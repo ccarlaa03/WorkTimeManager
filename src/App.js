@@ -1,15 +1,27 @@
-import logo from './logo.jpg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
+import VizitatorComponent from './components/vizitator/component-vizitator';
+import AngajatComponent from './components/Angajat/component-angajat';
+import HRComponent from './components/HR/component-hr';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
- 
+    <AuthProvider>
+      <Router>
+        <Routes>
+        <Route path="/" element={<VizitatorComponent />} />
 
-      </header>
-    </div>
+          <Route path="/" element={<AngajatComponent />} />
+    
+
+          <Route path="/" element={<HRComponent />} />
+      
+          </Routes>
+        </Router>
+    </AuthProvider>
   );
 }
 
 export default App;
+
