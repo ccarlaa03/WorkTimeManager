@@ -1,5 +1,5 @@
 import React from 'react';
-import VizitatorComponent from './component-vizitator';
+//import VizitatorComponent from './component-vizitator';
 
 function Contact() {
   return (

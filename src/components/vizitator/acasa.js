@@ -4,6 +4,7 @@ import VizitatorComponent from './component-vizitator';
 import imagine1 from '../../photos/img1.jpg'; 
 import imagine2 from '../../photos/img2.jpg'; 
 
+
 function Acasa() {
   return (
     <div>

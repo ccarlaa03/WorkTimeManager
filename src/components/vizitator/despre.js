@@ -1,6 +1,6 @@
 import React from 'react';
-import VizitatorComponent from './component-vizitator';
-import '../../styles/App.css'; 
+//import VizitatorComponent from './component-vizitator';
+
 
 
 

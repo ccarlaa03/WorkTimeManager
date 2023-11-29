@@ -44,6 +44,7 @@ text-align: center;
 padding: 50px; 
 background-color: #e4e9ef;
 color: #A087BC;
+margin-top: 20px;
 }
 
 h1 {
@@ -65,6 +66,7 @@ footer {
   color: #fff468;
   padding: 10px;
   width: auto;
+ 
 }
 
 .social-icons {
