@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import '/Login/login';
-import Footer from '../components/footer';
+import '../../styles/App.css';
 
 const Login = () => {
   const [showSignUp, setShowSignUp] = useState(true);
@@ -64,3 +63,4 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
+ export default Login;

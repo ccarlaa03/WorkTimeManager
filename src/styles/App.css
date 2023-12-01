@@ -54,7 +54,6 @@ margin-top: 10px;
 
 }
 
-
 .despre p {
 font-size: 1.2em;
 line-height: 1.6;
@@ -64,9 +63,8 @@ margin-bottom: 15px;
 footer {
   background-color: #a087bc;
   color: #fff468;
-  padding: 10px;
+  padding: 50px;
   width: auto;
- 
 }
 
 .social-icons {
@@ -83,13 +81,98 @@ footer {
   align-items: center;
 }
 
+.content {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch; 
+}
+
+.column {
+  flex: 1;
+  padding: 15px;
+  margin: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #e4e9ef; 
+}
+
+
+h2,h1 {
+  color: #A087BC; 
+}
+
+p {
+  color: #a087bc; 
+}
+
+.contact-page {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  background-color: #e4e9ef;
+}
+
+.form-group {
+  padding: 25px;
+}
+
+label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  box-sizing: border-box;
+color: #A087BC;
+}
+label{
+  color: #A087BC;
+}
+button {
+  background-color: #a087bc;
+  color: #fff;
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: none;
+  cursor: pointer;
+  
+}
+
+.contact-details,
+.working-hours {
+  background-color: #fff468;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 5px;
+}
+
+.imagine4 {
+  width: 300px;
+  height: auto;
+}
+
+.working-hours,
+.form-container,
+.contact-details,
+.image-container {
+  margin: 50px;  
+}
+
+
+
 @media screen and (max-width: 600px) {
   .despre {
-    padding: 10px;
+    padding: 18px;
   }
 
-  h1 {
-    font-size: 1.5em;
+  h1, h2 {
+    font-size: 18px;
   }
 
   .despre p {
@@ -99,9 +182,12 @@ footer {
   .image-container {
     flex-direction: column;
   }
+  li {
+    font-size: 10px;
+  }
 }
 
-.imagine1, .imagine2 {
+.imagine1, .imagine2, .imagine4, .imagine3 {
   max-width: 100%; 
   max-height: 100%; 
   height: auto; 
@@ -109,8 +195,145 @@ footer {
 }
 
 
-@media (min-width: 768px) {
-  .imagine1, .imagine2 {
+@media (min-width: 767px) {
+  .imagine1, .imagine2, .imagine3, .imagine4 {
     max-width: 50%; 
   }
 }
+
+@media only screen and (max-width: 767px) {
+  .content {
+    flex-direction: column; 
+  }
+
+  .column {
+    margin-bottom: 15px; 
+  }
+  .container{
+    font-size: 8px;
+  }
+}
+
+
+@media only screen and (max-width: 767px) {
+  .form-group {
+    margin-bottom: 15px;
+  }
+  .contact-page {
+    display: flex;
+    flex-direction: column; 
+    align-items: center; 
+  }
+
+  button {
+    width: 100%; 
+  }
+}
+
+
+@media only screen and (max-width: 767px) {
+  .col-md-4 {
+    width: 100%; 
+    margin-bottom: 20px; 
+    font-size: 5px;
+  }
+
+  .social-icons li {
+    margin-right: 5px; 
+  }
+}
+
+/* login */
+.content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100%;
+  width: 80%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.content h2 {
+  font-weight: 300;
+  font-size: 2.6em;
+  margin: 0.2em 0 0.1em;
+}
+
+.form-element {
+  margin: 1.6em 0;
+}
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 0.8em;
+  text-transform: uppercase;
+  color: #a087bc;
+}
+
+input {
+  background-color: transparent;
+  border: 0;
+  outline: 0;
+  font-size: 1em;
+  padding: 8px 1px;
+  margin-top: 0.1em;
+  border-bottom: 1px solid #d9cce8;
+  color: #d9cce8;
+}
+
+button {
+  padding: 0.8em 1.2em;
+  margin: 0 10px 0 0;
+  width: auto;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 1em;
+  color: #fff;
+  line-height: 1em;
+  letter-spacing: 0.6px;
+  border-radius: 3px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1);
+  border: 0;
+  outline: 0;
+  transition: all 0.25s;
+}
+
+button.signup {
+  background: #fff468
+}
+
+button.login {
+  background: #a087bc;
+}
+
+button.off {
+  background: none;
+  box-shadow: none;
+  margin: 0;
+  color: #e4e9ef;
+}
+
+button.off.signup {
+  background: #a087bc;
+}
+
+button.off.login {
+  background:#FFF468;
+}
+
+button:focus, button:active, button:hover {
+  box-shadow: 0 4px 7px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1);
+}
+
+@media only screen and (max-width: 768px) {
+  #slideBox {
+    width: 80%;
+    margin-left: 20%;
+  }
+}
+
