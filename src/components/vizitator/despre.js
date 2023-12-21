@@ -12,8 +12,7 @@ const Despre = () => {
           <img src={imagine3} alt="Imagine3" className="imagine3" />
         </div>
         
-
-        <div className="content">
+        <div className="content1">
           <div className="column">
             <h2>Scopul nostru</h2>
             <p>Scopul nostru este să simplificăm și să modernizăm procesele din cadrul departamentelor de resurse umane, facilitând comunicarea internă și creând un mediu de lucru prietenos și organizat.</p>

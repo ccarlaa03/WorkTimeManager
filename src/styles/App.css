@@ -1,11 +1,15 @@
 body {
   margin: 0;
-  background-color: #E4E9EF;
+  padding: 0;
+  background-color: #FFFFFF;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+p a {
+  color: #A087BC;
 }
 
 nav {
@@ -31,40 +35,41 @@ li {
 }
 
 li:not(:last-child) {
-  margin-right: 15px; 
+  margin-right: 15px;
 }
 
 a {
   text-decoration: none;
-  color: #FFF468;
+  color: #FFFFFF; 
 }
 
 .despre {
-text-align: center;
-padding: 50px; 
-background-color: #e4e9ef;
-color: #A087BC;
-margin-top: 20px;
+  text-align: center;
+  padding: 50px;
+  color: #A087BC;
+
 }
 
 h1 {
-font-size: 2em;
-margin-bottom: 20px;
-margin-top: 10px; 
-
+  font-size: 2em;
+  margin-bottom: 20px;
+  margin-top: 10px;
 }
 
 .despre p {
-font-size: 1.2em;
-line-height: 1.6;
-margin-bottom: 15px;
+  font-size: 1.2em;
+  line-height: 1.6;
+  margin-bottom: 15px;
 }
 
+
 footer {
-  background-color: #a087bc;
-  color: #fff468;
-  padding: 50px;
+  background-color: #A087BC;
+  color: #FFFFFF;
+  padding: 10px;
   width: auto;
+  position: relative;
+  bottom: 0;
 }
 
 .social-icons {
@@ -84,7 +89,7 @@ footer {
 .content {
   display: flex;
   justify-content: space-between;
-  align-items: stretch; 
+flex-wrap: wrap;
 }
 
 .column {
@@ -93,77 +98,65 @@ footer {
   margin: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
-  background-color: #e4e9ef; 
+  background-color: #E4E9EF;
 }
 
-
-h2,h1 {
-  color: #A087BC; 
+h2, h1 {
+  color: #A087BC;
 }
-
+h4{
+  color: #FFFFFF;
+}
 p {
-  color: #a087bc; 
+  color: #A087BC;
 }
 
 .contact-page {
   display: flex;
-  justify-content: space-around;
-  padding: 20px;
-  background-color: #e4e9ef;
+  justify-content: center; 
+  align-items: center;
+}
+
+.form-container {
+  max-width: 100%;
+  padding: 50px;
 }
 
 .form-group {
-  padding: 25px;
+  margin-bottom: 30px;
 }
 
+.imagine4 {
+  width: 30%; 
+}
 label {
   font-weight: bold;
   display: block;
   margin-bottom: 5px;
+  color: #A087BC;
 }
 
 input,
 textarea {
   width: 100%;
-  padding: 10px;
+  padding: 20px;
   margin-top: 5px;
   box-sizing: border-box;
-color: #A087BC;
-}
-label{
   color: #A087BC;
+  border: 1px solid #A087BC;
+  border-radius: 5px;
 }
+
 button {
-  background-color: #a087bc;
-  color: #fff;
+  background-color: #A087BC;
+  color: #FFF;
   width: 100%;
   padding: 10px;
   margin-top: 5px;
   border: none;
   cursor: pointer;
-  
-}
-
-.contact-details,
-.working-hours {
-  background-color: #fff468;
-  padding: 20px;
-  margin: 20px;
   border-radius: 5px;
 }
-
-.imagine4 {
-  width: 300px;
-  height: auto;
-}
-
-.working-hours,
-.form-container,
-.contact-details,
-.image-container {
-  margin: 50px;  
-}
-
 
 
 @media screen and (max-width: 600px) {
@@ -187,7 +180,7 @@ button {
   }
 }
 
-.imagine1, .imagine2, .imagine4, .imagine3 {
+.imagine1, .imagine2, .imagine3 {
   max-width: 100%; 
   max-height: 100%; 
   height: auto; 
@@ -214,23 +207,6 @@ button {
   }
 }
 
-
-@media only screen and (max-width: 767px) {
-  .form-group {
-    margin-bottom: 15px;
-  }
-  .contact-page {
-    display: flex;
-    flex-direction: column; 
-    align-items: center; 
-  }
-
-  button {
-    width: 100%; 
-  }
-}
-
-
 @media only screen and (max-width: 767px) {
   .col-md-4 {
     width: 100%; 
@@ -244,12 +220,19 @@ button {
 }
 
 /* login */
+.container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: auto; 
+}
+
 .content {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  min-height: 100%;
   width: 80%;
+  max-width: 400px; 
   margin: 0 auto;
   position: relative;
 }
@@ -301,10 +284,18 @@ button {
   border: 0;
   outline: 0;
   transition: all 0.25s;
+
+}
+.content h2 {
+  font-weight: 300;
+  font-size: 2.6em;
+  margin: 0.2em 0 0.1em;
 }
 
+
 button.signup {
-  background: #fff468
+  background: #a087bc;
+  color: #FFFFFF;
 }
 
 button.login {
@@ -315,7 +306,7 @@ button.off {
   background: none;
   box-shadow: none;
   margin: 0;
-  color: #e4e9ef;
+  color: #fff;
 }
 
 button.off.signup {
@@ -323,17 +314,136 @@ button.off.signup {
 }
 
 button.off.login {
-  background:#FFF468;
+  background: #FFF468; 
+  color: #000; 
 }
 
 button:focus, button:active, button:hover {
   box-shadow: 0 4px 7px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1);
 }
 
-@media only screen and (max-width: 768px) {
-  #slideBox {
-    width: 80%;
-    margin-left: 20%;
-  }
+.form-element {
+  margin-bottom: 10px; 
+  color: #A087BC;
 }
+
+.form-label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px; 
+  color: #A087BC;
+}
+
+.container-dashboard {
+  background-color: #E4E9EF;
+  padding: 20px;
+}
+
+.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+  background-color: #FFF;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.imagine-profil {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+}
+
+.buton {
+  margin-top: 10px;
+  padding: 5px 10px;
+  border: none;
+  background-color: #A087BC;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.container-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.header-calendar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+}
+
+.container-zile-saptamana, .container-zile-luna {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+}
+
+.zi-saptamana, .zi-calendar {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+.zi-saptamana {
+  background-color: #EFEFEF;
+}
+
+.zi-calendar.gol {
+  background-color: #F5F5F5;
+}
+.container-dashboard {
+  font-family: 'Arial', sans-serif;
+  color: #333;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.container-profil {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.imagine-profil {
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+}
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.zi-calendar.cu-eveniment {
+  background-color: #50c55a; 
+  color: white; 
+ 
+}
+
 

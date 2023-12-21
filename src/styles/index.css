@@ -1,68 +1,83 @@
-body {
-  margin: 0;
-  background-color: #E4E9EF;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/* Contact.css */
 
-nav {
-  background-color: #A087BC;
-  padding: 10px;
-  position: fixed;
-  width: 100%;
-  top: 0;
-  z-index: 1000;
-}
-
-ul {
-  list-style-type: none;
-  margin: 0;
-  padding: 0;
+.contact-page {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: space-around;
+  padding: 20px;
+  background-color: #E4E9EF;
 }
 
-li {
-  display: inline;
+.contact {
+  background-color: #A087BC;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 5px;
+  color: #FFF;
+  text-align: center;
 }
 
-li:not(:last-child) {
-  margin-right: 15px; 
+.contact h2 {
+  color: #FFF;
+  margin-bottom: 10px;
 }
 
-a {
-  text-decoration: none;
-  color: #FFF468;
+.contact p {
+  margin: 10px 0;
 }
 
-
-.content {
-padding: 20px;
+.imagine4 {
+  width: 100%;
+  height: auto;
+  margin: 20px 0;
+  object-fit: cover;
 }
 
-
-.despre {
-text-align: center;
-padding: 50px; 
-background-color: #e4e9ef;
-color: #A087BC;
+.image-container {
+  margin: 20px;
 }
 
-.despre h1 {
-font-size: 2em;
-margin-bottom: 20px;
-margin-top: 10px; 
-
+.form-group {
+  padding: 25px;
+  background-color: #E4E9EF;
+  border-radius: 5px;
+  margin: 20px;
 }
 
-
-.despre p {
-font-size: 1.2em;
-line-height: 1.6;
-margin-bottom: 15px;
+label {
+  font-weight: bold;
+  display: block;
+  margin-bottom: 5px;
+  color: #A087BC;
 }
 
+input,
+textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  box-sizing: border-box;
+  color: #A087BC;
+}
+
+button1 {
+  background-color: #A087BC;
+  color: #FFF;
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.contact-details {
+  background-color: #A087BC;
+  padding: 20px;
+  margin: 20px;
+  border-radius: 5px;
+  color: #FFF;
+  text-align: center;
+}
+
+.contact-details p {
+  margin: 10px 0;
+}
