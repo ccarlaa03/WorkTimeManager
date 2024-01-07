@@ -35,30 +35,12 @@ const App = () => {
             <Route path="/user-dashboard" element={<DashboardAng />} />
             <Route path="/login" element={<Login setAuthenticated={setAuthenticated} />} />
             <Route path="/signup" element={<SignUp setAuthenticated={setAuthenticated} />} />
+            <Route path="/hr-dashboard" element={<HrDashboard />} />
+            <Route path="/program-lucru" element={<ProgramLucru />} />
             
            <Route path="/user-profil" element={
             <ProtectedRoute roles={['angajat']}>
               <ProfilAng />
-            </ProtectedRoute>
-          } />
-           <Route path="/program-lucru" element={
-            <ProtectedRoute roles={['angajat']}>
-              <ProgramLucru />
-            </ProtectedRoute>
-          } />
-            <Route path="/concedii" element={
-            <ProtectedRoute roles={['angajat']}>
-              <Concedii />
-            </ProtectedRoute>
-          } />
-               <Route path="/feedback-ang" element={
-            <ProtectedRoute roles={['angajat']}>
-              <FeedbackAng/>
-            </ProtectedRoute>
-          } />
-          <Route path="/hr-dashboard" element={
-            <ProtectedRoute roles={['hr']}>
-              <HrDashboard />
             </ProtectedRoute>
           } />
           </Routes>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const EditareProfilModal = ({ profil, isOpen, onClose, onSave }) => {
+const EditareProfil = ({ profil, isOpen, onClose, onSave }) => {
   const [dateTemporare, setDateTemporare] = useState(profil);
 
   useEffect(() => {
@@ -53,4 +53,4 @@ const EditareProfilModal = ({ profil, isOpen, onClose, onSave }) => {
     );
   };
   
-  export default EditareProfilModal;
+  export default EditareProfil;

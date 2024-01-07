@@ -446,4 +446,59 @@ button:focus, button:active, button:hover {
  
 }
 
+.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+  background-color: #FFF;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
 
+.container-notificari, .container-intalniri {
+  background-color: #FFF;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+@media screen and (max-width: 768px) {
+  .container-notificari, .container-intalniri{
+    width: auto;
+    height: auto;
+    margin-bottom: 20px;
+  }
+}
+
+.container-profil img {
+  width: 80px;
+  height: auto;
+  border-radius: 50%; 
+  margin-bottom: 10px; 
+  object-fit: cover;
+}
+
+.modal form {
+  background-color: #f8f8f8; 
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.chart-container {
+  width: 300px; 
+  height: 300px; 
+  margin: auto; 
+}
+
+.container-flex {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px; 
+}
+
+.container-item {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1; 
+}

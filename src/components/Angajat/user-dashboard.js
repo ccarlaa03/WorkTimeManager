@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
 import Calendar from './calendar';
 import imagine from '../../photos/imagine-profil.jpg';
-import EditareProfilModal from './editare-profil';
+import EditareProfil from './editare-profil';
+import FormularModificare from './Formular-mod';
+import Statistici from './statistici'; 
 
-// Componenta Statistici definită separat
-const Statistici = ({ oreLucrate, zileLibere }) => (
-  <div className="container-statistici">
-    <h2>Statistici săptămânale</h2>
-    <p style={{ color: 'black' }}>Ore lucrate: {oreLucrate}</p>
-    <p style={{ color: 'black' }}>Zile libere: {zileLibere}</p>
-  </div>
-);
 
 // Componenta Dashboard
 const Dashboard = () => {
@@ -21,6 +15,9 @@ const Dashboard = () => {
     departament: "Departamentul de testare și control al calității",
   });
   const [editareProfil, setEditareProfil] = useState(false);
+
+  const [oreLucrate, setOreLucrate] = useState(40); // Exemplu de valoare
+  const [zileLibere, setZileLibere] = useState(2); // Exemplu de valoare
 
   const handleEditClick = () => {
     setEditareProfil(!editareProfil);
@@ -34,12 +31,13 @@ const Dashboard = () => {
     e.preventDefault();
     console.log("Profil actualizat:", profil);
     setEditareProfil(false);
+    
   };
 
   const handleSave = (dateActualizate) => {
     setProfil(dateActualizate);
     setEditareProfil(false);
-    localStorage.setItem('profil', JSON.stringify(dateActualizate)); 
+    localStorage.setItem('profil', JSON.stringify(dateActualizate));
   };
 
   const programLucru = [
@@ -49,6 +47,7 @@ const Dashboard = () => {
   const notificari = [
     { text: 'Orar actualizat pentru săptămâna viitoare.' },
   ];
+  const [esteDeschisModalModificare, setEsteDeschisModalModificare] = useState(false);
 
   return (
     <div className="container-dashboard">
@@ -61,15 +60,13 @@ const Dashboard = () => {
         <p>{profil.departament}</p>
         <button className="buton" onClick={() => setEditareProfil(true)}>Editează Profilul</button>
 
-        <EditareProfilModal
+        <EditareProfil
           profil={profil}
           isOpen={editareProfil}
           onClose={() => setEditareProfil(false)}
           onSave={handleSave}
         />
       </div>
-
-      <Statistici oreLucrate={40} zileLibere={0} />
 
       <div className="container-program-lucru">
         <h2>Program de lucru</h2>
@@ -78,14 +75,23 @@ const Dashboard = () => {
             <li key={index}>{zi.zi}: {zi.oraInceput} - {zi.oraSfarsit}</li>
           ))}
         </ul>
+        <button
+          className="buton"
+          onClick={() => setEsteDeschisModalModificare(true)} >
+          Cere modificare program
+        </button>
+
+        {esteDeschisModalModificare && (
+          <FormularModificare
+            onClose={() => setEsteDeschisModalModificare(false)}
+          />
+        )}
       </div>
 
-      <div className="container-calendar-extern">
-        <h2>Calendar</h2>
-        <Calendar />
-      </div>
+      <div className="container-flex">
+          <Statistici oreLucrate={oreLucrate} zileLibere={zileLibere} />
 
-      <div className="container-notificari">
+     <div className="container-item container-notificari">
         <h2>Notificări</h2>
         <ul>
           {notificari.map((notificare, index) => (
@@ -93,6 +99,14 @@ const Dashboard = () => {
           ))}
         </ul>
       </div>
+      </div>
+
+      <div className="container-calendar-extern">
+        <h2>Calendar</h2>
+        <Calendar />
+      </div>
+
+
     </div>
   );
 };

@@ -1,0 +1,43 @@
+*/fetch('http://localhost:5000/api/cerere-modificare', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ /* datele cererii aici */ }),
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Cererea a fost trimisă:', data);
+  alert('Cererea a fost trimisă. Te vom anunța noi în legătură cu decizia.');
+  onClose(); // Închiderea formularului
+})
+.catch((error) => {
+  console.error('Eroare la trimiterea cererii:', error);
+});
+  js 
+
+
+  from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
+ flask
+
+ from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+@app.route('/api/cerere-modificare', methods=['POST'])
+def cerere_modificare():
+    data = request.json
+    print(data)
+    # Aici puteți adăuga logica pentru a procesa cererea
+    # De exemplu, salvarea într-o bază de date, trimiterea unui email, etc.
+    
+    # Răspundeți cu un mesaj JSON
+    return jsonify({'message': 'Cererea a fost primită și este în procesare'})
+
+if __name__ == '__main__':
+    app.run(debug=True)
+ py
+/*
