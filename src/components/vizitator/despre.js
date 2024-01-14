@@ -2,6 +2,7 @@ import React from 'react';
 import '../../styles/App.css';
 import imagine3 from '../../photos/img3.jpg';
 
+
 const Despre = () => {
   return (
     <>

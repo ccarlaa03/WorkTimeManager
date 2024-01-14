@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import imagine4 from '../../photos/img4.jpg';
 
+
 function Contact() {
   const [formData, setFormData] = useState({
     name: '',
@@ -20,12 +21,10 @@ function Contact() {
     e.preventDefault();
     console.log('Formular trimis:', formData);
   };
-
   return (
+    <div>
     <div className="contact-page">
-
       <img src={imagine4} alt="Imagine4" className="imagine4" />
-
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-group">
           <h1>Scrie-ne un mesaj:</h1>
@@ -65,6 +64,7 @@ function Contact() {
 
         <button type="submit">Trimite</button>
       </form>
+    </div>
     </div>
   );
 }

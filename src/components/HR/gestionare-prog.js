@@ -9,6 +9,19 @@ const ProgramLucruHR = () => {
     setZiSelectata({ zi: '', oraInceput: '', oraSfarsit: '' }); // Resetarea formularului
   };
 
+  const handleStergeZi = index => {
+    const updatedProgram = [...programLucru];
+    updatedProgram.splice(index, 1);
+    setProgramLucru(updatedProgram);
+  };
+
+  // Funcția de modificare a zilei este comentată deoarece nu este folosită
+  // const handleModificaZi = (index, updatedZi) => {
+  //   const updatedProgram = [...programLucru];
+  //   updatedProgram[index] = updatedZi;
+  //   setProgramLucru(updatedProgram);
+  // };
+
   const handleZiChange = (e) => {
     setZiSelectata({ ...ziSelectata, [e.target.name]: e.target.value });
   };
@@ -36,13 +49,15 @@ const ProgramLucruHR = () => {
           value={ziSelectata.oraSfarsit}
           onChange={handleZiChange}
         />
-        <button onClick={handleAdaugaZi}>Adaugă Zi</button>
+        <button type="button" onClick={handleAdaugaZi}>Adaugă Zi</button>
       </form>
       <ul>
         {programLucru.map((zi, index) => (
           <li key={index}>
             {zi.zi}: {zi.oraInceput} - {zi.oraSfarsit}
-            {/* Opțional: Buton de ștergere/modificare pentru fiecare zi */}
+            <button onClick={() => handleStergeZi(index)}>Șterge</button>
+            {/* Butonul Modifică este comentat până când funcționalitatea este implementată */}
+            {/* <button onClick={() => { /* logic to set the selected day for editing * / }}>Modifică</button> */}
           </li>
         ))}
       </ul>

@@ -1,65 +1,51 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './styles/App.css';
-import { AuthProvider } from './database/AuthContext';
-import ProtectedRoute from './database/route';
-import ReactDOM from 'react-dom';
+import NavbarWrapper from './NavbarWrapper'; 
 import Footer from './footer';
-import Navbar from './components/vizitator/Navbar';
 import Despre from './components/vizitator/Despre';
 import Contact from './components/vizitator/Contact';
 import Acasa from './components/vizitator/acasa';
 import Login from './components/Logare/login';
 import SignUp from './components/Logare/signup';
-import ProfilAng from './components/Angajat/user-profil';
 import DashboardAng from './components/Angajat/user-dashboard';
 import HrDashboard from './components/HR/hr-dashboard';
 import ProgramLucru from './components/Angajat/program-lucru';
 import Concedii from './components/Angajat/concedii';
-import FeedbackAng from './components/Angajat/feedback-ang';
+import Feedback from './components/Angajat/feedback-ang';
+import UserProfil from './components/Angajat/user-profil';
+import ProgramLucruHR from './components/HR/gestionare-prog';
+import FormularFeedbackHR from './components/HR/formular-feedback';
+import GestionareFeedback from './components/HR/gestionare-feedback';
+import GestionareAngajati from './components/HR/gestionare-ang';
 
 
 const App = () => {
-  const [authenticated, setAuthenticated] = useState(false);
+
 
   return (
     <Router>
-      <AuthProvider>
-        <div>
-          <Navbar authenticated={authenticated} />
-
-          <Routes>
-            <Route path="/" element={<Acasa />} />
-            <Route path="/Despre" element={<Despre />} />
-            <Route path="/Contact" element={<Contact />} />
-            <Route path="/user-dashboard" element={<DashboardAng />} />
-            <Route path="/login" element={<Login setAuthenticated={setAuthenticated} />} />
-            <Route path="/signup" element={<SignUp setAuthenticated={setAuthenticated} />} />
-            <Route path="/hr-dashboard" element={<HrDashboard />} />
-            <Route path="/program-lucru" element={<ProgramLucru />} />
-            
-           <Route path="/user-profil" element={
-            <ProtectedRoute roles={['angajat']}>
-              <ProfilAng />
-            </ProtectedRoute>
-          } />
-          </Routes>
-        
-        </div>
-      </AuthProvider>
-      <Footer/>
+        <NavbarWrapper/>
+      <Routes>
+        <Route path="/" element={<Acasa />} />
+        <Route path="/Despre" element={<Despre />} />
+        <Route path="/Contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/user-dashboard" element={<DashboardAng />} />
+        <Route path="/program-lucru" element={<ProgramLucru />} />
+        <Route path="/concedii" element={<Concedii />} />
+        <Route path="/feedback-ang" element={<Feedback />} />
+        <Route path="/user-profil" element={<UserProfil />} />
+        <Route path="/hr-dashboard" element={<HrDashboard />} />
+        <Route path="/gestionare-feedback" element={<GestionareFeedback/>} />
+        <Route path="/gestionare-prog" element={<ProgramLucruHR/>} />
+        <Route path="/gestionare-ang" element={<GestionareAngajati/>} />
+        {/* Adăugați aici alte rute necesare */}
+      </Routes>
+      <Footer />
     </Router>
-    
   );
 };
-
-ReactDOM.render(
-  <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
 
 export default App;

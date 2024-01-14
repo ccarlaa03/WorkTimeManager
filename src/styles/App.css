@@ -1,12 +1,14 @@
 body {
   margin: 0;
   padding: 0;
-  background-color: #FFFFFF;
+  background-color: #E4E9EF;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  height: 100%; 
+  min-height: 100vh;
 }
 p a {
   color: #A087BC;
@@ -68,8 +70,13 @@ footer {
   color: #FFFFFF;
   padding: 10px;
   width: auto;
-  position: relative;
   bottom: 0;
+  margin-top: auto; 
+}
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; 
 }
 
 .social-icons {
@@ -99,6 +106,9 @@ flex-wrap: wrap;
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #E4E9EF;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 h2, h1 {
@@ -354,7 +364,8 @@ button:focus, button:active, button:hover {
 }
 
 .buton {
-  margin-top: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px; 
   padding: 5px 10px;
   border: none;
   background-color: #A087BC;
@@ -362,6 +373,7 @@ button:focus, button:active, button:hover {
   border-radius: 5px;
   cursor: pointer;
 }
+
 
 .container-calendar {
   display: grid;
@@ -438,7 +450,14 @@ button:focus, button:active, button:hover {
   background: white;
   padding: 20px;
   border-radius: 5px;
+  max-width: 500px;
+  width: 80%; 
+  margin: auto;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
 }
+
 
 .zi-calendar.cu-eveniment {
   background-color: #50c55a; 
@@ -467,6 +486,9 @@ button:focus, button:active, button:hover {
     width: auto;
     height: auto;
     margin-bottom: 20px;
+  }
+  .tabel-angajati {
+    max-width: 100%;
   }
 }
 
@@ -501,4 +523,18 @@ button:focus, button:active, button:hover {
   flex-direction: column;
   justify-content: space-between;
   flex: 1; 
+}
+
+.tabel{
+  width: 100%;
+  max-width: 100%; 
+  overflow-x: auto; 
+  margin: 0 auto; 
+  display: block;
+  align-content: center;
+}
+
+td {
+  padding: 45px; 
+  text-align: center; 
 }

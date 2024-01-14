@@ -10,25 +10,17 @@ const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      console.log(auth);
-      const authInstance = getAuth(auth);
-
-      if (!authInstance) {
-        console.error('Auth is undefined. Check Firebase initialization.');
-        return;
-      }
-
-      await createUserWithEmailAndPassword(authInstance, email, password);
+      await createUserWithEmailAndPassword(auth, email, password);
       console.log('Sign-up successful');
-      navigate('/dashboard');
+      navigate('/user-dashboard');
     } catch (error) {
       console.error('Sign-up failed', error.message);
     }
   };
+  
 
   const handleToggleForm = (redirectToLogin = false) => {
     if (redirectToLogin) {

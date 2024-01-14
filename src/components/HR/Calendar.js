@@ -21,11 +21,9 @@ const Calendar = () => {
   const luni = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 
   const adaugaEveniment = (evenimentNou) => {
-    // Adaugă noul eveniment la lista de evenimente
-    setEvenimente([...evenimente, evenimentNou]);
+    evenimentNou.data = new Date(evenimentNou.data);
+    setEvenimente(evenimenteActuale => [...evenimenteActuale, evenimentNou]);
 
-    // Actualizează calendarul pentru a afișa evenimentul nou adăugat
-    actualizeazaCalendar();
   };
 
   const generareZileLuna = () => {
@@ -86,21 +84,18 @@ const Calendar = () => {
         {generareZileLuna()}
       </div>
 
-      {/* Formularul pentru adăugarea manuală a evenimentelor */}
       <form onSubmit={(e) => {
         e.preventDefault();
-        // Colectează datele din formular și adaugă evenimentul
-        const formData = new FormData(e.target);
-        const data = new Date(formData.get('data'));
-        const ora = formData.get('ora');
-        const descriere = formData.get('descriere');
-        const culoare = formData.get('culoare');
+        const data = e.target.data.value;
+        const ora = e.target.ora.value;
+        const descriere = e.target.descriere.value;
+        const culoare = e.target.culoare.value;
         adaugaEveniment({ data, ora, descriere, culoare });
-        e.target.reset(); // Resetăm formularul după adăugarea evenimentului
+        e.target.reset();
       }}>
-        <input type="date" name="data" />
-        <input type="time" name="ora" />
-        <input type="text" name="descriere" placeholder="Descriere eveniment" />
+        <input type="date" name="data" required />
+        <input type="time" name="ora" required />
+        <input type="text" name="descriere" placeholder="Descriere eveniment" required />
         <input type="color" name="culoare" />
         <button type="submit">Adaugă eveniment</button>
       </form>

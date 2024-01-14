@@ -8,7 +8,7 @@ import '../../styles/App.css';
 const Acasa = () => {
   return (
     <div>
-  
+
     <section className='despre'>
       <h1>Bine ați venit la WorkTimeManager!</h1>
       <p>Soluția inovatoare pentru gestionarea eficientă a resurselor umane și a programului de lucru.</p>
