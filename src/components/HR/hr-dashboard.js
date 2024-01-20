@@ -5,6 +5,7 @@ import { Bar } from 'react-chartjs-2';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
 import FormularAdaugareIntalnire from './Formular-int';
+import Modal from 'react-modal';
 
 import {
   Chart as ChartJS,
@@ -89,7 +90,7 @@ const HrDashboard = () => {
     labels: departamente,
     datasets: [
       {
-        label: 'Număr de Angajați',
+        label: 'Număr de angajați',
         data: numarAngajatiPeDepartamente,
         borderWidth: 1,
       },
@@ -103,7 +104,7 @@ const HrDashboard = () => {
   };
 
   const [esteDeschisModalIntalniri, setEsteDeschisModalIntalniri] = useState(false);
-
+  const [esteDeschisModalEditareProfil, setEsteDeschisModalEditareProfil] = useState(false);
   return (
     <div className="container-dashboard">
       <h1>Dashboard HR</h1>
@@ -112,16 +113,37 @@ const HrDashboard = () => {
         <h3>{profil.nume}</h3>
         <p>{profil.titlu}</p>
         <p>{profil.departament}</p>
-        <button className="buton" onClick={() => setEditareProfil(true)}>Editează Profilul</button>
+        <button className="buton" onClick={() => setEsteDeschisModalEditareProfil(true)}>Editează Profilul</button>
 
+        </div>
+
+        <Modal
+        isOpen={esteDeschisModalEditareProfil}
+        onRequestClose={() => setEsteDeschisModalEditareProfil(false)}
+        contentLabel="Editează Profil"
+        className="modal-content"
+      >
         <EditareProfil
           profil={profil}
-          isOpen={editareProfil}
-          onClose={() => setEditareProfil(false)}
+          isOpen={esteDeschisModalEditareProfil}
+          onClose={() => setEsteDeschisModalEditareProfil(false)}
           onSave={handleSave}
         />
-      </div>
+      </Modal>
 
+      <Modal
+        isOpen={esteDeschisModalIntalniri}
+        onRequestClose={() => setEsteDeschisModalIntalniri(false)}
+        contentLabel="Adaugă Întâlnire"
+        className="modal-content" 
+
+      >
+        <h2>Adaugă întâlnire nouă</h2>
+        <FormularAdaugareIntalnire
+          onAdaugaIntalnire={adaugaIntalnire}
+          onClose={() => setEsteDeschisModalIntalniri(false)}
+        />
+      </Modal>
       <div className="container-notificari">
         <h2>Notificări</h2>
         <ul>
@@ -143,7 +165,7 @@ const HrDashboard = () => {
         </ul>
         <div style={{ textAlign: 'left' }}>
         <button className="buton" onClick={() => setEsteDeschisModalIntalniri(true)} >
-        Adaugă Întâlnire
+        Adaugă întâlnire
       </button>
       </div>
       {esteDeschisModalIntalniri && (

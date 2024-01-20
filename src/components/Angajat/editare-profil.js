@@ -19,8 +19,7 @@ const EditareProfil = ({ profil, isOpen, onClose, onSave }) => {
   if (!isOpen) return null;
   
     return (
-      <div className="modal">
-        <div className="modal-content">
+        <div>
           <h2>Editare Profil</h2>
           <form onSubmit={handleSubmit}>
             <label>Nume:</label>
@@ -49,7 +48,6 @@ const EditareProfil = ({ profil, isOpen, onClose, onSave }) => {
             <button type="button" onClick={onClose}>Închide</button>
           </form>
         </div>
-      </div>
     );
   };
   

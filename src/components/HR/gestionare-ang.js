@@ -55,7 +55,7 @@ const GestionareAngajati = () => {
     return (
         <div>
             <div className="container-dashboard">
-                <h1 className="h1">Gestionare Angajați</h1>
+                <h1 className="h1">Gestionare angajați</h1>
                 <table className="tabel column">
                     <thead>
                         <tr>
@@ -134,7 +134,7 @@ const GestionareAngajati = () => {
                                     required
                                 />
                             </label>
-                            <button type="submit">Salvează Modificările</button>
+                            <button type="submit">Salvează modificările</button>
                             <button type="button" onClick={inchideModalEditare}>Închide</button>
                         </form>
                     )}

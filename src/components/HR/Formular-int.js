@@ -12,7 +12,6 @@ const FormularAdaugareIntalnire = ({ onAdaugaIntalnire, onClose }) => {
     };
   
     return (
-      <div className="modal">
       <form onSubmit={handleSubmit}>
         <div>
           <label>Data:</label>
@@ -41,7 +40,6 @@ const FormularAdaugareIntalnire = ({ onAdaugaIntalnire, onClose }) => {
         <button type="submit">Adaugă</button>
         <button onClick={onClose}>Închide</button>
       </form>
-      </div>
     );
 };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import './styles/App.css';
-import NavbarWrapper from './NavbarWrapper'; 
+import NavbarWrapper from './NavbarWrapper';
 import Footer from './footer';
 import Despre from './components/vizitator/Despre';
 import Contact from './components/vizitator/Contact';
@@ -15,9 +15,13 @@ import Concedii from './components/Angajat/concedii';
 import Feedback from './components/Angajat/feedback-ang';
 import UserProfil from './components/Angajat/user-profil';
 import ProgramLucruHR from './components/HR/gestionare-prog';
-import FormularFeedbackHR from './components/HR/formular-feedback';
+import GestionareFormular from './components/HR/gestionare-formular';
 import GestionareFeedback from './components/HR/gestionare-feedback';
 import GestionareAngajati from './components/HR/gestionare-ang';
+import GestionareProgramLucru from './components/HR/gestionare-prog';
+import GestionareConcedii from './components/HR/gestionare-concedii';
+import GestionareTraining from './components/HR/gestionare-training';
+import Rapoarte from './components/HR/rapoarte';
 
 
 const App = () => {
@@ -25,7 +29,7 @@ const App = () => {
 
   return (
     <Router>
-        <NavbarWrapper/>
+      <NavbarWrapper />
       <Routes>
         <Route path="/" element={<Acasa />} />
         <Route path="/Despre" element={<Despre />} />
@@ -38,9 +42,12 @@ const App = () => {
         <Route path="/feedback-ang" element={<Feedback />} />
         <Route path="/user-profil" element={<UserProfil />} />
         <Route path="/hr-dashboard" element={<HrDashboard />} />
-        <Route path="/gestionare-feedback" element={<GestionareFeedback/>} />
-        <Route path="/gestionare-prog" element={<ProgramLucruHR/>} />
-        <Route path="/gestionare-ang" element={<GestionareAngajati/>} />
+        <Route path="/gestionare-feedback" element={<GestionareFeedback />} />
+        <Route path="/gestionare-prog" element={<GestionareProgramLucru />} />
+        <Route path="/gestionare-ang" element={<GestionareAngajati />} />
+        <Route path="/gestionare-concedii" element={<GestionareConcedii />} />
+        <Route path="/gestionare-formular" element={<GestionareFormular/>} />
+        <Route path="/gestionare-training" element={<GestionareTraining/>} />
         {/* Adăugați aici alte rute necesare */}
       </Routes>
       <Footer />

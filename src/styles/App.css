@@ -3,13 +3,13 @@ body {
   padding: 0;
   background-color: #E4E9EF;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  height: 100%; 
+  height: 100%;
   min-height: 100vh;
 }
+
 p a {
   color: #A087BC;
 }
@@ -42,7 +42,7 @@ li:not(:last-child) {
 
 a {
   text-decoration: none;
-  color: #FFFFFF; 
+  color: #FFFFFF;
 }
 
 .despre {
@@ -52,10 +52,10 @@ a {
 
 }
 
-h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
-  margin-top: 10px;
+.h1 {
+  color: #A087BC;
+  text-align: center;
+  margin-bottom: 30px;
 }
 
 .despre p {
@@ -71,12 +71,13 @@ footer {
   padding: 10px;
   width: auto;
   bottom: 0;
-  margin-top: auto; 
+  margin-top: auto;
 }
+
 #root {
   display: flex;
   flex-direction: column;
-  min-height: 100vh; 
+  min-height: 100vh;
 }
 
 .social-icons {
@@ -96,7 +97,7 @@ footer {
 .content {
   display: flex;
   justify-content: space-between;
-flex-wrap: wrap;
+  flex-wrap: wrap;
 }
 
 .column {
@@ -111,19 +112,22 @@ flex-wrap: wrap;
   white-space: nowrap;
 }
 
-h2, h1 {
+h2,
+h1 {
   color: #A087BC;
 }
-h4{
+
+h4 {
   color: #FFFFFF;
 }
+
 p {
   color: #A087BC;
 }
 
 .contact-page {
   display: flex;
-  justify-content: center; 
+  justify-content: center;
   align-items: center;
 }
 
@@ -137,8 +141,9 @@ p {
 }
 
 .imagine4 {
-  width: 30%; 
+  width: 30%;
 }
+
 label {
   font-weight: bold;
   display: block;
@@ -158,14 +163,14 @@ textarea {
 }
 
 button {
+  padding: 10px 20px;
+  margin-right: 10px;
   background-color: #A087BC;
-  color: #FFF;
-  width: 100%;
-  padding: 10px;
-  margin-top: 5px;
+  color: white;
   border: none;
-  cursor: pointer;
   border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 
@@ -174,7 +179,8 @@ button {
     padding: 18px;
   }
 
-  h1, h2 {
+  h1,
+  h2 {
     font-size: 18px;
   }
 
@@ -185,47 +191,55 @@ button {
   .image-container {
     flex-direction: column;
   }
+
   li {
     font-size: 10px;
   }
 }
 
-.imagine1, .imagine2, .imagine3 {
-  max-width: 100%; 
-  max-height: 100%; 
-  height: auto; 
-  margin-bottom: 10px; 
+.imagine1,
+.imagine2,
+.imagine3 {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  margin-bottom: 10px;
 }
 
 
 @media (min-width: 767px) {
-  .imagine1, .imagine2, .imagine3, .imagine4 {
-    max-width: 50%; 
+
+  .imagine1,
+  .imagine2,
+  .imagine3,
+  .imagine4 {
+    max-width: 50%;
   }
 }
 
 @media only screen and (max-width: 767px) {
   .content {
-    flex-direction: column; 
+    flex-direction: column;
   }
 
   .column {
-    margin-bottom: 15px; 
+    margin-bottom: 15px;
   }
-  .container{
+
+  .container {
     font-size: 8px;
   }
 }
 
 @media only screen and (max-width: 767px) {
   .col-md-4 {
-    width: 100%; 
-    margin-bottom: 20px; 
+    width: 100%;
+    margin-bottom: 20px;
     font-size: 5px;
   }
 
   .social-icons li {
-    margin-right: 5px; 
+    margin-right: 5px;
   }
 }
 
@@ -234,7 +248,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: auto; 
+  height: auto;
 }
 
 .content {
@@ -242,7 +256,7 @@ button {
   flex-direction: column;
   justify-content: center;
   width: 80%;
-  max-width: 400px; 
+  max-width: 400px;
   margin: 0 auto;
   position: relative;
 }
@@ -251,6 +265,7 @@ button {
   font-weight: 300;
   font-size: 2.6em;
   margin: 0.2em 0 0.1em;
+  align-items: center;
 }
 
 .form-element {
@@ -290,12 +305,13 @@ button {
   line-height: 1em;
   letter-spacing: 0.6px;
   border-radius: 3px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.1);
   border: 0;
   outline: 0;
   transition: all 0.25s;
 
 }
+
 .content h2 {
   font-weight: 300;
   font-size: 2.6em;
@@ -324,23 +340,25 @@ button.off.signup {
 }
 
 button.off.login {
-  background: #FFF468; 
-  color: #000; 
+  background: #FFF468;
+  color: #000;
 }
 
-button:focus, button:active, button:hover {
-  box-shadow: 0 4px 7px rgba(0,0,0,0.1), 0 3px 6px rgba(0,0,0,0.1);
+button:focus,
+button:active,
+button:hover {
+  box-shadow: 0 4px 7px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.1);
 }
 
 .form-element {
-  margin-bottom: 10px; 
+  margin-bottom: 10px;
   color: #A087BC;
 }
 
 .form-label {
   font-weight: bold;
   display: block;
-  margin-bottom: 5px; 
+  margin-bottom: 5px;
   color: #A087BC;
 }
 
@@ -349,7 +367,11 @@ button:focus, button:active, button:hover {
   padding: 20px;
 }
 
-.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+.container-profil,
+.container-statistici,
+.container-program-lucru,
+.container-notificari,
+.container-calendar-extern {
   background-color: #FFF;
   padding: 15px;
   border-radius: 8px;
@@ -362,18 +384,15 @@ button:focus, button:active, button:hover {
   height: 100px;
   border-radius: 50%;
 }
-
 .buton {
-  margin-top: 20px;
-  margin-bottom: 20px; 
-  padding: 5px 10px;
-  border: none;
-  background-color: #A087BC;
-  color: white;
-  border-radius: 5px;
-  cursor: pointer;
+  padding: 10px 15px; 
+  background-color: #A087BC; 
+  color: white; 
+  border: none; 
+  border-radius: 5px; 
+  cursor: pointer; 
+  transition: background-color 0.3s ease;
 }
-
 
 .container-calendar {
   display: grid;
@@ -388,13 +407,15 @@ button:focus, button:active, button:hover {
   padding: 10px;
 }
 
-.container-zile-saptamana, .container-zile-luna {
+.container-zile-saptamana,
+.container-zile-luna {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 5px;
 }
 
-.zi-saptamana, .zi-calendar {
+.zi-saptamana,
+.zi-calendar {
   padding: 10px;
   border: 1px solid #ddd;
   text-align: center;
@@ -407,15 +428,19 @@ button:focus, button:active, button:hover {
 .zi-calendar.gol {
   background-color: #F5F5F5;
 }
+
 .container-dashboard {
-  font-family: 'Arial', sans-serif;
-  color: #333;
-  max-width: 1800px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  background-color: #E4E9EF;
 }
 
-.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+.container-profil,
+.container-statistici,
+.container-program-lucru,
+.container-notificari,
+.container-calendar-extern {
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -434,38 +459,32 @@ button:focus, button:active, button:hover {
   width: 80px;
   height: 80px;
 }
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
 .modal-content {
-  background: white;
+  background: #E4E9EF;
   padding: 20px;
   border-radius: 5px;
   max-width: 500px;
-  width: 80%; 
+  width: 80%;
   margin: auto;
   position: relative;
   top: 50%;
   transform: translateY(-50%);
+
 }
 
 
 .zi-calendar.cu-eveniment {
-  background-color: #50c55a; 
-  color: white; 
- 
+  background-color: #50c55a;
+  color: white;
+
 }
 
-.container-profil, .container-statistici, .container-program-lucru, .container-notificari, .container-calendar-extern {
+.container-profil,
+.container-statistici,
+.container-program-lucru,
+.container-notificari,
+.container-calendar-extern {
   background-color: #FFF;
   padding: 15px;
   border-radius: 8px;
@@ -473,7 +492,8 @@ button:focus, button:active, button:hover {
   margin-bottom: 20px;
 }
 
-.container-notificari, .container-intalniri {
+.container-notificari,
+.container-intalniri {
   background-color: #FFF;
   padding: 15px;
   border-radius: 8px;
@@ -482,59 +502,151 @@ button:focus, button:active, button:hover {
 }
 
 @media screen and (max-width: 768px) {
-  .container-notificari, .container-intalniri{
+
+  .container-notificari,
+  .container-intalniri {
     width: auto;
     height: auto;
     margin-bottom: 20px;
   }
+
   .tabel-angajati {
     max-width: 100%;
+  }
+
+  .container-dashboard {
+    margin: 0 -20px;
+    padding: 10px;
   }
 }
 
 .container-profil img {
   width: 80px;
   height: auto;
-  border-radius: 50%; 
-  margin-bottom: 10px; 
+  border-radius: 50%;
+  margin-bottom: 10px;
   object-fit: cover;
 }
 
 .modal form {
-  background-color: #f8f8f8; 
+  background-color: #f8f8f8;
   padding: 20px;
   border-radius: 5px;
 }
 
 .chart-container {
-  width: 300px; 
-  height: 300px; 
-  margin: auto; 
+  width: 300px;
+  height: 300px;
+  margin: auto;
 }
 
 .container-flex {
   display: flex;
   justify-content: space-between;
-  gap: 20px; 
+  gap: 20px;
 }
 
 .container-item {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  flex: 1; 
+  flex: 1;
 }
 
-.tabel{
+
+
+.tabel {
   width: 100%;
-  max-width: 100%; 
-  overflow-x: auto; 
-  margin: 0 auto; 
-  display: block;
-  align-content: center;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-td {
-  padding: 45px; 
-  text-align: center; 
+.tabel.column th,
+.tabel.column td {
+  padding: 10px 15px; 
+  background-color: #FFFFFF; 
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+
+.tabel.column th {
+  background-color: #A087BC;
+  color: white;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+
+.tabel td {
+  border-bottom: 1px solid #ddd;
+  background-color: white;
+  color: #333;
+}
+
+
+.tabel button {
+  background-color: #9b82b1;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-right: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.tabel button:hover {
+  background-color: #8c73a3;
+}
+
+.rapoarte-cursuri {
+  background-color: #FFF;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.card-curs {
+  background-color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+.lista-cursuri {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+
+@media (max-width: 1024px) {
+
+  .tabel,
+  .tabel th,
+  .tabel td {
+    padding: 6px;
+    font-size: 0.8rem;
+  }
+
+  .tabel button {
+    padding: 8px 2px;
+    font-size: 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+
+  .tabel th:nth-child(3),
+  .tabel td:nth-child(3),
+  .tabel th:nth-child(4),
+  .tabel td:nth-child(4),
+  .tabel th:nth-child(5),
+  .tabel td:nth-child(5) {
+    display: none;
+  }
 }

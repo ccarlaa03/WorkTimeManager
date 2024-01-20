@@ -5,7 +5,7 @@ const FormularAdaugareAngajat = ({ onAdaugaAngajat, onClose }) => {
         e.preventDefault();
         const { nume, telefon, email, departament, functie, data } = e.target.elements;
         onAdaugaAngajat({
-            id: Date.now(), // Sugerat ca ID unic
+            id: Date.now(), 
             nume: nume.value,
             telefon: telefon.value,
             email: email.value,

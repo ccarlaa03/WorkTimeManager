@@ -21,10 +21,7 @@ const NavbarHR = () => {
           <NavLink to="/gestionare-concedii" activeClassName="active">Gestionare Concedii</NavLink>
         </li>
         <li>
-          <NavLink to="/hr-profil" activeClassName="active">Profilul Meu</NavLink>
-        </li>
-        <li>
-          <NavLink to="/recrutare" activeClassName="active">Recrutare</NavLink>
+          <NavLink to="/gestionare-traning" activeClassName="active">Gestionare Training</NavLink>
         </li>
       </ul>
     </nav>
