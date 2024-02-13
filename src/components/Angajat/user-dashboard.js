@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import Calendar from './calendar';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from './editare-profil';
 import FormularModificare from './Formular-mod';
-import Statistici from './statistici'; 
+import Statistici from './statistici';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import Modal from 'react-modal';
+import Pontator from './pontator';
 
+Modal.setAppElement('#root');
+
+const localizer = momentLocalizer(moment);
 
 // Componenta Dashboard
 const Dashboard = () => {
@@ -18,20 +25,36 @@ const Dashboard = () => {
 
   const [oreLucrate, setOreLucrate] = useState(40); // Exemplu de valoare
   const [zileLibere, setZileLibere] = useState(2); // Exemplu de valoare
+  const [modalEditareProfilIsOpen, setModalEditareProfilIsOpen] = useState(false);
+  const [nume, setNume] = useState(profil.nume);
+  const [post, setPost] = useState(profil.post);
+  const [departament, setDepartament] = useState(profil.departament);
+  const [modalModificareProgramIsOpen, setModalModificareProgramIsOpen] = useState(false);
+  const angajatId = 'id-angajat';
 
-  const handleEditClick = () => {
-    setEditareProfil(!editareProfil);
+  const openModificareProgramModal = () => {
+    setModalModificareProgramIsOpen(true);
   };
 
-  const handleChange = (e) => {
-    setProfil({ ...profil, [e.target.name]: e.target.value });
+  const closeModificareProgramModal = () => {
+    setModalModificareProgramIsOpen(false);
+  };
+
+  const handleSaveModificareProgram = (e) => {
+    e.preventDefault();
+    // Logica de salvare a cererii de modificare a programului de lucru
+    console.log("Cerere de modificare a programului de lucru trimisă.");
+    closeModificareProgramModal();
+  };
+  const openEditareProfilModal = () => {
+    setModalEditareProfilIsOpen(true);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Profil actualizat:", profil);
     setEditareProfil(false);
-    
+
   };
 
   const handleSave = (dateActualizate) => {
@@ -49,6 +72,25 @@ const Dashboard = () => {
   ];
   const [esteDeschisModalModificare, setEsteDeschisModalModificare] = useState(false);
 
+
+  const [events, setEvents] = useState([
+    {
+      start: moment().toDate(),
+      end: moment().add(3, 'days').toDate(),
+    },
+  ]);
+
+  const handleSaveEditareProfil = (e) => {
+    e.preventDefault();
+    // Puteți adăuga logica de salvare a profilului aici
+    console.log("Salvează profilul cu noile date", { nume, post, departament });
+    closeEditareProfilModal();
+  };
+
+
+  const closeEditareProfilModal = () => {
+    setModalEditareProfilIsOpen(false);
+  };
   return (
     <div className="container-dashboard">
       <h1>Dashboard</h1>
@@ -58,16 +100,11 @@ const Dashboard = () => {
         <h3>{profil.nume}</h3>
         <p>{profil.post}</p>
         <p>{profil.departament}</p>
-        <button className="buton" onClick={() => setEditareProfil(true)}>Editează Profilul</button>
-
-        <EditareProfil
-          profil={profil}
-          isOpen={editareProfil}
-          onClose={() => setEditareProfil(false)}
-          onSave={handleSave}
-        />
+        <button className="buton" onClick={openEditareProfilModal}>Editează profilul</button>
       </div>
-
+      <div class="button-container">
+        <Pontator angajatId={angajatId} />
+      </div>
       <div className="container-program-lucru">
         <h2>Program de lucru</h2>
         <ul>
@@ -77,7 +114,7 @@ const Dashboard = () => {
         </ul>
         <button
           className="buton"
-          onClick={() => setEsteDeschisModalModificare(true)} >
+          onClick={openModificareProgramModal}>
           Cere modificare program
         </button>
 
@@ -89,24 +126,99 @@ const Dashboard = () => {
       </div>
 
       <div className="container-flex">
-          <Statistici oreLucrate={oreLucrate} zileLibere={zileLibere} />
+        <Statistici oreLucrate={oreLucrate} zileLibere={zileLibere} />
 
-     <div className="container-item container-notificari">
-        <h2>Notificări</h2>
-        <ul>
-          {notificari.map((notificare, index) => (
-            <li key={index}>{notificare.text}</li>
-          ))}
-        </ul>
-      </div>
-      </div>
-
-      <div className="container-calendar-extern">
-        <h2>Calendar</h2>
-        <Calendar />
+        <div className="container-item container-notificari">
+          <h2>Notificări</h2>
+          <ul>
+            {notificari.map((notificare, index) => (
+              <li key={index}>{notificare.text}</li>
+            ))}
+          </ul>
+        </div>
       </div>
 
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+      />
 
+      <Modal
+        isOpen={modalEditareProfilIsOpen}
+        onRequestClose={closeEditareProfilModal}
+        contentLabel="Editare Profil"
+        className="modal-content"
+      >
+        <h2>Editare profil</h2>
+        <form onSubmit={handleSubmit}>
+          <div>
+            <label>Nume:</label>
+            <input
+              type="text"
+              value={nume}
+              onChange={(e) => setNume(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Post:</label>
+            <input
+              type="text"
+              value={post}
+              onChange={(e) => setPost(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Departament:</label>
+            <input
+              type="text"
+              value={departament}
+              onChange={(e) => setDepartament(e.target.value)}
+            />
+          </div>
+          {/* ...alte câmpuri */}
+          <div class="button-container">
+            <button className='buton' type="submit">Salvează</button>
+            <button className='buton' type="button" onClick={closeEditareProfilModal}>Închide</button>
+          </div>
+        </form>
+      </Modal>
+      <Modal
+        isOpen={modalModificareProgramIsOpen}
+        onRequestClose={closeModificareProgramModal}
+        contentLabel="Modificare Program de Lucru"
+        className="modal-content"
+      >
+        <h2>Modificare Program de Lucru</h2>
+        <form onSubmit={handleSaveModificareProgram}>
+
+          <div>
+            <label>Ziua:</label>
+            <select>
+
+              <option value="Luni">Luni</option>
+              <option value="Marți">Marți</option>
+              <option value="Miercuri">Miercuri</option>
+              <option value="Joi">Joi</option>
+              <option value="Vineri">Vineri</option>
+            </select>
+          </div>
+          <div>
+            <label>Ora de început:</label>
+            <input type="time" />
+          </div>
+          <div>
+            <label>Ora de sfârșit:</label>
+            <input type="time" />
+          </div>
+          <div class="button-container">
+            <button className='buton' type="submit">Trimite cererea</button>
+            <button className='buton' type="button" onClick={closeModificareProgramModal}>Închide</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

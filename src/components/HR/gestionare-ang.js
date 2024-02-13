@@ -166,7 +166,7 @@ const GestionareAngajati = () => {
                     </div>
                 </div>
                 <br></br>
-                <table className="tabel column">
+                <table className="tabel">
                     <thead>
                         <tr>
                             <th>ID</th>
@@ -203,8 +203,8 @@ const GestionareAngajati = () => {
                                 <td>{angajat.adresa}</td>
                                 <td>{angajat.data}</td>
                                 <td>
-                                    <button onClick={() => deschideModalEditare(angajat)}>Editează</button>
-                                    <button onClick={() => stergeAngajat(angajat.id)}>Șterge</button>
+                                    <button className='buton' onClick={() => deschideModalEditare(angajat)}>Editează</button>
+                                    <button className='buton' onClick={() => stergeAngajat(angajat.id)}>Șterge</button>
                                 </td>
                             </tr>
                         ))}

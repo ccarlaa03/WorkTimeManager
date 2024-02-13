@@ -55,39 +55,29 @@ const ProfilAngajatHR = () => {
             // ...alte înregistrări
         ],
     });
-
-    const handleEditProgramDeLucruSubmit = (event) => {
-        event.preventDefault();
-        // Aici ai implementa logica de actualizare a programului de lucru
-        // ...
-    };
-    const [modalIsOpen, setModalIsOpen] = useState(false);
-    // Funcție pentru deschiderea modalului
-    const openModal = () => {
-        setModalIsOpen(true);
-    };
-
-    // Funcție pentru închiderea modalului
-    const closeModal = () => {
-        setModalIsOpen(false);
-    };
-
-    // Adăugați funcționalitatea pentru a actualiza prezența
-    const actualizeazaPrezenta = (event) => {
-        event.preventDefault();
-        // Logică pentru actualizarea prezenței
-    };
-
-    const listaProiecte = angajat.proiecte.map(proiect => (
-        <div key={proiect.nume}>
-            <h3>{proiect.nume}</h3>
-            <p>Perioadă: {proiect.perioada}</p>
-            <p>Rol: {proiect.rol}</p>
-            <p>Descriere: {proiect.descriere}</p>
-        </div>
-    ));
-
+    const [lunaSelectataConcedii, setLunaSelectataConcedii] = useState('');
+    const [lunaSelectataEvaluari, setLunaSelectataEvaluari] = useState('');
+    const [anSelectatEvaluari, setAnSelectatEvaluari] = useState(new Date().getFullYear());
     const [modalEditProfilIsOpen, setModalEditProfilIsOpen] = useState(false);
+    const [lunaSelectataIstoricProgram, setLunaSelectataIstoricProgram] = useState('');
+    const [anSelectatIstoricProgram, setAnSelectatIstoricProgram] = useState(new Date().getFullYear());
+    const [anSelectatConcedii, setAnSelectatConcedii] = useState(new Date().getFullYear());
+    const [lunaSelectataProgram, setLunaSelectataProgram] = useState('');
+    const luni = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
+
+
+    const handleLunaConcediiChange = (event) => {
+        setLunaSelectataConcedii(event.target.value);
+    };
+
+    const handleLunaIstoricProgramChange = (event) => {
+        setLunaSelectataIstoricProgram(event.target.value);
+    };
+
+    const handleAnIstoricProgramChange = (event) => {
+        setAnSelectatIstoricProgram(event.target.value);
+    };
+
     const [programLucru, setProgramLucru] = useState({
         luni: { start: '09:00', end: '17:00' },
         marti: { start: '09:00', end: '17:00' },
@@ -98,6 +88,13 @@ const ProfilAngajatHR = () => {
         { tip: 'Concediu odihnă', perioada: '15.08.2023 - 30.08.2023', status: 'Aprobat' },
         // ...alte concedii
     ]);
+    const handleLunaEvaluariChange = (event) => {
+        setLunaSelectataEvaluari(event.target.value);
+    };
+
+    const handleAnEvaluariChange = (event) => {
+        setAnSelectatEvaluari(event.target.value);
+    };
 
     const handleEditProfil = (event) => {
         event.preventDefault();
@@ -114,10 +111,22 @@ const ProfilAngajatHR = () => {
         setModalEditProfilIsOpen(false);
     };
 
-    // Funcție pentru actualizarea programului de lucru
-    const actualizeazaProgramLucru = (zi, start, end) => {
-        setProgramLucru(prev => ({ ...prev, [zi]: { start, end } }));
+
+    const [istoricConcedii, setIstoricConcedii] = useState([
+        // Presupunem că avem datele în acest format
+        { luna: 'Ianuarie', an: 2024, detalii: 'Concediu odihnă', zile: 5 },
+        { luna: 'Martie', an: 2024, detalii: 'Concediu medical', zile: 3 },
+        // ...alte concedii
+    ]);
+
+    // Funcție pentru a actualiza anul selectat
+    const handleAnConcediiChange = (event) => {
+        setAnSelectatConcedii(event.target.value);
     };
+    const handleLunaProgramChange = (event) => {
+        setLunaSelectataProgram(event.target.value);
+    };
+
 
     return (
         <div className="container-dashboard">
@@ -148,6 +157,137 @@ const ProfilAngajatHR = () => {
                     <div className="button-container">
                         <button className="buton" onClick={() => setModalEditProfilIsOpen(true)}>Editează</button>
                     </div>
+
+
+                </div>
+                <div className="container-profil">
+                    <div className="section">
+                        <h2>Program de lucru</h2>
+
+                        <p>Orar: {programDeLucru.programLucru}</p>
+                        <p>Ore suplimentare luna curentă: {programDeLucru.oreSuplimentare}</p>
+
+                        <h2>Istoric program de lucru</h2>
+                        <label htmlFor="lunaIstoricProgram">Luna:</label>
+                        <select id="lunaIstoricProgram" value={lunaSelectataIstoricProgram} onChange={handleLunaIstoricProgramChange}>
+                            <option value="">Toate lunile</option>
+                            {luni.map((luna, index) => (
+                                <option key={index} value={luna}>{luna}</option>
+                            ))}
+                        </select>
+
+                        <label htmlFor="anIstoricProgram">Anul:</label>
+                        <select id="anIstoricProgram" value={anSelectatIstoricProgram} onChange={handleAnIstoricProgramChange}>
+                            {[...Array(5)].map((_, index) => (
+                                <option key={index} value={new Date().getFullYear() - index}>
+                                    {new Date().getFullYear() - index}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ul>
+                            {programDeLucru.istoric
+                                .filter(intrare =>
+                                    (lunaSelectataIstoricProgram === '' || intrare.luna === lunaSelectataIstoricProgram) &&
+                                    (anSelectatIstoricProgram === intrare.an)
+                                )
+                                .map((intrare, index) => (
+                                    <li key={index}>
+                                        {intrare.luna} {intrare.an}: {intrare.oreSuplimentare} ore
+                                    </li>
+                                ))}
+                        </ul>
+                    </div>
+
+
+
+                    <div className="section">
+                        <h2>Concedii</h2>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tip concediu</th>
+                                    <th>Perioada</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {concedii.map((concediu, index) => (
+                                    <tr key={index}>
+                                        <td>{concediu.tip}</td>
+                                        <td>{concediu.perioada}</td>
+                                        <td>{concediu.status}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        <h2>Istoric concedii</h2>
+                        <label htmlFor="lunaConcedii">Luna:</label>
+                        <select id="lunaConcedii" value={lunaSelectataConcedii} onChange={handleLunaConcediiChange}>
+                            <option value="">Toate lunile</option>
+                            {luni.map((luna, index) => (
+                                <option key={index} value={luna}>{luna}</option>
+                            ))}
+                        </select>
+
+                        <label htmlFor="anConcedii">Anul:</label>
+                        <select id="anConcedii" value={anSelectatConcedii} onChange={handleAnConcediiChange}>
+                            {[...Array(5)].map((_, index) => (
+                                <option key={index} value={new Date().getFullYear() - index}>
+                                    {new Date().getFullYear() - index}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ul>
+                            {istoricConcedii
+                                .filter(concediu =>
+                                    (lunaSelectataConcedii === '' || concediu.luna === lunaSelectataConcedii) &&
+                                    (anSelectatConcedii === concediu.an)
+                                )
+                                .map((concediu, index) => (
+                                    <li key={index}>
+                                        {concediu.luna} {concediu.an}: {concediu.detalii} - {concediu.zile} zile
+                                    </li>
+                                ))}
+                        </ul>
+                    </div>
+                </div>
+
+                <div className="container-profil">
+                    <div className="section">
+                        <h2>Evaluări</h2>
+                        <label htmlFor="lunaEvaluari">Luna:</label>
+                        <select id="lunaEvaluari" value={lunaSelectataEvaluari} onChange={handleLunaEvaluariChange}>
+                            <option value="">Toate lunile</option>
+                            {luni.map((luna, index) => (
+                                <option key={index} value={luna}>{luna}</option>
+                            ))}
+                        </select>
+
+                        <label htmlFor="anEvaluari">Anul:</label>
+                        <select id="anEvaluari" value={anSelectatEvaluari} onChange={handleAnEvaluariChange}>
+                            {[...Array(5)].map((_, index) => (
+                                <option key={index} value={new Date().getFullYear() - index}>
+                                    {new Date().getFullYear() - index}
+                                </option>
+                            ))}
+                        </select>
+
+                        <ul>
+                            {angajat.evaluariPerformanta
+                                .filter(evaluare =>
+                                    (lunaSelectataEvaluari === '' || evaluare.luna === lunaSelectataEvaluari) &&
+                                    (anSelectatEvaluari === evaluare.an)
+                                )
+                                .map((evaluare, index) => (
+                                    <li key={index}>
+                                        Luna: {evaluare.luna}, Scor: {evaluare.scor}/10, Feedback: {evaluare.feedback}
+                                    </li>
+                                ))}
+                        </ul>
+                    </div>
                     <div className="section">
                         <h2>Prezență</h2>
                         <table>
@@ -168,68 +308,7 @@ const ProfilAngajatHR = () => {
                         </table>
                     </div>
 
-                </div>
-                <div className="container-profil">
-                    <div className="section">
-                        <h2>Program de lucru</h2>
-                        <p>Orar: {programDeLucru.orar}</p>
-                        <p>Ore suplimentare luna curentă: {programDeLucru.oreSuplimentare}</p>
 
-                        <h2>Istoric program de lucru</h2>
-                        <ul>
-                            {programDeLucru.istoric.map((intrare, index) => (
-                                <p key={index}>{intrare.luna}: {intrare.oreSuplimentare} ore</p>
-                            ))}
-                        </ul>
-                    </div>
-
-
-                    <div className="section">
-                        <h2>Concedii</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tip concediu</th>
-                                    <th>Perioada</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {concedii.map((concediu, index) => (
-                                    <tr key={index}>
-                                        <td>{concediu.tip}</td>
-                                        <td>{concediu.perioada}</td>
-                                        <td>{concediu.status}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div className="container-profil">
-                    <div className="section">
-                        <h2>Evaluări</h2>
-                        {angajat.evaluariPerformanta.map((evaluare, index) => (
-                            <div key={index}>
-                                <h3>Luna: {evaluare.luna}</h3>
-                                <p>Scor: {evaluare.scor}/10</p>
-                                <p>Feedback: {evaluare.feedback}</p>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="section">
-                        <h2>Participare la proiecte</h2>
-                        {angajat.proiecte.map(proiect => (
-                            <div key={proiect.nume}>
-                                <h3>{proiect.nume}</h3>
-                                <p>Perioadă: {proiect.perioada}</p>
-                                <p>Rol: {proiect.rol}</p>
-                                <p>Descriere: {proiect.descriere}</p>
-                            </div>
-                        ))}
-                    </div>
                 </div>
             </div>
 
@@ -292,7 +371,7 @@ const ProfilAngajatHR = () => {
                 </form>
             </Modal>
 
-        </div>
+        </div >
     );
 };
 

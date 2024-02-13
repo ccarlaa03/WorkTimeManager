@@ -392,10 +392,10 @@ button:hover {
 .container-dashboard {
   max-width: 1200px;
   margin: 0 auto; 
-  padding: 20px; 
+  padding: 40px; 
   display: flex; 
   flex-direction: column; 
-  gap: 20px; 
+  gap: 50px; 
 }
 
 
@@ -602,14 +602,17 @@ button:hover {
 }
 
 
-
 .tabel {
   width: 100%;
   max-width: 100%;
   border-collapse: collapse;
   margin: 0 auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px
+  margin-bottom: 20px;
+  table-layout: fixed;
+  overflow-x: auto;
+  background-color: #A087BC;
+  color: white;
 }
 
 .tabel.column th,
@@ -620,12 +623,12 @@ button:hover {
   text-align: left;
 }
 
-
 .tabel.column th {
   background-color: #A087BC;
   color: white;
   padding: 12px 15px;
   text-align: left;
+  border-bottom: 1px solid #ddd;
 }
 
 
@@ -636,20 +639,17 @@ button:hover {
 }
 
 
-.tabel button {
+.tabel buton {
   background-color: #9b82b1;
   color: white;
   border: none;
-  padding: 10px 15px;
-  border-radius: 4px;
-  margin-right: 10px;
+  padding: 6px 12px; /* ajustat pentru a avea un aspect mai echilibrat */
+  border-radius: 2px;
+  margin-right: 10px; /* spațiu la dreapta fiecărui buton */
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
 
-.tabel button:hover {
-  background-color: #8c73a3;
-}
 
 .rapoarte-cursuri {
   background-color: #FFF;
@@ -679,7 +679,6 @@ button:hover {
   background-color: #f7f7f7;
   color: #aaa;
 }
-
 
 
 select::-ms-expand {

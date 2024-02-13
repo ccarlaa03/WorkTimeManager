@@ -264,8 +264,8 @@ const GestionareProgramLucru = () => {
         >
           <h2>Adaugă program de lucru</h2>
           <form onSubmit={handleSalveazaProgramLucru}>
-          <div className="form-row" style={{ display: 'flex', marginBottom: '0' }}>
-              <div className="form-group-container"> 
+            <div className="form-row" style={{ display: 'flex', marginBottom: '0' }}>
+              <div className="form-group-container">
                 <div className="form-group">
                   <label htmlFor="departament">Departament:</label>
                   <select
@@ -348,7 +348,7 @@ const GestionareProgramLucru = () => {
               </div>
             )}
 
-<div className="form-row" style={{ display: 'flex', marginBottom: '0' }}>
+            <div className="form-row" style={{ display: 'flex', marginBottom: '0' }}>
               <div className="form-group">
                 <label>Ora de început:</label>
                 <input

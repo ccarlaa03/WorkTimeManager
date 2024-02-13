@@ -7,7 +7,7 @@ import { Bar } from 'react-chartjs-2';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
 import Modal from 'react-modal';
-
+// de creat partea de a trimite mesaje/notificari(actiuni in bloc)
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -44,19 +44,7 @@ const HrDashboard = () => {
       end: moment().add(1, 'days').toDate(),
     },
   ]);
-  const handleEditClick = () => {
-    setEditareProfil(!editareProfil);
-  };
 
-  const handleChange = (e) => {
-    setProfil({ ...profil, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log("Profil actualizat:", profil);
-    setEditareProfil(false);
-  };
 
   const handleSave = (dateActualizate) => {
     setProfil(dateActualizate);
@@ -247,14 +235,14 @@ const HrDashboard = () => {
         events={events}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: 500 }}
+        style={{ height: 400 }}
       />
       <div class="button-container">
         <button onClick={deschideModalAdaugareEveniment} className="buton">
           Adaugă eveniment nou
         </button>
       </div>
-<br></br>
+      <br></br>
       <div className="container-statistici">
         <h2>Statisticile departamentelor</h2>
         <Bar data={graficDepartamente} options={{ scales: { y: { beginAtZero: true } } }} />
