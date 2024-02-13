@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import Calendar from './Calendar';
+import { Calendar, momentLocalizer } from 'react-big-calendar';
+import moment from 'moment';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../../styles/App.css';
 import { Bar } from 'react-chartjs-2';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
-import FormularAdaugareIntalnire from './Formular-int';
 import Modal from 'react-modal';
 
 import {
@@ -26,6 +27,7 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
 
@@ -36,7 +38,12 @@ const HrDashboard = () => {
     imagine: imagine,
   });
   const [editareProfil, setEditareProfil] = useState(false);
-
+  const [events, setEvents] = useState([
+    {
+      start: moment().toDate(),
+      end: moment().add(1, 'days').toDate(),
+    },
+  ]);
   const handleEditClick = () => {
     setEditareProfil(!editareProfil);
   };
@@ -66,12 +73,56 @@ const HrDashboard = () => {
     { nume: 'Angajat 5', departament: 'IT' },
   ]);
 
-  const [dataCalendar, setDataCalendar] = useState(new Date());
-  const notificari = [
-    { text: 'Orar actualizat pentru săptămâna viitoare.' },
-    { text: 'Întâlnire importantă cu noii angajați mâine la 10:30.' },
-    { text: 'Instruire obligatorie privind politica de resurse umane pe 15 martie.' },
-  ];
+
+  const [esteDeschisModalAdaugareEveniment, setEsteDeschisModalAdaugareEveniment] = useState(false);
+  const [evenimentNou, setEvenimentNou] = useState({
+    titlu: '',
+    start: new Date(),
+    end: new Date(),
+  });
+
+  const deschideModalAdaugareEveniment = () => {
+    setEvenimentNou({
+      ...evenimentNou,
+      start: new Date(),
+      end: new Date(),
+    });
+    setEsteDeschisModalAdaugareEveniment(true);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEvenimentNou(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleAdaugaEveniment = (e) => {
+    e.preventDefault();
+    const evenimentAdaugat = {
+      title: evenimentNou.title,
+      start: new Date(`${evenimentNou.startDate}T${evenimentNou.startTime}`),
+      end: new Date(`${evenimentNou.endDate}T${evenimentNou.endTime}`),
+    };
+
+
+    setEvents(prevEvents => [...prevEvents, evenimentAdaugat]);
+
+
+    setEsteDeschisModalAdaugareEveniment(false);
+    setEvenimentNou({
+      title: '',
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: '',
+    });
+  };
+
+  const handleInchideModalAdauga = () => {
+    setEsteDeschisModalAdaugareEveniment(false);
+  };
 
   // Datele pentru graficul cu numărul de angajați pe departamente
   const departamente = [...new Set(angajati.map(angajat => angajat.departament))];
@@ -79,12 +130,7 @@ const HrDashboard = () => {
     angajati.filter(angajat => angajat.departament === departament).length
   );
 
-  const [intalniri, setIntalniri] = useState([
-    { id: 1, data: '2024-01-10', ora: '10:00', titlu: 'Reuniune de echipă' },
-    { id: 2, data: '2024-01-15', ora: '14:30', titlu: 'Prezentare client' },
-    // ...alte întâlniri
-  ]);
-  
+
 
   const graficDepartamente = {
     labels: departamente,
@@ -98,12 +144,6 @@ const HrDashboard = () => {
   };
 
 
-  const adaugaIntalnire = (intalnire) => {
-    const nouaIntalnire = { id: intalniri.length + 1, ...intalnire };
-    setIntalniri([...intalniri, nouaIntalnire]);
-  };
-
-  const [esteDeschisModalIntalniri, setEsteDeschisModalIntalniri] = useState(false);
   const [esteDeschisModalEditareProfil, setEsteDeschisModalEditareProfil] = useState(false);
   return (
     <div className="container-dashboard">
@@ -115,9 +155,9 @@ const HrDashboard = () => {
         <p>{profil.departament}</p>
         <button className="buton" onClick={() => setEsteDeschisModalEditareProfil(true)}>Editează Profilul</button>
 
-        </div>
+      </div>
 
-        <Modal
+      <Modal
         isOpen={esteDeschisModalEditareProfil}
         onRequestClose={() => setEsteDeschisModalEditareProfil(false)}
         contentLabel="Editează Profil"
@@ -131,59 +171,90 @@ const HrDashboard = () => {
         />
       </Modal>
 
+
       <Modal
-        isOpen={esteDeschisModalIntalniri}
-        onRequestClose={() => setEsteDeschisModalIntalniri(false)}
-        contentLabel="Adaugă Întâlnire"
-        className="modal-content" 
-
+        isOpen={esteDeschisModalAdaugareEveniment}
+        onRequestClose={() => setEsteDeschisModalAdaugareEveniment(false)}
+        className="modal-content"
       >
-        <h2>Adaugă întâlnire nouă</h2>
-        <FormularAdaugareIntalnire
-          onAdaugaIntalnire={adaugaIntalnire}
-          onClose={() => setEsteDeschisModalIntalniri(false)}
-        />
+        <form onSubmit={handleAdaugaEveniment}>
+          <div className="form-group">
+            <label>Eveniment:</label>
+            <input
+              type="text"
+              name="title"
+              value={evenimentNou.title}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+          <div className="form-row" style={{ display: 'flex' }}>
+            <div className="form-group">
+              <label>Data de început:</label>
+              <input
+                type="date"
+                name="startDate"
+                value={evenimentNou.startDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ora de început:</label>
+              <input
+                type="time"
+                name="startTime"
+                value={evenimentNou.startTime}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+          <div className="form-row" style={{ display: 'flex' }}>
+            <div className="form-group">
+              <label>Data de sfârșit:</label>
+              <input
+                type="date"
+                name="endDate"
+                value={evenimentNou.endDate}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Ora de sfârșit:</label>
+              <input
+                type="time"
+                name="endTime"
+                value={evenimentNou.endTime}
+                onChange={handleInputChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="button-container">
+            <button className='buton' type="submit">Adaugă</button>
+            <button className='buton' type="button" onClick={handleInchideModalAdauga}>Închide</button>
+          </div>
+        </form>
       </Modal>
-      <div className="container-notificari">
-        <h2>Notificări</h2>
-        <ul>
-          {notificari.map((notificare, index) => (
-            <li key={index}>{notificare.text}</li>
-          ))}
-        </ul>
-      </div>
 
-      <div className="container-intalniri">
-        <h2>Întâlniri</h2>
-        <ul>
-          {intalniri.map((intalnire, index) => (
-            <li key={index}>
-              <div>{intalnire.data} {intalnire.ora}</div>
-              <div>{intalnire.titlu}</div>
-            </li>
-          ))}
-        </ul>
-        <div style={{ textAlign: 'left' }}>
-        <button className="buton" onClick={() => setEsteDeschisModalIntalniri(true)} >
-        Adaugă întâlnire
-      </button>
+      <Calendar
+        localizer={localizer}
+        events={events}
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+      />
+      <div class="button-container">
+        <button onClick={deschideModalAdaugareEveniment} className="buton">
+          Adaugă eveniment nou
+        </button>
       </div>
-      {esteDeschisModalIntalniri && (
-
-        <FormularAdaugareIntalnire
-          onAdaugaIntalnire={adaugaIntalnire}
-          onClose={() => setEsteDeschisModalIntalniri(false)}
-        />
-      )}
-      </div>
-
-      <div className="container-calendar-extern">
-        <h2>Calendar</h2>
-        <Calendar
-          onChange={(data) => setDataCalendar(data)}
-          value={dataCalendar}
-        />
-      </div>
+<br></br>
       <div className="container-statistici">
         <h2>Statisticile departamentelor</h2>
         <Bar data={graficDepartamente} options={{ scales: { y: { beginAtZero: true } } }} />

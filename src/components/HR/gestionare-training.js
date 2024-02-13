@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import Modal from 'react-modal';
-import FormularAdaugareCurs from './formular-curs';
-import Calendar from './Calendar';
-import FormularEditareCurs from './formular-ed-curs';
 import Rapoarte from './rapoarte';
 
 Modal.setAppElement('#root'); // Adaugă această linie dacă nu este deja inclusă în altă parte în codul tău
@@ -18,34 +15,64 @@ const GestionareTrainingHR = () => {
 
     const [modalAdaugareCursDeschis, setModalAdaugareCursDeschis] = useState(false);
     const [modalEditareDeschis, setModalEditareDeschis] = useState(false);
-    const [cursSelectat, setCursSelectat] = useState(null);
+    const [cursEditat, setCursEditat] = useState(null);
 
-    // Funcție pentru deschiderea modalului de adăugare curs nou
-    const deschideModalAdaugareCurs = () => {
-        setModalAdaugareCursDeschis(true);
-    };
-    const editareCurs = (cursEditat) => {
-        setCursuri(cursuriActuale => cursuriActuale.map(curs => curs.id === cursEditat.id ? cursEditat : curs));
-        setModalEditareDeschis(false); // Închide modalul după editare
-    };
-    // Funcție pentru închiderea modalului de adăugare curs nou
-    const inchideModalAdaugareCurs = () => {
+    const deschideModalAdaugareCurs = () => setModalAdaugareCursDeschis(true);
+    const inchideModalAdaugareCurs = () => setModalAdaugareCursDeschis(false);
+
+    const [cursSelectat, setCursSelectat] = useState(null);
+    const [titlu, setTitlu] = useState('');
+    const [descriere, setDescriere] = useState('');
+    const [data, setData] = useState('');
+    const [durata, setDurata] = useState('');
+
+    const onClose = () => {
         setModalAdaugareCursDeschis(false);
+        setModalEditareDeschis(false);
     };
-    const deschideModalPentruEditare = (curs) => {
-        setCursSelectat(curs);
+
+    const resetForm = () => {
+        setTitlu('');
+        setDescriere('');
+        setData('');
+        setDurata('');
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (modalAdaugareCursDeschis) {
+            // Logica pentru adăugarea unui curs nou
+            // Presupunând că formularul de adăugare are câmpuri `titlu`, `descriere`, etc.
+            const nouCurs = {
+                id: Date.now(), // Generați un ID unic pentru cursul nou
+                titlu: e.target.titlu.value,
+                descriere: e.target.descriere.value,
+                data: e.target.data.value,
+                durata: e.target.durata.value
+            };
+            setCursuri(cursuriActuale => [...cursuriActuale, nouCurs]);
+        } else if (modalEditareDeschis && cursSelectat) {
+            // Logica pentru editarea unui curs existent
+            const cursEditat = {
+                ...cursSelectat,
+                titlu: e.target.titlu.value,
+                descriere: e.target.descriere.value,
+                data: e.target.data.value,
+                durata: e.target.durata.value
+            };
+            setCursuri(cursuriActuale => cursuriActuale.map(curs => curs.id === cursEditat.id ? cursEditat : curs));
+        }
+        onClose(); // Închide modalul după trimitere
+    };
+    const deschideModalEditare = (curs) => {
+        setCursEditat(curs);
         setModalEditareDeschis(true);
     };
+    const inchideModalEditare = () => {
+        setCursEditat(null);
+        setModalEditareDeschis(false);
+    };
 
-    const deschideModalPentruAdaugare = () => {
-        setCursSelectat(null); // Resetare curs selectat pentru adăugare
-        setModalAdaugareCursDeschis(true);
-    };
-    // Funcție pentru adăugarea unui nou curs
-    const adaugaCurs = (cursNou) => {
-        setCursuri(cursuriActuale => [...cursuriActuale, { ...cursNou, id: cursuriActuale.length + 1 }]);
-        inchideModalAdaugareCurs(); // Închide modalul după adăugare
-    };
 
     // Funcție pentru ștergerea unui curs
     const stergeCurs = (idCurs) => {
@@ -61,42 +88,91 @@ const GestionareTrainingHR = () => {
                     <div key={curs.id} className="card-curs">
                         <h3>{curs.titlu}</h3>
                         <p>{curs.descriere}</p>
-                        <p>Data: {curs.data.toLocaleDateString()}</p> 
+                        <p>Data: {curs.data.toLocaleDateString()}</p>
                         <p>Durata: {curs.durata}</p>
-                        <button onClick={() => { setCursSelectat(curs); setModalEditareDeschis(true); }}>Editează</button>
-                        <button onClick={() => stergeCurs(curs.id)}>Șterge</button>
+                        <div class="button-container">
+                            <button onClick={() => { setCursSelectat(curs); setModalEditareDeschis(true); }}>Editează</button>
+                            <button onClick={() => stergeCurs(curs.id)}>Șterge</button>
+                        </div>
                     </div>
                 ))}
 
             </div>
 
-            <Modal className="modal-content" isOpen={modalEditareDeschis} onRequestClose={() => setModalEditareDeschis(false)}>
-                {cursSelectat && (
-                    <FormularEditareCurs
-                        curs={cursSelectat}
-                        onEditareCurs={editareCurs}
-                        onClose={() => setModalEditareDeschis(false)}
+            <Modal
+                isOpen={modalEditareDeschis}
+                onRequestClose={() => setModalEditareDeschis(false)}
+                className="modal-content"
+            >
+                <h2>Editare curs</h2>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label>
+                            Titlu curs:
+                            <input
+                                type="text"
+                                value={titlu}
+                                onChange={(e) => setTitlu(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <label>
+                            Descriere:
+                            <textarea
+                                value={descriere}
+                                onChange={(e) => setDescriere(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <label>
+                            Data:
+                            <input
+                                type="date"
+                                value={data}
+                                onChange={(e) => setData(e.target.value)}
+                                required
+                            />
+                        </label>
 
-                    />
-                )}
+                        <label>
+                            Durata (zile):
+                            <input
+                                type="number"
+                                value={durata}
+                                onChange={(e) => setDurata(e.target.value)}
+                                required
+                            />
+                        </label>
+
+                    </div>
+                    <button type="submit">Salvează modificările</button>
+                    <button type="button" onClick={onClose}>Închide</button>
+                </form>
+                );
+
             </Modal>
             <Modal
                 isOpen={modalAdaugareCursDeschis}
-                onRequestClose={inchideModalAdaugareCurs}
-                contentLabel="Adaugă curs nou"
+                onRequestClose={() => setModalAdaugareCursDeschis(false)}
                 className="modal-content"
             >
-                <FormularAdaugareCurs
-                    onAdaugaCurs={adaugaCurs}
-                    onClose={inchideModalAdaugareCurs}
-                />
+                <h2>Adaugă Curs Nou</h2>
+                <form onSubmit={handleSubmit}>
+                    <label>Nume:<input type="text" name="nume" required /></label>
+                    <label>Număr de telefon:<input type="text" name="telefon" required /></label>
+                    <label>Adresă de email:<input type="email" name="email" required /></label>
+                    <label>Departament:<input type="text" name="departament" required /></label>
+                    <label>Funcție:<input type="text" name="functie" required /></label>
+                    <label>Data angajării:<input type="date" name="data" required /></label>
+                    <button type="submit">Adaugă</button>
+                    <button type="button" onClick={onClose}>Închide</button>
+                </form>
             </Modal>
-            <div className="form-group" style={{ textAlign: "center" }}>
-                <button onClick={deschideModalAdaugareCurs} className="buton-adauga">Adaugă Curs Nou</button>
+            <div class="button-container">
+                <button onClick={deschideModalAdaugareCurs} className="buton">Adaugă curs nou</button>
             </div>
             <Rapoarte cursuri={cursuri} />
 
-            {/*<Calendar evenimente={cursuri.map(({ data, titlu }) => ({ data, titlu }))} />*/}
 
         </div>
     );

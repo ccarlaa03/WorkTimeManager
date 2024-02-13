@@ -22,6 +22,7 @@ import GestionareProgramLucru from './components/HR/gestionare-prog';
 import GestionareConcedii from './components/HR/gestionare-concedii';
 import GestionareTraining from './components/HR/gestionare-training';
 import Rapoarte from './components/HR/rapoarte';
+import ProfilAngajatHR from './components/HR/profil-angajat';
 
 
 const App = () => {
@@ -48,6 +49,7 @@ const App = () => {
         <Route path="/gestionare-concedii" element={<GestionareConcedii />} />
         <Route path="/gestionare-formular" element={<GestionareFormular/>} />
         <Route path="/gestionare-training" element={<GestionareTraining/>} />
+        <Route path="/profil-angajat" element={<ProfilAngajatHR/>} />
         {/* Adăugați aici alte rute necesare */}
       </Routes>
       <Footer />

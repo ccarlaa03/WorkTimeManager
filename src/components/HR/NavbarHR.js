@@ -9,19 +9,19 @@ const NavbarHR = () => {
           <NavLink to="/hr-dashboard" activeClassName="active">Dashboard HR</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-ang" activeClassName="active">Gestionare Angajați</NavLink>
+          <NavLink to="/gestionare-ang" activeClassName="active">Gestionare angajați</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-prog" activeClassName="active">Gestionare Program</NavLink>
+          <NavLink to="/gestionare-prog" activeClassName="active">Program de lucru</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-feedback" activeClassName="active">Gestionare Feedback</NavLink>
+          <NavLink to="/gestionare-feedback" activeClassName="active"> Feedback</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-concedii" activeClassName="active">Gestionare Concedii</NavLink>
+          <NavLink to="/gestionare-concedii" activeClassName="active">Concedii</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-traning" activeClassName="active">Gestionare Training</NavLink>
+          <NavLink to="/gestionare-training" activeClassName="active">Training</NavLink>
         </li>
       </ul>
     </nav>

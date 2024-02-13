@@ -52,7 +52,8 @@ a {
 
 }
 
-.h1 {
+.h1,
+.h2 {
   color: #A087BC;
   text-align: center;
   margin-bottom: 30px;
@@ -132,12 +133,47 @@ p {
 }
 
 .form-container {
-  max-width: 100%;
+  max-width: 50%;
   padding: 50px;
 }
 
 .form-group {
-  margin-bottom: 30px;
+  margin-top: 0px;
+
+}
+
+.form-group label {
+  margin-bottom: 0;
+}
+
+input[type="date"],
+.select-style {
+  padding: 8px 8px;
+  margin-top: 0;
+}
+
+.form-group:last-child {
+  margin-top: 0;
+}
+
+.form-group:first-child {
+  margin-top: 0;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.form-group-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.checkbox-label {
+  margin-top: 0px;
+  white-space: nowrap;
+
 }
 
 .imagine4 {
@@ -147,15 +183,16 @@ p {
 label {
   font-weight: bold;
   display: block;
-  margin-bottom: 5px;
+  margin-top: 0px;
   color: #A087BC;
 }
 
 input,
-textarea {
-  width: 100%;
-  padding: 20px;
-  margin-top: 5px;
+textarea,
+select {
+  width: auto;
+  padding: 10px;
+  margin-top: 0px;
   box-sizing: border-box;
   color: #A087BC;
   border: 1px solid #A087BC;
@@ -171,6 +208,7 @@ button {
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+
 }
 
 
@@ -283,17 +321,6 @@ button {
   color: #a087bc;
 }
 
-input {
-  background-color: transparent;
-  border: 0;
-  outline: 0;
-  font-size: 1em;
-  padding: 8px 1px;
-  margin-top: 0.1em;
-  border-bottom: 1px solid #d9cce8;
-  color: #d9cce8;
-}
-
 button {
   padding: 0.8em 1.2em;
   margin: 0 10px 0 0;
@@ -363,11 +390,29 @@ button:hover {
 }
 
 .container-dashboard {
-  background-color: #E4E9EF;
-  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto; 
+  padding: 20px; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 20px; 
 }
 
-.container-profil,
+
+.section {
+  flex: 1;
+  width: 600px;
+  background: #ffffff;
+  padding: 20px;
+
+}
+
+.container-profil {
+  justify-content: space-between;
+  gap: 80px;
+  margin-top: 40px;
+}
+
 .container-statistici,
 .container-program-lucru,
 .container-notificari,
@@ -384,14 +429,23 @@ button:hover {
   height: 100px;
   border-radius: 50%;
 }
+
 .buton {
-  padding: 10px 15px; 
-  background-color: #A087BC; 
-  color: white; 
-  border: none; 
-  border-radius: 5px; 
-  cursor: pointer; 
+  padding: 10px 10px;
+  background-color: #A087BC;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
   transition: background-color 0.3s ease;
+  margin-top: 10px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0px;
 }
 
 .container-calendar {
@@ -431,7 +485,7 @@ button:hover {
 
 .container-dashboard {
   max-width: 1200px;
-  margin: 0 auto;
+  margin: auto;
   padding: 20px;
   background-color: #E4E9EF;
 }
@@ -462,17 +516,17 @@ button:hover {
 
 .modal-content {
   background: #E4E9EF;
-  padding: 20px;
-  border-radius: 5px;
-  max-width: 500px;
-  width: 80%;
-  margin: auto;
-  position: relative;
-  top: 50%;
-  transform: translateY(-50%);
-
+  padding: 5px;
+  border-radius: 2px;
+  width: auto;
+  max-width: auto;
+  position: fixed;
+  top: 35%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  flex-direction: column;
+  align-items: stretch;
 }
-
 
 .zi-calendar.cu-eveniment {
   background-color: #50c55a;
@@ -528,12 +582,6 @@ button:hover {
   object-fit: cover;
 }
 
-.modal form {
-  background-color: #f8f8f8;
-  padding: 20px;
-  border-radius: 5px;
-}
-
 .chart-container {
   width: 300px;
   height: 300px;
@@ -561,12 +609,13 @@ button:hover {
   border-collapse: collapse;
   margin: 0 auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px
 }
 
 .tabel.column th,
 .tabel.column td {
-  padding: 10px 15px; 
-  background-color: #FFFFFF; 
+  padding: 10px 15px;
+  background-color: #FFFFFF;
   border-bottom: 1px solid #ddd;
   text-align: left;
 }
@@ -617,6 +666,7 @@ button:hover {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
+
 .lista-cursuri {
   display: flex;
   flex-wrap: wrap;
@@ -624,20 +674,46 @@ button:hover {
 }
 
 
+
+.select-style:disabled {
+  background-color: #f7f7f7;
+  color: #aaa;
+}
+
+
+
+select::-ms-expand {
+  display: none;
+}
+
+
+
 @media (max-width: 1024px) {
 
   .tabel,
   .tabel th,
   .tabel td {
-    padding: 6px;
-    font-size: 0.8rem;
+    padding: 5px;
+    font-size: 0.55rem;
   }
 
   .tabel button {
-    padding: 8px 2px;
-    font-size: 0.5rem;
+    padding: 5px 2px;
+    font-size: 0.55rem;
   }
+
+  .select-style {
+    font-size: 0.55rem;
+  }
+
+  .modal-content {
+    width: auto;
+    padding: 8px;
+    font-size: 12px;
+  }
+
 }
+
 
 @media (max-width: 768px) {
 
@@ -649,4 +725,17 @@ button:hover {
   .tabel td:nth-child(5) {
     display: none;
   }
+
+  .modal-content {
+    width: auto;
+    max-height: 90vh;
+    padding: 10px;
+    font-size: 16px;
+  }
+
+  .buton {
+    padding: 12px 20px;
+    font-size: 13px;
+  }
+
 }
