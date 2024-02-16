@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import FormularModificare from './Formular-mod';
+import moment from 'moment';
+import Modal from 'react-modal';
+
+Modal.setAppElement('#root');
+
+
 
 const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
   const [lunaCurenta, setLunaCurenta] = useState(new Date());
@@ -7,6 +12,9 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
   const [zileLibere, setZileLibere] = useState(zileLibereInitial || []);
   const [istoricProgram, setIstoricProgram] = useState([]);
   const [esteDeschisModalModificare, setEsteDeschisModalModificare] = useState(false);
+  const [zi, setZi] = useState('');
+  const [oraInceput, setOraInceput] = useState('');
+  const [oraSfarsit, setOraSfarsit] = useState('');
 
   useEffect(() => {
     // Aici poți face o cerere la server pentru a încărca programul de lucru și zilele libere
@@ -29,7 +37,6 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
     incarcaDate();
   }, [lunaCurenta]);
 
-  // Presupunem că funcțiile fetchProgramLucru, fetchZileLibere, fetchIstoricProgram sunt definite și returnează datele necesare
   // Funcția pentru a merge la luna precedentă
   const handleLunaPrecedenta = () => {
     setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() - 1));
@@ -70,19 +77,25 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
     ]);
   };
 
-  // Apoi, asigură-te că aceste funcții sunt accesibile în componenta ta prin import sau prin a fi definite în același fișier
-
+  const handleSubmitModificare = (e) => {
+    e.preventDefault();
+    // Logica de trimitere a cererii de modificare
+    console.log('Cerere de modificare trimisă:', { zi, oraInceput, oraSfarsit });
+    setEsteDeschisModalModificare(false); // Închide modalul după trimitere
+  };
 
   return (
     <div>
       <div className='container-dashboard'>
         <h1>Programul meu de lucru</h1>
-        <button className="buton" onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() - 1))}>
-          Luna Precedentă
-        </button>
-        <button  className="buton"  onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() + 1))}>
-          Luna Următoare
-        </button>
+        <div class="button-container">
+          <button className="buton" onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() - 1))}>
+            Luna Precedentă
+          </button>
+          <button className="buton" onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() + 1))}>
+            Luna Următoare
+          </button>
+        </div>
 
         <section>
           <div className="container-program-lucru">
@@ -128,19 +141,54 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
             )}
           </div>
         </section>
+        <div class="button-container">
+          <button
+            className="buton"
+            onClick={() => setEsteDeschisModalModificare(true)}
+          >
+            Cere modificare program
+          </button>
+        </div>
 
-        <button
-          className="buton"
-          onClick={() => setEsteDeschisModalModificare(true)}
-        >
-          Cere modificare program
-        </button>
-        {esteDeschisModalModificare && (
-          <FormularModificare
-            onClose={() => setEsteDeschisModalModificare(false)}
-          />
-        )}
       </div>
+      <Modal
+        isOpen={esteDeschisModalModificare}
+        onRequestClose={() => setEsteDeschisModalModificare(false)}
+        contentLabel="Modificare Program de Lucru"
+        className="modal-content"
+      >
+        <h2>Modificare program de lucru</h2>
+        <form onSubmit={handleSubmitModificare}>
+          <div>
+            <label>Ziua:</label>
+            <input
+              type="date"
+              value={zi}
+              onChange={(e) => setZi(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Ora de început:</label>
+            <input
+              type="time"
+              value={oraInceput}
+              onChange={(e) => setOraInceput(e.target.value)}
+            />
+          </div>
+          <div>
+            <label>Ora de sfârșit:</label>
+            <input
+              type="time"
+              value={oraSfarsit}
+              onChange={(e) => setOraSfarsit(e.target.value)}
+            />
+          </div>
+          <div className="button-container">
+            <button className='buton' type="submit">Trimite cererea</button>
+            <button className='buton' type="button" onClick={() => setEsteDeschisModalModificare(false)}>Închide</button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

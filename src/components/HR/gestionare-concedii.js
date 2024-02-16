@@ -6,6 +6,9 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 
+Modal.setAppElement('#root');
+
+const localizer = momentLocalizer(moment);
 
 const initialAngajati = [
     { id: 1, nume: 'Ion Popescu', departament: 'IT' },

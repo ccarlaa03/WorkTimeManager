@@ -1,11 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import imagine1 from '../../photos/img1.jpg';
 import imagine2 from '../../photos/img2.jpg';
 import '../../styles/App.css';
 
-
-
 const Acasa = () => {
+  const [informatii, setInformatii] = useState(null);
+
+  useEffect(() => {
+    fetch('http://localhost:8000/api/informatii-acasa/') 
+      .then(data => {
+        setInformatii(data);
+      })
+      .catch(error => console.log(error));
+  }, []);
+
   return (
     <div>
 

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import './styles/App.css';
 import NavbarWrapper from './NavbarWrapper';
 import Footer from './footer';
@@ -23,11 +23,11 @@ import GestionareConcedii from './components/HR/gestionare-concedii';
 import GestionareTraining from './components/HR/gestionare-training';
 import Rapoarte from './components/HR/rapoarte';
 import ProfilAngajatHR from './components/HR/profil-angajat';
-
+import ExampleComponent from './ExampleComponent';
 
 const App = () => {
 
-
+  
   return (
     <Router>
       <NavbarWrapper />

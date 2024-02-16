@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from './editare-profil';
-import FormularModificare from './Formular-mod';
 import Statistici from './statistici';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
@@ -118,11 +117,7 @@ const Dashboard = () => {
           Cere modificare program
         </button>
 
-        {esteDeschisModalModificare && (
-          <FormularModificare
-            onClose={() => setEsteDeschisModalModificare(false)}
-          />
-        )}
+        
       </div>
 
       <div className="container-flex">

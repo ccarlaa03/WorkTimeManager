@@ -12,12 +12,12 @@ const NavbarAngajat = () => {
         </li>
         <li>
           <NavLink to="/program-lucru" activeClassName="active">
-            Program de Lucru
+            Program de lucru
           </NavLink>
         </li>
         <li>
           <NavLink to="/concedii" activeClassName="active">
-            Concedii
+            Concedi
           </NavLink>
         </li>
         <li>
@@ -27,7 +27,7 @@ const NavbarAngajat = () => {
         </li>
         <li>
           <NavLink to="/user-profil" activeClassName="active">
-            Profilul Meu
+            Profilul meu
           </NavLink>
         </li>
       </ul>
