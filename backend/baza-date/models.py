@@ -1,5 +1,9 @@
 from django.db import models
+from django.conf import settings
 
+class MyModel(models.Model):
+    upload_to_path = settings.MEDIA_ROOT + '/my_uploads/'
+    file = models.FileField(upload_to=upload_to_path)
 class Angajat(models.Model):
     nume = models.CharField(max_length=100)
     prenume = models.CharField(max_length=100)

@@ -14,7 +14,7 @@ import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
@@ -42,7 +42,6 @@ SECRET_KEY = 'django-insecure--t05ychmh9s=3ike3rj3q75_jrbbrm%s+^7de03$h193hz@y0b
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-ROOT_URLCONF = 'worktimemanager.urls'
 # Application definition
 
 INSTALLED_APPS = [
@@ -69,6 +68,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
 ]
 
+ROOT_URLCONF = 'worktimemanager.urls'
 
 TEMPLATES = [
     {
