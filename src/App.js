@@ -23,7 +23,7 @@ import GestionareConcedii from './components/HR/gestionare-concedii';
 import GestionareTraining from './components/HR/gestionare-training';
 import Rapoarte from './components/HR/rapoarte';
 import ProfilAngajatHR from './components/HR/profil-angajat';
-import ExampleComponent from './ExampleComponent';
+import { DataProvider } from './dataContext';
 
 const App = () => {
 
@@ -31,6 +31,7 @@ const App = () => {
   return (
     <Router>
       <NavbarWrapper />
+      <DataProvider />
       <Routes>
         <Route path="/" element={<Acasa />} />
         <Route path="/Despre" element={<Despre />} />

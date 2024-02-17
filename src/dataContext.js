@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
 // Crează un Context
 const DataContext = createContext();
@@ -13,9 +14,10 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('http://localhost:8000/api/your-endpoint/');
-        const jsonData = await response.json();
-        setData(jsonData);
+        // Utilizează axios pentru a face solicitarea
+        const response = await axios.get('http://localhost:8000/api/acasa/');
+        // Setează datele primite ca stare
+        setData(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
       }
