@@ -1,47 +1,37 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Axios from 'axios';
+import axios from 'axios';
 
 const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [signUpError, setSignUpError] = useState(null);
-  const [signUpSuccess, setSignUpSuccess] = useState(null);
+  const [signUpError, setSignUpError] = useState('');
+  const [signUpSuccess, setSignUpSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [role, setRole] = useState('hr');
+  const [role, setRole] = useState('angajat'); 
   const navigate = useNavigate();
 
-  const submitSignUp = () => {
-    setIsLoading(true);
-    Axios.post('http://localhost:3000/signup', {
-      email: email,
-      password: password,
-      role: role
-    })
-    .then((response) => {
-      console.log(response);
-      setSignUpSuccess('Mulțumim pentru crearea contului. Un angajat vă va contacta în curând.');
-      setTimeout(() => navigate('/login'), 3000);
-    })
-    .catch((error) => {
-      console.error('Eroare la înregistrare', error.message);
-      setSignUpError('Eroare la înregistrare. Verifică adresa de email și parola.');
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
-  };
-
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setSignUpError('Parolele nu coincid.');
       return;
     }
-    submitSignUp();
+    setIsLoading(true);
+    try {
+      await axios.post('http://localhost:8000/api/signup', { email, password, role });
+      setSignUpSuccess('Utilizator creat cu succes.');
+      setIsLoading(false);
+      navigate('/login'); 
+    } catch (error) {
+      console.error('Eroare la înregistrare', error);
+      setSignUpError('Eroare la înregistrare. Verifică adresa de email și parola.');
+      setIsLoading(false);
+    }
   };
 
+  
   return (
     <div className="container">
       <div className="content">

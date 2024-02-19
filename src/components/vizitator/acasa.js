@@ -8,11 +8,16 @@ const Acasa = () => {
 
   useEffect(() => {
     fetch('http://localhost:8000/api/acasa/')
-    .then(response => response.json()) 
-    .then(data => {
-        setInformatii(data);
-    })
-    .catch(error => console.log(error));
+.then(response => {
+  if (!response.ok) {
+    throw new Error('Network response was not ok ' + response.statusText);
+  }
+  return response.json();
+}) 
+.then(data => {
+    setInformatii(data);
+})
+.catch(error => console.error('Eroare la preluarea datelor:', error));
 
   }, []);
 

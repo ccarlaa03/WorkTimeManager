@@ -19,14 +19,12 @@ from django.urls import path, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
-from worktimemanager import views
-
+from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),  
-    path('', views.acasa, name='acasa'),
-    path('Despre/', views.despre, name='despre'),  
-    path('Contact/', views.contact, name='contact'),  
+    path('api/signup', views.signup_view, name='signup'),
+    path('rest-auth/login', views.login_view, name='login'),
 ]
 
 if settings.DEBUG:

@@ -10,9 +10,6 @@ body {
   min-height: 100vh;
 }
 
-p a {
-  color: #A087BC;
-}
 
 nav {
   background-color: #A087BC;
@@ -21,6 +18,21 @@ nav {
   width: auto;
   top: 0;
   z-index: 1000;
+}
+
+footer {
+  background-color: #A087BC;
+  color: #FFFFFF;
+  padding: 10px;
+  width: auto;
+  bottom: 0;
+  margin-top: auto;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 ul {
@@ -66,20 +78,10 @@ a {
 }
 
 
-footer {
-  background-color: #A087BC;
-  color: #FFFFFF;
-  padding: 10px;
-  width: auto;
-  bottom: 0;
-  margin-top: auto;
+p a {
+  color: #A087BC;
 }
 
-#root {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
 
 .social-icons {
   list-style: none;
@@ -345,38 +347,6 @@ button {
   margin: 0.2em 0 0.1em;
 }
 
-
-button.signup {
-  background: #a087bc;
-  color: #FFFFFF;
-}
-
-button.login {
-  background: #a087bc;
-}
-
-button.off {
-  background: none;
-  box-shadow: none;
-  margin: 0;
-  color: #fff;
-}
-
-button.off.signup {
-  background: #a087bc;
-}
-
-button.off.login {
-  background: #FFF468;
-  color: #000;
-}
-
-button:focus,
-button:active,
-button:hover {
-  box-shadow: 0 4px 7px rgba(0, 0, 0, 0.1), 0 3px 6px rgba(0, 0, 0, 0.1);
-}
-
 .form-element {
   margin-bottom: 10px;
   color: #A087BC;
@@ -640,7 +610,7 @@ button:hover {
 
 
 .tabel buton {
-  background-color: #9b82b1;
+  background-color: #A087BC;
   color: white;
   border: none;
   padding: 6px 12px; /* ajustat pentru a avea un aspect mai echilibrat */
