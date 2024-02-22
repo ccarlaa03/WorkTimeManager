@@ -1,36 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import imagine from '../../photos/imagine-profil.jpg';
-import EditareProfil from './editare-profil';
 import Statistici from './statistici';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import Modal from 'react-modal';
 import Pontator from './pontator';
+import axios from 'axios';
 
 Modal.setAppElement('#root');
 
 const localizer = momentLocalizer(moment);
 
-// Componenta Dashboard
 const Dashboard = () => {
-  const [profil, setProfil] = useState({
-    nume: "Chereji Carla",
-    imagine: imagine,
-    post: "Domeniu de activitate: Asigurarea calității produselor software",
-    departament: "Departamentul de testare și control al calității",
-  });
+
+  const [profil, setProfil] = useState(null);
+  const [oreLucrate, setOreLucrate] = useState(40);
+  const [zileLibere, setZileLibere] = useState(2);
+  const [nume, setNume] = useState('');
+  const [post, setPost] = useState('');
+  const [departament, setDepartament] = useState('');
+  
+  const [modalEditareProfilIsOpen, setModalEditareProfilIsOpen] = useState(false);
+  const [modalModificareProgramIsOpen, setModalModificareProgramIsOpen] = useState(false);
   const [editareProfil, setEditareProfil] = useState(false);
 
-  const [oreLucrate, setOreLucrate] = useState(40); // Exemplu de valoare
-  const [zileLibere, setZileLibere] = useState(2); // Exemplu de valoare
-  const [modalEditareProfilIsOpen, setModalEditareProfilIsOpen] = useState(false);
-  const [nume, setNume] = useState(profil.nume);
-  const [post, setPost] = useState(profil.post);
-  const [departament, setDepartament] = useState(profil.departament);
-  const [modalModificareProgramIsOpen, setModalModificareProgramIsOpen] = useState(false);
   const angajatId = 'id-angajat';
-
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const openModificareProgramModal = () => {
     setModalModificareProgramIsOpen(true);
   };
@@ -79,6 +77,7 @@ const Dashboard = () => {
     },
   ]);
 
+
   const handleSaveEditareProfil = (e) => {
     e.preventDefault();
     // Puteți adăuga logica de salvare a profilului aici
@@ -90,15 +89,38 @@ const Dashboard = () => {
   const closeEditareProfilModal = () => {
     setModalEditareProfilIsOpen(false);
   };
+
+  useEffect(() => {
+    const fetchData = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/api/angajat-profil');
+            setProfil(response.data);
+        } catch (error) {
+            console.error("Eroare la preluarea datelor profilului", error);
+        }
+    };
+    fetchData();
+}, []);
+
+
+  if (isLoading) {
+    return <div>Se încarcă...</div>;
+  }
+
+  if (error) {
+    return <div>A apărut o eroare: {error.message}</div>;
+  }
+
+
   return (
     <div className="container-dashboard">
       <h1>Dashboard</h1>
 
       <div className="container-profil">
-        <img src={profil.imagine} alt="Profil" className="imagine-profil" />
-        <h3>{profil.nume}</h3>
-        <p>{profil.post}</p>
-        <p>{profil.departament}</p>
+      <img src={profil.imagine || imagine} alt="Profil" className="imagine-profil" />
+      <h3>{profil.nume}</h3>
+      <p>{profil.post}</p>
+      <p>{profil.departament}</p>
         <button className="buton" onClick={openEditareProfilModal}>Editează profilul</button>
       </div>
       <div class="button-container">

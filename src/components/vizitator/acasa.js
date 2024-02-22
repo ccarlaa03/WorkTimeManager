@@ -7,7 +7,7 @@ const Acasa = () => {
   const [informatii, setInformatii] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/acasa/')
+    fetch('http://localhost:8000/acasa/')
 .then(response => {
   if (!response.ok) {
     throw new Error('Network response was not ok ' + response.statusText);

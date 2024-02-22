@@ -25,13 +25,12 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 if DEBUG:
-   STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+   REACT_APP_API_URL = 'http://localhost:8000/rest-auth'
 
 else:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
             
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 
 
 # Quick-start development settings - unsuitable for production
@@ -54,6 +53,7 @@ INSTALLED_APPS = [
     'worktimemanager',
     'corsheaders',
     'rest_framework',
+
 ]
 
 MIDDLEWARE = [
@@ -68,7 +68,13 @@ MIDDLEWARE = [
     
 ]
 
+
 ROOT_URLCONF = 'worktimemanager.urls'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  
+     
+]
 
 TEMPLATES = [
     {
@@ -90,8 +96,9 @@ TEMPLATES = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    ),
 }
+
 
 
 WSGI_APPLICATION = 'worktimemanager.wsgi.application'
@@ -153,6 +160,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 
+CSRF_COOKIE_SECURE = True
+
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+ 
 CORS_ALLOW_CREDENTIALS = True
 
 # Static files (CSS, JavaScript, Images)

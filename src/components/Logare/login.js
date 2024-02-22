@@ -10,21 +10,35 @@ const Login = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+    e.preventDefault(); 
+
+    setIsLoading(true); 
 
     try {
-      const response = await axios.post('http://localhost:8000/api/login', { email, password });
-      setIsLoading(false);
-
+      const response = await axios.post('http://localhost:8000/api/login', {
+        email: email,
+        password: password
+      });
+      
       localStorage.setItem('access', response.data.access);
+      localStorage.setItem('role', response.data.role);
       axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-
-      navigate(`/${response.data.role}-dashboard`);
+      
+      if (response.data.role === 'HR') {
+        navigate('/HR-dashboard');
+      } else if (response.data.role === 'Angajat') {
+        navigate('/Angajat-dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
-      console.error('Eroare la logare', error);
-      setLoginError('Autentificare eșuată. Verificați emailul și parola.');
-      setIsLoading(false);
+      if (error.response) {
+        setLoginError(error.response.data.error || 'Autentificare eșuată. Verificați emailul și parola.');
+      } else {
+        setLoginError('Eroare necunoscută.');
+      }
+    } finally {
+      setIsLoading(false); 
     }
   };
 
