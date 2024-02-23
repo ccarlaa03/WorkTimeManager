@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, re_path, include, reverse_lazy
+from django.urls import path, re_path, reverse_lazy
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.static import serve
@@ -24,9 +24,9 @@ from django.views.generic.base import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),  
-    path('api/signup', views.signup_view, name='signup'),
-    path('api/login', views.login_view, name='login'),
-    path('api/acasa', views.acasa_view, name='acasa'),
+    path('signup/', views.signup_view, name='signup'),
+    path('login/', views.login_view, name='login'),
+    path('acasa/', views.acasa_view, name='acasa'),
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
