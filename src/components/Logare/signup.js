@@ -5,23 +5,19 @@ import axios from 'axios';
 const SignUp = () => {
   const navigate = useNavigate();
 
-  // State-uri pentru datele utilizatorului
+  // State-uri pentru datele utilizatorului și ale companiei
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [ownerName, setOwnerName] = useState('')
-  const [signUpError, setSignUpError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-
-  // State-uri pentru datele companiei
+  const [ownerName, setOwnerName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
   const [companyPhoneNumber, setCompanyPhoneNumber] = useState('');
   const [companyIndustry, setCompanyIndustry] = useState('');
   const [companyNumberOfEmployees, setCompanyNumberOfEmployees] = useState('');
   const [companyFoundedDate, setCompanyFoundedDate] = useState('');
-
-
+  const [signUpError, setSignUpError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async (e) => {
     e.preventDefault();
@@ -32,29 +28,30 @@ const SignUp = () => {
     }
 
     setIsLoading(true);
-    const companyData = {
-      name: companyName,
-      address: companyAddress,
-      phone_number: companyPhoneNumber,
-      industry: companyIndustry, 
-      number_of_employees: companyNumberOfEmployees, 
-      founded_date: companyFoundedDate, 
-    };
-    const userData = {
-      owner_name: ownerName,
-      email,
-      password,
-    };
 
     try {
-      const response = await axios.post('http://localhost:8000/signup/', {
-        email, password, company: companyData
+      // Asigură-te că adresa URL este corectă și corespunde cu endpoint-ul tău din backend
+      await axios.post('http://localhost:8000/signup/', {
+        email,
+        password,
+        company_name: companyName,
+        company_address: companyAddress,
+        company_phone_number: companyPhoneNumber,
+        company_email: email, // Presupunem că email-ul companiei este același cu cel al owner-ului
+        company_industry: companyIndustry,
+        company_number_of_employees: companyNumberOfEmployees,
+        company_founded_date: companyFoundedDate,
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
-      setIsLoading(false);
+
       navigate('/login');
     } catch (error) {
       console.error('Eroare la înregistrare', error);
       setSignUpError('Eroare la înregistrare. Verifică adresa de email, parola și detaliile companiei.');
+    } finally {
       setIsLoading(false);
     }
   };
@@ -63,7 +60,7 @@ const SignUp = () => {
     <div className="container">
       <div className="content">
         <h2>Înregistrare</h2>
-        <form onSubmit={handleSignUp} className="form-stack">
+        <form onSubmit={handleSignUp} className="form-stack" method="POST">
           <div className="form-element">
             <label className="form-label">Nume:</label>
             <input type="text" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} required />

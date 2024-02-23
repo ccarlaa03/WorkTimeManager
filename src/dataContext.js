@@ -4,7 +4,8 @@ import axios from 'axios';
 const DataContext = createContext();
 
 export const useData = () => useContext(DataContext);
-
+axios.defaults.xsrfCookieName = 'csrftoken';
+axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
 export const DataProvider = ({ children }) => {
   const [data, setData] = useState(null);
@@ -12,7 +13,7 @@ export const DataProvider = ({ children }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/acasa');
+        const response = await axios.get('http://localhost:8000/acasa/');
 
         setData(response.data);
       } catch (error) {

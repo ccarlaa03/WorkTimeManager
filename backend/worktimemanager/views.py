@@ -5,13 +5,16 @@ from django.contrib.auth import authenticate, login
 from rest_framework.response import Response
 from rest_framework import status
 from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer
-
+from django.shortcuts import render
+from .decorators import is_owner, is_hr, is_employee
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def signup_view(request):
     company_data = {
         'name': request.data.get('company_name'),
-        'ownername': request.data.get('owner_name'),
         'address': request.data.get('company_address'),
         'phone_number': request.data.get('company_phone_number'),
         'email': request.data.get('company_email'),
@@ -25,15 +28,18 @@ def signup_view(request):
         user_data = {
             'email': request.data.get('email'),
             'password': request.data.get('password'),
-            'name': request.data.get('name'),
+            'role': 'owner', 
         }
-        user = User.objects.create_user(**user_data, company=company)
+        user = User.objects.create_user(**user_data)
+        user.company = company
+        user.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
     else:
         return Response(company_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
     email = request.data.get('email')
     password = request.data.get('password')
@@ -73,3 +79,34 @@ def create_employee_view(request):
             return Response(employee_serializer.data, status=status.HTTP_201_CREATED)
         return Response(employee_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@is_employee
+def employee_dashboard(request):
+    # Logica pentru dashboard-ul Employee
+    return render(request, 'Angajat-dashboard.js')
+
+@is_employee
+def employee_profile(request):
+    # Logica pentru profilul Employee
+    return render(request, 'angajat-profil.js')
+
+@is_hr
+def hr_dashboard(request):
+    # Logica pentru dashboard-ul HR
+    return render(request, 'hr_dashboard.html')
+
+@is_hr
+def hr_management(request):
+    # Logica pentru managementul HR
+    return render(request, 'hr_management.html')
+
+@is_owner
+def owner_dashboard(request):
+    # Logica pentru dashboard-ul Owner
+    return render(request, 'owner_dashboard.html')
+
+@is_owner
+def owner_settings(request):
+    # Logica pentru setările Owner
+    return render(request, 'owner_settings.html')
