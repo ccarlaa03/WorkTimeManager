@@ -3,10 +3,11 @@ import { useLocation } from 'react-router-dom';
 import NavbarAngajat from './components/Angajat/Navbar-angajat';
 import NavbarVizitator from './components/vizitator/Navbar';
 import NavbarHR from './components/HR/NavbarHR';
+import NavbarOwner from './components/Owner/NavbarOwner';
 
 const NavbarWrapper = () => {
   const location = useLocation();
-  
+  const isOwnerRoute = location.pathname.includes('/owner-');
   // Determinați dacă calea curentă corespunde unei rute de angajat
   const isAngajatRoute = location.pathname.startsWith('/user-dashboard') || 
                          location.pathname.startsWith('/program-lucru') || 
@@ -22,6 +23,8 @@ const NavbarWrapper = () => {
     return <NavbarHR />;
   } else if (isAngajatRoute) {
     return <NavbarAngajat />;
+  } else if (isOwnerRoute) {
+    return <NavbarOwner />; 
   } else {
     return <NavbarVizitator />;
   }

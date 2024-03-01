@@ -9,7 +9,7 @@ const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [ownerName, setOwnerName] = useState('');
+  const [owner_name, setOwnerName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [companyAddress, setCompanyAddress] = useState('');
   const [companyPhoneNumber, setCompanyPhoneNumber] = useState('');
@@ -31,23 +31,24 @@ const SignUp = () => {
 
     try {
       // Asigură-te că adresa URL este corectă și corespunde cu endpoint-ul tău din backend
-      await axios.post('http://localhost:8000/signup/', {
+      await axios.post('http://localhost:8000/api/signup/', {
         email,
         password,
         company_name: companyName,
         company_address: companyAddress,
         company_phone_number: companyPhoneNumber,
-        company_email: email, // Presupunem că email-ul companiei este același cu cel al owner-ului
+        company_email: email, 
         company_industry: companyIndustry,
         company_number_of_employees: companyNumberOfEmployees,
         company_founded_date: companyFoundedDate,
+        owner_name: owner_name,
       }, {
         headers: {
           'Content-Type': 'application/json'
         }
       });
 
-      navigate('/login');
+      navigate('/login/');
     } catch (error) {
       console.error('Eroare la înregistrare', error);
       setSignUpError('Eroare la înregistrare. Verifică adresa de email, parola și detaliile companiei.');
@@ -63,7 +64,7 @@ const SignUp = () => {
         <form onSubmit={handleSignUp} className="form-stack" method="POST">
           <div className="form-element">
             <label className="form-label">Nume:</label>
-            <input type="text" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} required />
+            <input type="text" value={owner_name} onChange={(e) => setOwnerName(e.target.value)} required />
           </div>
 
           <div className="form-element">

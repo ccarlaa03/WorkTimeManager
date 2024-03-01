@@ -25,13 +25,14 @@ DEBUG = True
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 if DEBUG:
-   REACT_APP_API_URL = 'http://localhost:8000/rest-auth'
+   REACT_APP_API_URL = 'http://localhost:8000/'
 
 else:
     STATICFILES_DIRS = [os.path.join(BASE_DIR, "static"),]
             
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
+APPEND_SLASH = False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -53,6 +54,7 @@ INSTALLED_APPS = [
     'worktimemanager',
     'corsheaders',
     'rest_framework',
+    'rest_framework.authtoken',
 
 ]
 
@@ -100,6 +102,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated', 
@@ -178,8 +181,11 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_COOKIE_SECURE = True
 
+CORS_ORIGIN_WHITELIST = [
+    'http://localhost:3000', 
+]
 
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:8000']
 
  
 CORS_ALLOW_CREDENTIALS = True

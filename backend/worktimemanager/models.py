@@ -24,7 +24,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    role = models.CharField(max_length=10, choices=[('owner', 'Owner'), ('employee', 'Employee'), ('hr', 'HR')], default='owner')
+    role = models.CharField(max_length=10, choices=[('owner', 'Owner'), ('employee', 'Employee'), ('hr', 'HR')])
 
     objects = CustomUserManager()
 
@@ -40,32 +40,40 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.email
 
 class Company(models.Model):
-    name = models.CharField(max_length=255, verbose_name="Numele Companiei")
-    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name='owned_company', null=True)
+    name = models.CharField(max_length=255)
     address = models.TextField(verbose_name="Adresa")
     phone_number = models.CharField(max_length=20, verbose_name="Numărul de telefon")
     email = models.EmailField(verbose_name="Email")
     industry = models.CharField(max_length=255, verbose_name="Industia")
     number_of_employees = models.IntegerField(verbose_name="Numărul de angajați")
     founded_date = models.DateField(verbose_name="Data înfințării")
- 
+
     def __str__(self):
         return self.name
-    
+
+class Owner(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    owner_name = models.CharField(max_length=100, null=True, blank=True)
+    company = models.OneToOneField(Company, on_delete=models.CASCADE, related_name='owner', null=True, blank=True)
+
+    def __str__(self):
+        return self.owner_name
+
+
 class HR(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    nume = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     pozitie = models.CharField(max_length=100)
     departament = models.CharField(max_length=100)
     data_angajarii = models.DateField()
 
     def __str__(self):
-        return f"HR: {self.nume}"
+        return f"HR: {self.name}"
     
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='employee_profile')
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='employees')
-    nume = models.CharField(max_length=100)
+    name = models.CharField(max_length=100)
     pozitie = models.CharField(max_length=100)
     departament = models.CharField(max_length=100)
     data_angajarii = models.DateField()
@@ -76,3 +84,10 @@ class Employee(models.Model):
     def __str__(self):
            return f"{self.user.email} ({'HR' if self.is_hr else 'Employee'})"
     
+
+class Event(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    start = models.DateTimeField()
+    end = models.DateTimeField()
+    company = models.ForeignKey(Company, related_name='events', on_delete=models.CASCADE)

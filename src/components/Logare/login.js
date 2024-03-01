@@ -2,46 +2,52 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Aici ai declarat hook-ul
 
   const handleLogin = async (e) => {
-    e.preventDefault(); 
-
-    setIsLoading(true); 
-
+    e.preventDefault();
+    setIsLoading(true);
+    let response;
+  
     try {
-      const response = await axios.post('http://localhost:8000/login/', {
+      const response = await axios.post('http://localhost:8000/api/login/', {
         email: email,
         password: password
       });
-      
-      localStorage.setItem('access', response.data.access);
-      localStorage.setItem('role', response.data.role);
-      axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
-      
-      if (response.data.role === 'HR') {
-        navigate('/HR-dashboard');
-      } else if (response.data.role === 'Angajat') {
-        navigate('/Angajat-dashboard');
+    
+      if (response.data && response.data.token && response.data.role) {
+        localStorage.setItem('access', response.data.token);
+        navigate(`/${response.data.role}-dashboard`);
+        
       } else {
-        navigate('/');
+        setLoginError('Autentificare eșuată.');
       }
     } catch (error) {
+      setIsLoading(false);
       if (error.response) {
-        setLoginError(error.response.data.error || 'Autentificare eșuată. Verificați emailul și parola.');
+
+        if (error.response.status === 401) { 
+          setLoginError('Email sau parola incorectă.');
+        } else {
+          setLoginError('Autentificare eșuată. Eroare de server.');
+        }
+      } else if (error.request) {
+        // The request was made but no response was received
+        setLoginError('Autentificare eșuată. Serverul nu răspunde.');
       } else {
-        setLoginError('Eroare necunoscută.');
+        // Something happened in setting up the request that triggered an Error
+        setLoginError('Eroare necunoscută la autentificare.');
       }
-    } finally {
-      setIsLoading(false); 
+      console.error('Eroare la autentificare:', error);
     }
   };
-
+  
   return (
     <div className="container">
       <div className="content">

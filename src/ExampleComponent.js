@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API_URL = 'http://localhost:3000/api/';
+const API_URL = 'http://localhost:3000/';
 
 const ExampleComponent = () => {
   const [data, setData] = useState(null);

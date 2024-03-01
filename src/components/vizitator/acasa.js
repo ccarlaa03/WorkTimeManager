@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import imagine1 from '../../photos/img1.jpg';
 import imagine2 from '../../photos/img2.jpg';
 import '../../styles/App.css';
+import axios from 'axios';
 
 const Acasa = () => {
   const [informatii, setInformatii] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:8000/acasa/')
+    axios.get('http://localhost:8000/acasa/')
 .then(response => {
   if (!response.ok) {
     throw new Error('Network response was not ok ' + response.statusText);

@@ -21,12 +21,18 @@ from django.conf.urls.static import static
 from django.views.static import serve
 from . import views
 from django.views.generic.base import RedirectView
+from .views import owner_dashboard
 
 urlpatterns = [
     path('admin/', admin.site.urls),  
-    path('signup/', views.signup_view, name='signup'),
-    path('login/', views.login_view, name='login'),
+    path('api/signup/', views.signup_view, name='signup'),
+    path('api/login/', views.login_view, name='login'),
     path('acasa/', views.acasa_view, name='acasa'),
+    path('logout/', views.user_logout, name='logout'),
+    path('owner-dashboard/', owner_dashboard, name='owner-dashboard'),
+    path('company-details/', views.company_details_view, name='company-details'),
+    path('events/', views.events_view, name='events'),
+
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
@@ -38,5 +44,5 @@ if settings.DEBUG:
         re_path(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),
     ]
 
-LOGIN_REDIRECT_URL = '/dashboard/'
+
 

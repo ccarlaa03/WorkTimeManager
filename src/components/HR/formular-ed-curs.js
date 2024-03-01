@@ -11,7 +11,7 @@ const FormularEditareCurs = ({ curs, onEditareCurs, onClose }) => {
         if (curs) {
             setTitlu(curs.titlu);
             setDescriere(curs.descriere);
-            setData(curs.data.toISOString().split('T')[0]); // Formatăm data pentru a fi compatibilă cu inputul de tip date
+            setData(curs.data.toISOString().split('T')[0]); 
             setDurata(curs.durata);
         }
     }, [curs]);

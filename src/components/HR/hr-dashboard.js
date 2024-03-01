@@ -7,7 +7,7 @@ import { Bar } from 'react-chartjs-2';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
 import Modal from 'react-modal';
-// de creat partea de a trimite mesaje/notificari(actiuni in bloc)
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -237,6 +237,7 @@ const HrDashboard = () => {
         endAccessor="end"
         style={{ height: 400 }}
       />
+      
       <div class="button-container">
         <button onClick={deschideModalAdaugareEveniment} className="buton">
           Adaugă eveniment nou
