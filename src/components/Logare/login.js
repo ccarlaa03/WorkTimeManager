@@ -13,7 +13,6 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    let response;
   
     try {
       const response = await axios.post('http://localhost:8000/api/login/', {
@@ -23,6 +22,7 @@ const Login = () => {
     
       if (response.data && response.data.token && response.data.role) {
         localStorage.setItem('access', response.data.token);
+        localStorage.setItem('token', response.data.token);
         navigate(`/${response.data.role}-dashboard`);
         
       } else {

@@ -14,6 +14,21 @@ const localizer = momentLocalizer(moment);
 
 const Dashboard = () => {
 
+  const [employeeInfo, setEmployeeInfo] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get('/employee-dashboard/', { withCredentials: true });
+        setEmployeeInfo(res.data.employee_info);
+      } catch (error) {
+        console.error("Error fetching Employee dashboard data: ", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
   const [profil, setProfil] = useState(null);
   const [oreLucrate, setOreLucrate] = useState(40);
   const [zileLibere, setZileLibere] = useState(2);

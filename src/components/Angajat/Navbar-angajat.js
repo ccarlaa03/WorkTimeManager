@@ -1,7 +1,15 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 const NavbarAngajat = () => {
+  const navigate = useNavigate();
+  const isAuthenticated = !!localStorage.getItem('token');
+  // Funcția logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   return (
     <nav className="navbar">
       <ul className="navbar-nav">
@@ -19,6 +27,9 @@ const NavbarAngajat = () => {
         </li>
         <li>
           <NavLink to="/user-profil" activeClassName="active">Profilul meu</NavLink>
+        </li>
+        <li>
+          <NavLink to="/logout" onClick={handleLogout}>Log out</NavLink>
         </li>
       </ul>
     </nav>

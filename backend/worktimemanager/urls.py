@@ -21,17 +21,19 @@ from django.conf.urls.static import static
 from django.views.static import serve
 from . import views
 from django.views.generic.base import RedirectView
-from .views import owner_dashboard
+from .views import logout_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),  
     path('api/signup/', views.signup_view, name='signup'),
     path('api/login/', views.login_view, name='login'),
     path('acasa/', views.acasa_view, name='acasa'),
-    path('logout/', views.user_logout, name='logout'),
-    path('owner-dashboard/', owner_dashboard, name='owner-dashboard'),
-    path('company-details/', views.company_details_view, name='company-details'),
-    path('events/', views.events_view, name='events'),
+    path('api/logout/', logout_view, name='logout'),
+    path('owner-dashboard/', views.owner_dashboard, name='owner-dashboard'),
+    path('hr-dashboard/', views.hr_dashboard, name='hr-dashboard'),
+    path('employee-dashboard/', views.employee_dashboard, name='employee-dashboard'),
+    path('api/company-details/', views.company_details_view, name='company-details'),
+    path('api/events/', views.events_view, name='events'),
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

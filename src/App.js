@@ -22,7 +22,7 @@ import GestionareTraining from './components/HR/gestionare-training';
 import ProfilAngajatHR from './components/HR/profil-angajat';
 import ProfilAngajat from './components/Angajat/angajat-profil';
 import OwnerDashboard from './components/Owner/owner-dashboard';
-
+import LogoutComponent from './components/Logare/logout';
 
 
 const App = () => {
@@ -36,6 +36,7 @@ const App = () => {
         <Route path="/Despre" element={<Despre />} />
         <Route path="/Contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/logout" element={<LogoutComponent />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/employee-dashboard" element={<DashboardAng />} />
         <Route path="/program-lucru" element={<ProgramLucru />} />

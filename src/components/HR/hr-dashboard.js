@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -7,6 +7,8 @@ import { Bar } from 'react-chartjs-2';
 import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
 import Modal from 'react-modal';
+import axios from 'axios';
+
 
 import {
   Chart as ChartJS,
@@ -30,6 +32,21 @@ ChartJS.register(
 const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
+  const [hrInfo, setHrInfo] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await axios.get('/hr-dashboard/', { withCredentials: true });
+        setHrInfo(res.data.hr_info);
+      } catch (error) {
+        console.error("Error fetching HR dashboard data: ", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
 
   const [profil, setProfil] = useState({
     nume: 'Carla Chereji',

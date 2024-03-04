@@ -1,10 +1,10 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from .models import User, Company, Employee, Owner, Event
+from .models import User, Company, Employee, Owner, Event, HR
 from django.contrib.auth import authenticate, login, logout
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, EmployeeSerializer, HRSerializer
 from django.shortcuts import render
 from .decorators import is_owner, is_hr, is_employee
 from rest_framework.decorators import api_view, permission_classes
@@ -13,6 +13,9 @@ from django.http import JsonResponse
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
+from django.contrib.auth import logout
+from django.http import HttpResponseForbidden
+from functools import wraps
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -64,7 +67,7 @@ def login_view(request):
         token, created = Token.objects.get_or_create(user=user)
         return Response({
             'token': token.key,
-            'user_id': user.pk,
+            'user_id': user.id,
             'email': user.email,
             'role': user.role,
     }, status=status.HTTP_200_OK)
@@ -133,46 +136,29 @@ def create_employee_view(request):
             return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def user_logout(request):
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
     logout(request)
-    return render(request,'login')
+    return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
 
-@is_employee
-def employee_dashboard(request):
-    # Logica pentru dashboard-ul Employee
-    return render(request, 'Angajat-dashboard.js')
 
-@is_employee
-def employee_profile(request):
-    # Logica pentru profilul Employee
-    return render(request, 'angajat-profil.js')
-
-@is_hr
-def hr_dashboard(request):
-    # Logica pentru dashboard-ul HR
-    return render(request, 'hr-dashboard.js')
-
-@is_hr
-def hr_management(request):
-    # Logica pentru managementul HR
-    return render(request, 'hr_management.html')
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@is_owner
 def owner_dashboard(request):
-    user = request.user
     try:
-        owner = user.owner
+        owner = request.user.owner
         company = owner.company
-        events = Event.objects.filter(company=company)
+        events = company.events.all()  
         return Response({
             'company': CompanySerializer(company).data,
             'events': EventSerializer(events, many=True).data
         })
     except Owner.DoesNotExist:
         return Response({'error': 'Profilul de owner nu există.'}, status=404)
-
-    
+   
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def company_details_view(request):
@@ -190,3 +176,28 @@ def events_view(request):
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@is_hr
+def hr_dashboard(request):
+    try:
+        hr_profile = request.user.hr_profile  # Presupunând că ai o relație one-to-one de la User la HR cu related_name='hr_profile'
+        # Logica pentru a prelua datele necesare pentru dashboard-ul HR
+        return Response({
+            'hr_info': HRSerializer(hr_profile).data  # Presupunând că ai un serializer pentru HR
+        })
+    except HR.DoesNotExist:
+        return Response({'error': 'Profilul HR nu există.'}, status=404)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@is_employee
+def employee_dashboard(request):
+    try:
+        employee_profile = request.user.employee_profile  # Presupunând că ai o relație one-to-one de la User la Employee cu related_name='employee_profile'
+        # Logica pentru a prelua datele necesare pentru dashboard-ul Employee
+        return Response({
+            'employee_info': EmployeeSerializer(employee_profile).data  # Presupunând că ai un serializer pentru Employee
+        })
+    except Employee.DoesNotExist:
+        return Response({'error': 'Profilul Employee nu există.'}, status=404)

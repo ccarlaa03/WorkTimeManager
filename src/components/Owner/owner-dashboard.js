@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import '../../styles/App.css'; 
+import '../../styles/App.css';
 
 const localizer = momentLocalizer(moment);
 
@@ -13,11 +13,21 @@ const OwnerDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("Access denied. No token available. User must be logged in to access this.");
+        return;
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
       try {
-        const companyRes = await axios.get('http://localhost:8000/owner-dashboard/', { withCredentials: true });
+        const companyRes = await axios.get('http://localhost:8000/api/company-details/', config);
         setCompany(companyRes.data);
 
-        const eventsRes = await axios.get('http://localhost:8000/events/', { withCredentials: true }); // Asumând că ai un endpoint pentru evenimente
+        const eventsRes = await axios.get('http://localhost:8000/api/events/', config);
         setEvents(eventsRes.data.map(event => ({
           ...event,
           start: new Date(event.start),

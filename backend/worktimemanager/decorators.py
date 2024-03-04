@@ -1,29 +1,24 @@
 from django.http import HttpResponseForbidden
 from functools import wraps
 
-def is_owner(function):
-    @wraps(function)
-    def wrap(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 'Owner':
-            return function(request, *args, **kwargs)
-        else:
-            return HttpResponseForbidden("Nu ai permisiunea de a accesa această pagină.")
-    return wrap
 
-def is_hr(function):
-    @wraps(function)
-    def wrap(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 'HR':
-            return function(request, *args, **kwargs)
-        else:
-            return HttpResponseForbidden("Nu ai permisiunea de a accesa această pagină.")
-    return wrap
+def is_owner(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if not hasattr(request.user, 'owner'):
+            return HttpResponseForbidden('Nu aveți permisiunea de a accesa această resursă.')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
 
-def is_employee(function):
-    @wraps(function)
-    def wrap(request, *args, **kwargs):
-        if request.user.is_authenticated and request.user.role == 'Employee':
-            return function(request, *args, **kwargs)
-        else:
-            return HttpResponseForbidden("Nu ai permisiunea de a accesa această pagină.")
-    return wrap
+def is_hr(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if not hasattr(request.user, 'hr'):
+            return HttpResponseForbidden('Nu aveți permisiunea de a accesa această resursă.')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
+
+def is_employee(view_func):
+    def _wrapped_view(request, *args, **kwargs):
+        if not hasattr(request.user, 'employee'):
+            return HttpResponseForbidden('Nu aveți permisiunea de a accesa această resursă.')
+        return view_func(request, *args, **kwargs)
+    return _wrapped_view
