@@ -1,4 +1,7 @@
 from django.apps import AppConfig
 
-class Worktimemanager(AppConfig):
-    name = 'worktimemanager' # numele aplicației
+class WorktimeManagerConfig(AppConfig):
+    name = 'worktimemanager'
+
+    def ready(self):
+        import worktimemanager.signals  

@@ -15,11 +15,19 @@ const localizer = momentLocalizer(moment);
 const Dashboard = () => {
 
   const [employeeInfo, setEmployeeInfo] = useState(null);
-
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error("Access denied. No token available. User must be logged in to access this.");
+        return;
+      }
+
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
       try {
-        const res = await axios.get('/employee-dashboard/', { withCredentials: true });
+        const res = await axios.get('http://localhost:3000/employee-dashboard/', config);
         setEmployeeInfo(res.data.employee_info);
       } catch (error) {
         console.error("Error fetching Employee dashboard data: ", error);

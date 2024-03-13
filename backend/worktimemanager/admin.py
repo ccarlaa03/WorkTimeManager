@@ -1,19 +1,13 @@
 from django.contrib import admin
-from .models import User, Company, Owner, Employee, HR
+from .models import User, Company, Owner, HR, Employee, WorkSchedule, Feedback, Leave, Training, Event
 
-
-if not admin.site.is_registered(User):
-    admin.site.register(User)
-
-if not admin.site.is_registered(Company):
-    admin.site.register(Company)
-
-if not admin.site.is_registered(Owner):
-    admin.site.register(Owner)
-
-
-if not admin.site.is_registered(Employee):
-    admin.site.register(Employee)
-
-if not admin.site.is_registered(HR):
-    admin.site.register(HR)
+admin.site.register(User)
+admin.site.register(Company)
+admin.site.register(Owner)
+admin.site.register(HR)
+admin.site.register(Employee)
+admin.site.register(WorkSchedule)
+admin.site.register(Feedback)
+admin.site.register(Leave)
+admin.site.register(Training)
+admin.site.register(Event)

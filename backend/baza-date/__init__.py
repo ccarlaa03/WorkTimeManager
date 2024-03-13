@@ -1,2 +1,3 @@
+WorktimeManagerConfig = 'worktimemanager.apps.MyAppConfig'
 
 

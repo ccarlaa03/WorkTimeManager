@@ -2,13 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import '../../styles/App.css';
 import { Bar } from 'react-chartjs-2';
-import imagine from '../../photos/imagine-profil.jpg';
 import EditareProfil from '../Angajat/editare-profil';
 import Modal from 'react-modal';
+import instance from '../../axiosConfig';
 import axios from 'axios';
-
 
 import {
   Chart as ChartJS,
@@ -20,7 +18,6 @@ import {
   Legend,
 } from 'chart.js';
 
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -29,62 +26,85 @@ ChartJS.register(
   Tooltip,
   Legend
 );
+
 const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
-  const [hrInfo, setHrInfo] = useState(null);
+  const [HR, setHR] = useState({});
+  const [accessToken, setAccessToken] = useState('');
+  const [events, setEvents] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [editareProfil, setEditareProfil] = useState(false);
+  const [esteDeschisModalAdaugareEveniment, setEsteDeschisModalAdaugareEveniment] = useState(false);
+  const [evenimentNou, setEvenimentNou] = useState({
+    title: '',
+    startDate: '',
+    startTime: '',
+    endDate: '',
+    endTime: '',
+  });
 
   useEffect(() => {
     const fetchData = async () => {
+      const accessToken = localStorage.getItem('access_token'); // Use 'access_token', not 'token'
+      if (!accessToken) {
+        console.log("No access token found. User is not logged in.");
+        return;
+      }
+
       try {
-        const res = await axios.get('/hr-dashboard/', { withCredentials: true });
-        setHrInfo(res.data.hr_info);
+        const response = await axios.get('http://localhost:8000/hr-dashboard/', {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        console.log(response.data);
+        setHR(response.data);
       } catch (error) {
-        console.error("Error fetching HR dashboard data: ", error);
+        console.error("Error fetching data:", error.response ? error.response.data : error.message);
+        // If the token is invalid or expired, you can handle it here
       }
     };
 
     fetchData();
-  }, []);
+  }, []);;
 
+  
 
-  const [profil, setProfil] = useState({
-    nume: 'Carla Chereji',
-    titlu: 'Manager HR',
-    departament: 'Resurse Umane',
-    imagine: imagine,
-  });
-  const [editareProfil, setEditareProfil] = useState(false);
-  const [events, setEvents] = useState([
-    {
-      start: moment().toDate(),
-      end: moment().add(1, 'days').toDate(),
-    },
-  ]);
+  /*try {
+    const eventsResponse = await axios.get('http://localhost:8000/events/');
+    setEvents(eventsResponse.data.map(event => ({
+      ...event,
+      start: new Date(event.start),
+      end: new Date(event.end)
+    })));
+ 
+    const employeesResponse = await axios.get('http://localhost:8000/employees/');
+    setEmployees(employeesResponse.data);
+  } 
+  
+catch (error) {
+    console.error("Error fetching data:", error.response ? error.response.data : error.message);
+  }*/
 
 
   const handleSave = (dateActualizate) => {
-    setProfil(dateActualizate);
+    console.log('Salvarea datelor profilului', dateActualizate);
     setEditareProfil(false);
-    localStorage.setItem('profil', JSON.stringify(dateActualizate));
   };
 
+  const handleOpenEditareProfil = () => setEditareProfil(true);
+  const handleCloseEditareProfil = () => setEditareProfil(false);
+  const handleInchideModalAdauga = () => setEsteDeschisModalAdaugareEveniment(false);
 
-  const [angajati, setAngajati] = useState([
-    { nume: 'Angajat 1', departament: 'Resurse Umane' },
-    { nume: 'Angajat 2', departament: 'Resurse Umane' },
-    { nume: 'Angajat 3', departament: 'Finanțe' },
-    { nume: 'Angajat 4', departament: 'Resurse Umane' },
-    { nume: 'Angajat 5', departament: 'IT' },
-  ]);
-
-
-  const [esteDeschisModalAdaugareEveniment, setEsteDeschisModalAdaugareEveniment] = useState(false);
-  const [evenimentNou, setEvenimentNou] = useState({
-    titlu: '',
-    start: new Date(),
-    end: new Date(),
-  });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setEvenimentNou(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
 
   const deschideModalAdaugareEveniment = () => {
     setEvenimentNou({
@@ -95,14 +115,6 @@ const HrDashboard = () => {
     setEsteDeschisModalAdaugareEveniment(true);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setEvenimentNou(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
   const handleAdaugaEveniment = (e) => {
     e.preventDefault();
     const evenimentAdaugat = {
@@ -111,75 +123,49 @@ const HrDashboard = () => {
       end: new Date(`${evenimentNou.endDate}T${evenimentNou.endTime}`),
     };
 
-
     setEvents(prevEvents => [...prevEvents, evenimentAdaugat]);
-
-
     setEsteDeschisModalAdaugareEveniment(false);
-    setEvenimentNou({
-      title: '',
-      startDate: '',
-      startTime: '',
-      endDate: '',
-      endTime: '',
-    });
+    setEvenimentNou({ title: '', startDate: '', startTime: '', endDate: '', endTime: '' });
   };
 
-  const handleInchideModalAdauga = () => {
-    setEsteDeschisModalAdaugareEveniment(false);
+  const departments = [...new Set(employees.map(emp => emp.department))];
+  const departmentData = departments.map(dept => employees.filter(emp => emp.department === dept).length);
+
+  const chartData = {
+    labels: departments,
+    datasets: [{
+      label: 'Numărul de angajați pe departament',
+      data: departmentData,
+      backgroundColor: 'rgba(54, 162, 235, 0.2)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 1,
+    }],
   };
 
-  // Datele pentru graficul cu numărul de angajați pe departamente
-  const departamente = [...new Set(angajati.map(angajat => angajat.departament))];
-  const numarAngajatiPeDepartamente = departamente.map(departament =>
-    angajati.filter(angajat => angajat.departament === departament).length
-  );
-
-
-
-  const graficDepartamente = {
-    labels: departamente,
-    datasets: [
-      {
-        label: 'Număr de angajați',
-        data: numarAngajatiPeDepartamente,
-        borderWidth: 1,
-      },
-    ],
-  };
-
-
-  const [esteDeschisModalEditareProfil, setEsteDeschisModalEditareProfil] = useState(false);
   return (
     <div className="container-dashboard">
       <h1>Dashboard HR</h1>
-      <div className="container-profil">
-        <img src={profil.imagine} alt="Profil" />
-        <h3>{profil.nume}</h3>
-        <p>{profil.titlu}</p>
-        <p>{profil.departament}</p>
-        <button className="buton" onClick={() => setEsteDeschisModalEditareProfil(true)}>Editează Profilul</button>
+      <h2>Bine ai venit, {HR.name}</h2>
 
+      <div className="container-profil">
+        <h2>{HR.name || 'Nume Implicit'}</h2>
+        <p>Post: {HR.position || 'Poziție Implicită'}</p>
+        <p>Departament: {HR.department || 'Departament Implicit'}</p>
+        <button onClick={handleOpenEditareProfil}>Editează Profilul</button>
       </div>
 
       <Modal
-        isOpen={esteDeschisModalEditareProfil}
-        onRequestClose={() => setEsteDeschisModalEditareProfil(false)}
+        isOpen={editareProfil}
+        onRequestClose={handleCloseEditareProfil}
         contentLabel="Editează Profil"
         className="modal-content"
       >
-        <EditareProfil
-          profil={profil}
-          isOpen={esteDeschisModalEditareProfil}
-          onClose={() => setEsteDeschisModalEditareProfil(false)}
-          onSave={handleSave}
-        />
+        <EditareProfil onSave={handleSave} onCancel={handleCloseEditareProfil} />
       </Modal>
-
 
       <Modal
         isOpen={esteDeschisModalAdaugareEveniment}
-        onRequestClose={() => setEsteDeschisModalAdaugareEveniment(false)}
+        onRequestClose={handleInchideModalAdauga}
         className="modal-content"
       >
         <form onSubmit={handleAdaugaEveniment}>
@@ -252,21 +238,22 @@ const HrDashboard = () => {
         events={events}
         startAccessor="start"
         endAccessor="end"
-        style={{ height: 400 }}
+        style={{ height: 500 }}
       />
-      
-      <div class="button-container">
+
+
+      <div className="button-container">
         <button onClick={deschideModalAdaugareEveniment} className="buton">
           Adaugă eveniment nou
         </button>
       </div>
+
       <br></br>
       <div className="container-statistici">
         <h2>Statisticile departamentelor</h2>
-        <Bar data={graficDepartamente} options={{ scales: { y: { beginAtZero: true } } }} />
+        <Bar data={chartData} options={{ scales: { y: { beginAtZero: true } } }} />
       </div>
     </div>
-
   );
 };
 export default HrDashboard;

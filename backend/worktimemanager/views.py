@@ -1,22 +1,23 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from .models import User, Company, Employee, Owner, Event, HR
-from django.contrib.auth import authenticate, login, logout
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from .models import User, Company, Employee, Owner, Event, HR, Feedback
+from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, EmployeeSerializer, HRSerializer
-from django.shortcuts import render
-from .decorators import is_owner, is_hr, is_employee
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
-from django.http import JsonResponse
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import logout
-from django.http import HttpResponseForbidden
-from functools import wraps
+import logging
+from .decorators import is_hr, is_employee, is_owner;
+from rest_framework import viewsets
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
+logger = logging.getLogger(__name__)
+                           
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -61,29 +62,36 @@ def login_view(request):
     email = request.data.get('email')
     password = request.data.get('password')
     user = authenticate(request, email=email, password=password)
-
+    logger.debug('Login attempt for email: {}'.format(email))   
+    
     if user is not None:
         login(request, user)
-        token, created = Token.objects.get_or_create(user=user)
+        
+
+        refresh = RefreshToken.for_user(user)
+        
+        logger.debug('JWT tokens created for {}: access {}, refresh {}'.format(user.email, str(refresh.access_token), str(refresh)))
+
         return Response({
-            'token': token.key,
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
             'user_id': user.id,
             'email': user.email,
             'role': user.role,
-    }, status=status.HTTP_200_OK)
+        }, status=status.HTTP_200_OK)
     else:
         try:
             user = User.objects.get(email=email)
             if user.check_password(password):
-                # Dacă parola este corectă dar userul nu a fost autentificat, poate exista o problemă cu metoda `authenticate`
-                return Response({'error': 'Autentificarea a eșuat dintr-un motiv necunoscut.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({'error': 'Login failed for an unknown reason.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             else:
-                return Response({'error': 'Parola este incorectă.'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Incorrect password.'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            return Response({'error': 'Emailul nu există.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['GET'])
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def acasa_view(request):
     if request.method == 'GET':
         data = {
@@ -96,108 +104,156 @@ def acasa_view(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_employee_view(request):
-    # Verifică dacă utilizatorul autentificat este owner.
+
     if request.user.role == 'owner':
         user_data = {
             'email': request.data.get('email'),
             'password': request.data.get('password'),
-            'role': request.data.get('role')
+            'role': request.data.get('role'), 
         }
-        
-        # Verifică dacă rolul este corect.
-        if user_data['role'] not in ['hr', 'employee']:
-            return Response({"error": "Rol invalid."}, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Crează noul User și asociază-l cu compania owner-ului.
-        user_data['company'] = request.user.company
-        user_serializer = UserSerializer(data=user_data)
-        
-        if user_serializer.is_valid():
-            user = user_serializer.save()
-            user.set_password(user_data['password'])  # Asigură-te că parola este hash-uită.
-            user.save()
-            
-            # Preia datele suplimentare pentru Employee, dacă există.
-            employee_data = request.data.get('employee')
-            if employee_data:
-                employee_data['user'] = user.id  # Setează utilizatorul creat ca fiind asociat cu Employee.
-                employee_serializer = EmployeeSerializer(data=employee_data)
-                
-                if employee_serializer.is_valid():
-                    employee_serializer.save()
-                    return Response(employee_serializer.data, status=status.HTTP_201_CREATED)
-                else:
-                    user.delete()  # Șterge utilizatorul dacă datele Employee nu sunt valide.
-                    return Response(employee_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            else:
-                # Dacă nu sunt date suplimentare Employee, returnează doar user.
-                return Response(user_serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.create_user(**user_data)
+        is_hr = user_data['role'] == 'hr'
+        employee = Employee.objects.create(user=user, is_hr=is_hr, **request.data)
+        return Response(EmployeeSerializer(employee).data, status=status.HTTP_201_CREATED)
+    else:
+        return Response({'error': 'Doar proprietarul poate adăuga angajați sau HR.'}, status=status.HTTP_403_FORBIDDEN)
 
+@api_view(['POST'])
+@permission_classes([IsAdminUser]) 
+def create_hr_user(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save(is_hr=True)  
+        return Response(serializer.data)
+    else:
+        return Response(serializer.errors)
 
+@api_view(['POST'])
+@permission_classes([IsAdminUser]) 
+def create_employee_user(request):
+    serializer = EmployeeSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save(is_employee=True)  
+        return Response(serializer.data)
+    else:
+        return Response(serializer.errors)
+    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
-    logout(request)
-    return Response({"detail": "Logout successful."}, status=status.HTTP_200_OK)
+    try:
+        refresh_token = request.data.get("refresh_token")
+        if refresh_token is None:
+            raise ValueError("Refresh token is required.")
+
+        token = RefreshToken(refresh_token)
+        token.blacklist()
+
+        return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
-@is_owner
+@permission_classes([IsAdminUser]) 
+
 def owner_dashboard(request):
     try:
-        owner = request.user.owner
+        owner = request.user.owner  
         company = owner.company
-        events = company.events.all()  
-        return Response({
-            'company': CompanySerializer(company).data,
-            'events': EventSerializer(events, many=True).data
-        })
-    except Owner.DoesNotExist:
-        return Response({'error': 'Profilul de owner nu există.'}, status=404)
+        events = company.events.all()
+        company_data = CompanySerializer(company).data
+        events_data = EventSerializer(events, many=True).data
+        return Response({'company': company_data, 'events': events_data})
+    except Exception as e:
+        logger.error(f'Eroare la procesarea request-ului: {str(e)}')
+        return Response({'error': 'A avut loc o eroare.'}, status=500)
+
    
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAdminUser]) 
 def company_details_view(request):
-    # Presupunând că fiecare user are asociată o companie
-    company = request.user.company
-    serializer = CompanySerializer(company)
-    return Response(serializer.data)
+    try:
+        owner = request.user.owner 
+        company = owner.company
+        serializer = CompanySerializer(company)
+        return Response(serializer.data)
+    except Owner.DoesNotExist:
+        return Response({'error': 'Acest utilizator nu este un owner.'}, status=404)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def events_view(request):
-    company = request.user.company
-    events = Event.objects.filter(company=company)
+    events = Event.objects.filter(company=request.user.company)
     serializer = EventSerializer(events, many=True)
     return Response(serializer.data)
 
-@api_view(['GET'])
+@api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
-@is_hr
 def hr_dashboard(request):
+    print('test',request)
+    if not request.user.is_authenticated:
+        return Response({'error': 'Authentication required'}, status=403)   
+
+    if not hasattr(request.user, 'hr'):
+        return Response({'error': 'Nu aveți permisiunea de a accesa această resursă.'}, status=403)
+    
     try:
-        hr_profile = request.user.hr_profile  # Presupunând că ai o relație one-to-one de la User la HR cu related_name='hr_profile'
-        # Logica pentru a prelua datele necesare pentru dashboard-ul HR
+        hr = request.user.hr  
         return Response({
-            'hr_info': HRSerializer(hr_profile).data  # Presupunând că ai un serializer pentru HR
+            'name': hr.name,  
+            'department': hr.department,
+            'position': hr.position
         })
     except HR.DoesNotExist:
-        return Response({'error': 'Profilul HR nu există.'}, status=404)
+        return Response({'error': 'HR profile not found'}, status=404)
+    except Exception as e:
+        return Response({'error': 'An unexpected error occurred'}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @is_employee
 def employee_dashboard(request):
     try:
-        employee_profile = request.user.employee_profile  # Presupunând că ai o relație one-to-one de la User la Employee cu related_name='employee_profile'
-        # Logica pentru a prelua datele necesare pentru dashboard-ul Employee
-        return Response({
-            'employee_info': EmployeeSerializer(employee_profile).data  # Presupunând că ai un serializer pentru Employee
-        })
-    except Employee.DoesNotExist:
-        return Response({'error': 'Profilul Employee nu există.'}, status=404)
+        employee_profile = Employee.objects.filter(user=request.user, is_hr=False).first()
+        if employee_profile:
+            company = employee_profile.company
+            events = Event.objects.filter(company=company)
+            return Response({
+                'employee_info': EmployeeSerializer(employee_profile).data, 
+                'events': EventSerializer(events, many=True).data
+            })
+        else:
+            return Response({'error': 'Profilul angajatului nu există sau accesul nu este permis.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+
+
+class FeedbackList(viewsets.ModelViewSet):
+    queryset = Feedback.objects.all()
+    serializer_class = FeedbackSerializer
+
+
+    def post(self, request):
+        serializer = FeedbackSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+
+@api_view(['GET'])
+def events_view(request):
+    events = Event.objects.all()
+    serializer = EventSerializer(events, many=True)
+    return Response(serializer.data)
+
+class EmployeeViewSet(viewsets.ModelViewSet):
+    queryset = Employee.objects.all()
+    serializer_class = EmployeeSerializer
+    permission_classes = [IsAuthenticated]

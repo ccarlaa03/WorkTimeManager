@@ -1,16 +1,34 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const LogoutComponent = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // La montarea componentului, efectuează logout
-    localStorage.removeItem('access');
-    navigate('/login');
-  }, [navigate]);
+    (async () => {
+      try {
+        await axios.post('http://localhost:8000/logout/', {
+          refresh_token: localStorage.getItem('refresh_token')
+        }, {
+          headers: {'Content-Type': 'application/json'},
+          withCredentials: true
+        });
+      } catch (e) {
+        console.log('Logout failed', e);
+      }
 
-  return null; // sau un spinner în timp ce se efectuează logout
+
+      localStorage.clear();
+      delete axios.defaults.headers.common['Authorization'];
+
+  
+      navigate('/login');
+    })();
+  }, [navigate]); 
+
+
+  return null;
 };
 
 export default LogoutComponent;

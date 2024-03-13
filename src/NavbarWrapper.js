@@ -1,37 +1,49 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import NavbarAngajat from './components/Angajat/Navbar-angajat';
 import NavbarVizitator from './components/vizitator/Navbar';
-import NavbarHR from './components/HR/NavbarHR';
+import NavbarHR from './components/Hr/NavbarHR';
 import NavbarOwner from './components/Owner/NavbarOwner';
 
 const NavbarWrapper = () => {
   const navigate = useNavigate();
-  const isAuthenticated = !!localStorage.getItem('token'); // Asigură-te că există un token în localStorage
-  const userRole = localStorage.getItem('role'); // Presupunem că rolul este stocat în localStorage la login
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+  const userRole = localStorage.getItem('role');
+
+  useEffect(() => {
+    console.log('isAuthenticated:', isAuthenticated);
+    console.log('userRole:', userRole);
+  }, [isAuthenticated, userRole]);
 
   const handleLogout = async () => {
     try {
-      await axios.post('/api/logout/');
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-      navigate('/login');
+      if (isAuthenticated) {
+        await axios.post('/logout', {
+          refresh_token: localStorage.getItem('refresh_token')
+        }, {
+          headers: {'Content-Type': 'application/json'},
+          withCredentials: true
+        });
+        localStorage.clear();
+        setIsAuthenticated(false); 
+        navigate('/login');
+      }
     } catch (error) {
-      console.error('Eroare la logout:', error);
+      console.error('Error during logout:', error);
     }
   };
 
-  // În funcție de rolul utilizatorului, decide care navbar să returnezi
-  if (isAuthenticated && userRole === 'owner') {
-    return <NavbarOwner onLogout={handleLogout} />;
-  } else if (isAuthenticated && userRole === 'employee') {
-    return <NavbarAngajat onLogout={handleLogout} />;
-  } else if (isAuthenticated && userRole === 'hr') {
-    return <NavbarHR onLogout={handleLogout} />;
-  } else {
-    // Dacă nu este autentificat, arată navbar-ul pentru vizitatori
-    return <NavbarVizitator />;
+  // Decide which Navbar to render based on the user's role
+  switch (userRole) {
+    case 'owner':
+      return <NavbarOwner onLogout={handleLogout} />;
+    case 'hr':
+      return <NavbarHR onLogout={handleLogout} />;
+    case 'employee':
+      return <NavbarAngajat onLogout={handleLogout} />;
+    default:
+      return <NavbarVizitator />;
   }
 };
 

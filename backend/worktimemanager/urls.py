@@ -22,18 +22,22 @@ from django.views.static import serve
 from . import views
 from django.views.generic.base import RedirectView
 from .views import logout_view
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),  
+    path('api/admin/', admin.site.urls),  
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/signup/', views.signup_view, name='signup'),
-    path('api/login/', views.login_view, name='login'),
+    path('login/', views.login_view, name='login'),
     path('acasa/', views.acasa_view, name='acasa'),
-    path('api/logout/', logout_view, name='logout'),
+    path('logout/', logout_view, name='logout'),
     path('owner-dashboard/', views.owner_dashboard, name='owner-dashboard'),
     path('hr-dashboard/', views.hr_dashboard, name='hr-dashboard'),
     path('employee-dashboard/', views.employee_dashboard, name='employee-dashboard'),
-    path('api/company-details/', views.company_details_view, name='company-details'),
-    path('api/events/', views.events_view, name='events'),
+    path('gestionare-ang/', views.employee_dashboard, name='gestionare-ang'),
+    path('events/', views.events_view, name='events'),
+    path('employees/', views.events_view, name='employees'),
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

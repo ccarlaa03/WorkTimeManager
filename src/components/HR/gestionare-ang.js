@@ -1,37 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
 import FormularAdaugareAngajat from './Formular-adaug';
 import ReactPaginate from 'react-paginate';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 Modal.setAppElement('#root');
 
 const GestionareAngajati = () => {
-    const [angajati, setAngajati] = useState([
-        { id: 1, nume: 'Ion Popescu', telefon: '071267891', email: 'ion.popescu@yahoo.com', departament: 'IT', functie: 'Developer', prezenta: 'Prezent', adresa: ' str. Mare 10 Baia Mare', data: '12.01.2024' },
-        // ... alți angajați
-    ]);
-    const navigate = useNavigate();
-
+    const [angajati, setAngajati] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
-
     const [filter, setFilter] = useState({
         nume: '',
         functie: '',
         departament: '',
         dataAngajarii: '',
     });
+    const [angajatEditat, setAngajatEditat] = useState(null);
+    const [modalEditareIsOpen, setModalEditareIsOpen] = useState(false);
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const response = await axios.get('http://localhost:3000/gestionare-ang/');
+                setAngajati(response.data);
+            } catch (error) {
+                console.error("Error fetching data: ", error.response ? error.response.data : error);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const handleSearch = () => {
-
+        // implementare căutare
     };
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilter(prevFilters => ({
             ...prevFilters,
             [name]: value
         }));
+    };
+
+    const handlePageChange = ({ selected }) => {
+        setCurrentPage(selected);
+    };
+
+    const handleSearchChange = (e) => {
+        setFilter({ ...filter, nume: e.target.value });
+        setCurrentPage(0);
+    };
+
+    const adaugaAngajat = (angajatNou) => {
+        setAngajati([...angajati, angajatNou]);
+        closeModal();
+    };
+
+    const stergeAngajat = (id) => {
+        setAngajati(angajati.filter(angajat => angajat.id !== id));
+    };
+
+    const sortAngajati = (criteria) => {
+        const sortedAngajati = [...angajati];
+        sortedAngajati.sort((a, b) => {
+            if (a[criteria] < b[criteria]) {
+                return -1;
+            }
+            if (a[criteria] > b[criteria]) {
+                return 1;
+            }
+            return 0;
+        });
+        setAngajati(sortedAngajati);
     };
 
     const filteredAngajati = angajati.filter(angajat => {
@@ -42,25 +86,17 @@ const GestionareAngajati = () => {
     });
 
     const angajatiPerPage = 10;
-
-    // Calcularea indexului de început și a indexului de sfârșit pentru afișarea angajaților pe pagina curentă
     const indexOfLastAngajat = (currentPage + 1) * angajatiPerPage;
     const indexOfFirstAngajat = indexOfLastAngajat - angajatiPerPage;
     const angajatiPaginaCurenta = filteredAngajati.slice(indexOfFirstAngajat, indexOfLastAngajat);
 
-    // Funcția pentru schimbarea paginii curente
-    const handlePageChange = ({ selected }) => {
-        setCurrentPage(selected);
+    const openModal = () => {
+        setModalIsOpen(true);
     };
 
-    const handleSearchChange = (e) => {
-        setFilter({ ...filter, nume: e.target.value });
-        setCurrentPage(0);
+    const closeModal = () => {
+        setModalIsOpen(false);
     };
-
-    const [angajatEditat, setAngajatEditat] = useState(null);
-    const [modalEditareIsOpen, setModalEditareIsOpen] = useState(false);
-    const [modalIsOpen, setModalIsOpen] = useState(false);
 
     const deschideModalEditare = (angajat) => {
         setAngajatEditat(angajat);
@@ -82,39 +118,6 @@ const GestionareAngajati = () => {
         setAngajati(angajatiActualizati);
         inchideModalEditare();
     };
-
-    const openModal = () => {
-        setModalIsOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalIsOpen(false);
-    };
-
-    const adaugaAngajat = (angajatNou) => {
-        setAngajati([...angajati, angajatNou]);
-        closeModal();
-    };
-
-    const stergeAngajat = (id) => {
-        setAngajati(angajati.filter(angajat => angajat.id !== id));
-    };
-
-    // Funcția pentru sortare
-    const sortAngajati = (criteria) => {
-        const sortedAngajati = [...angajati];
-        sortedAngajati.sort((a, b) => {
-            if (a[criteria] < b[criteria]) {
-                return -1;
-            }
-            if (a[criteria] > b[criteria]) {
-                return 1;
-            }
-            return 0;
-        });
-        setAngajati(sortedAngajati);
-    };
-
 
     return (
         <div>

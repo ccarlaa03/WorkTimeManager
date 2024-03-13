@@ -5,7 +5,9 @@ import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import '../../styles/App.css';
 
+
 const localizer = momentLocalizer(moment);
+
 
 const OwnerDashboard = () => {
   const [company, setCompany] = useState(null);
@@ -24,17 +26,15 @@ const OwnerDashboard = () => {
       };
 
       try {
-        const companyRes = await axios.get('http://localhost:8000/api/company-details/', config);
-        setCompany(companyRes.data);
-
-        const eventsRes = await axios.get('http://localhost:8000/api/events/', config);
-        setEvents(eventsRes.data.map(event => ({
+        const dashboardRes = await axios.get('http://localhost:8000/owner-dashboard/', config);
+        setCompany(dashboardRes.data.company);
+        setEvents(dashboardRes.data.events.map(event => ({
           ...event,
           start: new Date(event.start),
           end: new Date(event.end)
         })));
       } catch (error) {
-        console.error("Error fetching data: ", error);
+        console.error("Error fetching data: ", error.response || error);
       }
     };
 
@@ -43,8 +43,8 @@ const OwnerDashboard = () => {
 
   return (
     <div className="container-dashboard">
-      <h1>Owner Dashboard</h1>
-      {company && (
+      <h1>Dashboard</h1>
+      {company ? (
         <div className="company-info">
           <h2>{company.name}</h2>
           <p>Adresa: {company.address}</p>
@@ -54,7 +54,10 @@ const OwnerDashboard = () => {
           <p>Număr de angajați: {company.number_of_employees}</p>
           <p>Data înființării: {new Date(company.founded_date).toLocaleDateString()}</p>
         </div>
+      ) : (
+        <p>Încărcare detalii companie...</p>
       )}
+
       <div className="calendar-section">
         <Calendar
           localizer={localizer}
