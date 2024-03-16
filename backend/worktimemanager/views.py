@@ -280,9 +280,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 @api_view(['PUT'])
-def update_profile(request, pk):
+@permission_classes([IsAuthenticated])
+def update_profile(request, user_id):
     try:
-        hr = HR.objects.get(pk=pk)
+        hr = HR.objects.get(user__id=user_id)
         serializer = HRSerializer(hr, data=request.data)
         if serializer.is_valid():
             serializer.save()

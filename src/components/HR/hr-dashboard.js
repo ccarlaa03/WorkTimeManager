@@ -36,7 +36,7 @@ const HrDashboard = () => {
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', start: moment().toDate(), end: moment().toDate() });
   const getAccessToken = () => localStorage.getItem('access_token');
-  const [inputValue, setInputValue] = useState('');
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
 
   useEffect(() => {
@@ -58,8 +58,10 @@ const HrDashboard = () => {
             position: hrResponse.data.position || '',
             department: hrResponse.data.department || '',
             company: hrResponse.data.company || '',
+            user_id: hrResponse.data.user_id || '',
           });
         }
+        
         const eventsResponse = await axios.get('/events/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -82,12 +84,15 @@ const HrDashboard = () => {
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     const accessToken = getAccessToken();
-    if (!accessToken || !HR.id) {
-      console.error("Authorization required or user ID missing.");
+    if (!accessToken) {
+      console.error("No access token provided.");
       return;
     }
-    if (!HR.id) {
-      console.error("User ID is undefined. Cannot update profile without a user ID.");
+
+    const userId = HR.id;
+  
+    if (!userId) {
+      console.error("User ID is undefined.");
       return;
     }
 
@@ -95,24 +100,35 @@ const HrDashboard = () => {
       name: HR.name,
       position: HR.position,
       department: HR.department,
-      company: HR.company,
+      company: HR.company.id,
+      id: HR.id,
     };
+
+    console.log('Submitting profile update:', profileData);
+
     try {
-      const response = await axios.put('update-profile/', profileData, {
+      const response = await axios.put(`http://localhost:8000/update-profile/${userId}/`, profileData, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json'
-        }
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
       });
+      
       console.log('Profile updated successfully', response.data);
-      closeEditProfileModal();
+      setUpdateSuccess(true); 
+      closeEditProfileModal(); 
+      setTimeout(() => {
+        setUpdateSuccess(false);
+      }, 3000);
     } catch (error) {
       console.error('Error during profile update:', error);
       if (error.response) {
         console.error('Error data:', error.response.data);
       }
     }
-  }
+  };
+
+
   const handleEventInputChange = (e) => {
     const { name, value } = e.target;
 
@@ -136,10 +152,10 @@ const HrDashboard = () => {
     }
     const eventData = {
       title: newEvent.title,
-      description: newEvent.description, 
+      description: newEvent.description,
       start: newEvent.start instanceof Date ? newEvent.start.toISOString() : newEvent.start,
       end: newEvent.end instanceof Date ? newEvent.end.toISOString() : newEvent.end,
-      company: HR.company 
+      company: HR.company
     };
 
     try {
@@ -151,7 +167,7 @@ const HrDashboard = () => {
       });
 
       console.log('Event added successfully', response.data);
-      setIsAddEventModalOpen(false); 
+      setIsAddEventModalOpen(false);
       setEvents([...events, { ...response.data, start: new Date(response.data.start), end: new Date(response.data.end) }]);
     } catch (error) {
       console.error('Error during event addition:', error.response ? error.response.data : error.message);
@@ -198,7 +214,7 @@ const HrDashboard = () => {
         <p>Companie: {HR.company || 'Companie Implicită'}</p>
         <button onClick={openEditProfileModal}>Editează Profilul</button>
       </div>
-
+      {updateSuccess && <div className="update-success-message">Datele au fost actualizate cu succes!</div>}
       <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content">
         <form onSubmit={handleProfileUpdate}>
           <label>Nume:</label>

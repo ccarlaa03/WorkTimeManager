@@ -486,17 +486,55 @@ button {
 
 .modal-content {
   background: #E4E9EF;
-  padding: 5px;
+  padding: 20px; /* Adjusted for inner spacing */
   border-radius: 2px;
   width: auto;
-  max-width: auto;
+  max-width: 600px; /* You can set a max-width for better appearance */
   position: fixed;
   top: 35%;
   left: 50%;
   transform: translate(-50%, -50%);
+  display: flex; /* Ensure that this is set to flex for the children to align properly */
   flex-direction: column;
   align-items: stretch;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Optional: for drop shadow */
 }
+
+.modal-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.update-success-message {
+  color: green;
+  text-align: center;
+  padding: 10px;
+  margin-top: 10px;
+  border: 1px solid green;
+  border-radius: 5px;
+}
+
+.modal-content form button {
+  padding: 10px 20px;
+  background-color: #A087BC;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 15px;
+}
+
+.modal-content form input,
+.modal-content form label {
+  margin-bottom: 5px;
+}
+
+
+.modal-content form button[type="submit"] {
+  margin-top: 20px; 
+}
+
 
 .zi-calendar.cu-eveniment {
   background-color: #50c55a;

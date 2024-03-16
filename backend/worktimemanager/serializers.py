@@ -36,7 +36,7 @@ class HRSerializer(serializers.ModelSerializer):
     class Meta:
         model = HR
         fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
+        read_only_fields = ('user',)
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company

@@ -37,7 +37,8 @@ urlpatterns = [
     path('gestionare-ang/', views.employee_dashboard, name='gestionare-ang'),
     path('events/', views.events_view, name='events'),
     path('employees/', views.events_view, name='employees'),
-    path('update-profile/', views.update_profile, name='update-profile'),
+    path('update-profile/<int:user_id>/', views.update_profile, name='update_profile'),
+
     path('add-event/', views.add_event, name='add-event'),
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
