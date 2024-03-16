@@ -3,9 +3,9 @@ import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Bar } from 'react-chartjs-2';
-import EditareProfil from '../Angajat/editare-profil';
 import Modal from 'react-modal';
 import instance from '../../axiosConfig';
+import 'chart.js/auto';
 import axios from 'axios';
 
 import {
@@ -30,112 +30,156 @@ ChartJS.register(
 const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
-  const [HR, setHR] = useState({});
-  const [accessToken, setAccessToken] = useState('');
+  const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '' });
   const [events, setEvents] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [editareProfil, setEditareProfil] = useState(false);
-  const [esteDeschisModalAdaugareEveniment, setEsteDeschisModalAdaugareEveniment] = useState(false);
-  const [evenimentNou, setEvenimentNou] = useState({
-    title: '',
-    startDate: '',
-    startTime: '',
-    endDate: '',
-    endTime: '',
-  });
+  const [profileEdit, setEditProfile] = useState(false);
+  const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
+  const [newEvent, setNewEvent] = useState({ title: '', start: moment().toDate(), end: moment().toDate() });
+  const getAccessToken = () => localStorage.getItem('access_token');
+  const [inputValue, setInputValue] = useState('');
+
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = localStorage.getItem('access_token'); // Use 'access_token', not 'token'
+      const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
         console.log("No access token found. User is not logged in.");
         return;
       }
 
       try {
-        const response = await axios.get('http://localhost:8000/hr-dashboard/', {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+        const hrResponse = await instance.get('/hr-dashboard/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-
-        console.log(response.data);
-        setHR(response.data);
+        if (hrResponse.data) {
+          setHR({
+            id: hrResponse.data.id || '',
+            name: hrResponse.data.name || '',
+            position: hrResponse.data.position || '',
+            department: hrResponse.data.department || '',
+            company: hrResponse.data.company || '',
+          });
+        }
+        const eventsResponse = await axios.get('/events/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        setEvents(eventsResponse.data.map(event => ({
+          ...event,
+          start: new Date(event.start),
+          end: new Date(event.end),
+        })));
       } catch (error) {
         console.error("Error fetching data:", error.response ? error.response.data : error.message);
-        // If the token is invalid or expired, you can handle it here
       }
     };
-
     fetchData();
-  }, []);;
+  }, []);
 
-  
-
-  /*try {
-    const eventsResponse = await axios.get('http://localhost:8000/events/');
-    setEvents(eventsResponse.data.map(event => ({
-      ...event,
-      start: new Date(event.start),
-      end: new Date(event.end)
-    })));
- 
-    const employeesResponse = await axios.get('http://localhost:8000/employees/');
-    setEmployees(employeesResponse.data);
-  } 
-  
-catch (error) {
-    console.error("Error fetching data:", error.response ? error.response.data : error.message);
-  }*/
-
-
-  const handleSave = (dateActualizate) => {
-    console.log('Salvarea datelor profilului', dateActualizate);
-    setEditareProfil(false);
-  };
-
-  const handleOpenEditareProfil = () => setEditareProfil(true);
-  const handleCloseEditareProfil = () => setEditareProfil(false);
-  const handleInchideModalAdauga = () => setEsteDeschisModalAdaugareEveniment(false);
-
-  const handleInputChange = (e) => {
+  const handleProfileChange = (e) => {
     const { name, value } = e.target;
-    setEvenimentNou(prevState => ({
-      ...prevState,
-      [name]: value
-    }));
+    setHR((prevHR) => ({ ...prevHR, [name]: value }));
+  };
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    const accessToken = getAccessToken();
+    if (!accessToken || !HR.id) {
+      console.error("Authorization required or user ID missing.");
+      return;
+    }
+    if (!HR.id) {
+      console.error("User ID is undefined. Cannot update profile without a user ID.");
+      return;
+    }
+
+    const profileData = {
+      name: HR.name,
+      position: HR.position,
+      department: HR.department,
+      company: HR.company,
+    };
+    try {
+      const response = await axios.put('update-profile/', profileData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Profile updated successfully', response.data);
+      closeEditProfileModal();
+    } catch (error) {
+      console.error('Error during profile update:', error);
+      if (error.response) {
+        console.error('Error data:', error.response.data);
+      }
+    }
+  }
+  const handleEventInputChange = (e) => {
+    const { name, value } = e.target;
+
+    const newValue = (name === 'start' || name === 'end') ? new Date(value) : value;
+
+    setNewEvent({ ...newEvent, [name]: newValue });
   };
 
-  const deschideModalAdaugareEveniment = () => {
-    setEvenimentNou({
-      ...evenimentNou,
+
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      console.error("No access token provided.");
+      return;
+    }
+
+    if (!HR.company) {
+      console.error("No company ID associated with this HR user.");
+      return;
+    }
+    const eventData = {
+      title: newEvent.title,
+      description: newEvent.description, 
+      start: newEvent.start instanceof Date ? newEvent.start.toISOString() : newEvent.start,
+      end: newEvent.end instanceof Date ? newEvent.end.toISOString() : newEvent.end,
+      company: HR.company 
+    };
+
+    try {
+      const response = await axios.post(`http://localhost:8000/add-event/`, eventData, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('Event added successfully', response.data);
+      setIsAddEventModalOpen(false); 
+      setEvents([...events, { ...response.data, start: new Date(response.data.start), end: new Date(response.data.end) }]);
+    } catch (error) {
+      console.error('Error during event addition:', error.response ? error.response.data : error.message);
+      if (error.response) {
+        console.error('Full error response:', error.response);
+      }
+    }
+  };
+
+
+  const openEditProfileModal = () => setEditProfile(true);
+  const closeEditProfileModal = () => setEditProfile(false);
+  const closeAddEventModal = () => setIsAddEventModalOpen(false);
+
+  const openAddEventModal = () => {
+    setNewEvent({
+      ...newEvent,
       start: new Date(),
       end: new Date(),
     });
-    setEsteDeschisModalAdaugareEveniment(true);
+    setIsAddEventModalOpen(true);
   };
-
-  const handleAdaugaEveniment = (e) => {
-    e.preventDefault();
-    const evenimentAdaugat = {
-      title: evenimentNou.title,
-      start: new Date(`${evenimentNou.startDate}T${evenimentNou.startTime}`),
-      end: new Date(`${evenimentNou.endDate}T${evenimentNou.endTime}`),
-    };
-
-    setEvents(prevEvents => [...prevEvents, evenimentAdaugat]);
-    setEsteDeschisModalAdaugareEveniment(false);
-    setEvenimentNou({ title: '', startDate: '', startTime: '', endDate: '', endTime: '' });
-  };
-
-  const departments = [...new Set(employees.map(emp => emp.department))];
-  const departmentData = departments.map(dept => employees.filter(emp => emp.department === dept).length);
 
   const chartData = {
-    labels: departments,
+    labels: ['Department 1', 'Department 2', 'Department 3'],
     datasets: [{
       label: 'Numărul de angajați pe departament',
-      data: departmentData,
+      data: [10, 20, 30],
       backgroundColor: 'rgba(54, 162, 235, 0.2)',
       borderColor: 'rgba(54, 162, 235, 1)',
       borderWidth: 1,
@@ -151,85 +195,82 @@ catch (error) {
         <h2>{HR.name || 'Nume Implicit'}</h2>
         <p>Post: {HR.position || 'Poziție Implicită'}</p>
         <p>Departament: {HR.department || 'Departament Implicit'}</p>
-        <button onClick={handleOpenEditareProfil}>Editează Profilul</button>
+        <p>Companie: {HR.company || 'Companie Implicită'}</p>
+        <button onClick={openEditProfileModal}>Editează Profilul</button>
       </div>
 
-      <Modal
-        isOpen={editareProfil}
-        onRequestClose={handleCloseEditareProfil}
-        contentLabel="Editează Profil"
-        className="modal-content"
-      >
-        <EditareProfil onSave={handleSave} onCancel={handleCloseEditareProfil} />
+      <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content">
+        <form onSubmit={handleProfileUpdate}>
+          <label>Nume:</label>
+          <input
+            type="text"
+            name="name"
+            value={HR.name}
+            onChange={handleProfileChange}
+          />
+          <label>Post:</label>
+          <input
+            type="text"
+            name="position"
+            value={HR.position}
+            onChange={(e) => setHR({ ...HR, position: e.target.value })}
+          />
+          <label>Departament:</label>
+          <input
+            type="text"
+            name="department"
+            value={HR.department}
+            onChange={(e) => setHR({ ...HR, department: e.target.value })}
+          />
+          <label>Companie:</label>
+          <input
+            type="text"
+            name="company"
+            value={HR.company}
+            onChange={(e) => setHR({ ...HR, company: e.target.value })}
+          />
+
+          <button type="submit">Salvează modificările</button>
+        </form>
       </Modal>
 
-      <Modal
-        isOpen={esteDeschisModalAdaugareEveniment}
-        onRequestClose={handleInchideModalAdauga}
-        className="modal-content"
-      >
-        <form onSubmit={handleAdaugaEveniment}>
-          <div className="form-group">
-            <label>Eveniment:</label>
-            <input
-              type="text"
-              name="title"
-              value={evenimentNou.title}
-              onChange={handleInputChange}
-              required
-            />
-          </div>
-          <div className="form-row" style={{ display: 'flex' }}>
-            <div className="form-group">
-              <label>Data de început:</label>
-              <input
-                type="date"
-                name="startDate"
-                value={evenimentNou.startDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Ora de început:</label>
-              <input
-                type="time"
-                name="startTime"
-                value={evenimentNou.startTime}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-          <div className="form-row" style={{ display: 'flex' }}>
-            <div className="form-group">
-              <label>Data de sfârșit:</label>
-              <input
-                type="date"
-                name="endDate"
-                value={evenimentNou.endDate}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Ora de sfârșit:</label>
-              <input
-                type="time"
-                name="endTime"
-                value={evenimentNou.endTime}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="button-container">
-            <button className='buton' type="submit">Adaugă</button>
-            <button className='buton' type="button" onClick={handleInchideModalAdauga}>Închide</button>
-          </div>
+      <Modal isOpen={isAddEventModalOpen} onRequestClose={closeAddEventModal} contentLabel="Adaugă Eveniment" className="modal-content">
+        <form onSubmit={handleAddEvent}>
+          <label>Eveniment:</label>
+          <input
+            type="text"
+            name="title"
+            placeholder="Titlu Eveniment"
+            value={newEvent.title}
+            onChange={handleEventInputChange}
+            required
+          />
+          <label>Descrie:</label>
+          <input
+            type="text"
+            name="description"
+            placeholder="Descrie"
+            value={newEvent.description}
+            onChange={handleEventInputChange}
+            required
+          />
+          <label>Data de început:</label>
+          <input
+            type="datetime-local"
+            name="start"
+            value={moment(newEvent.start).format("YYYY-MM-DDTHH:mm")}
+            onChange={handleEventInputChange}
+            required
+          />
+          <label>Data de sfârșit:</label>
+          <input
+            type="datetime-local"
+            name="end"
+            value={moment(newEvent.end).format("YYYY-MM-DDTHH:mm")}
+            onChange={handleEventInputChange}
+            required
+          />
+          <button className="button" type="submit">Adaugă Eveniment</button>
         </form>
       </Modal>
 
@@ -241,14 +282,13 @@ catch (error) {
         style={{ height: 500 }}
       />
 
-
       <div className="button-container">
-        <button onClick={deschideModalAdaugareEveniment} className="buton">
+        <button onClick={openAddEventModal} className="button">
           Adaugă eveniment nou
         </button>
       </div>
 
-      <br></br>
+      <br />
       <div className="container-statistici">
         <h2>Statisticile departamentelor</h2>
         <Bar data={chartData} options={{ scales: { y: { beginAtZero: true } } }} />
@@ -256,5 +296,5 @@ catch (error) {
     </div>
   );
 };
-export default HrDashboard;
 
+export default HrDashboard;

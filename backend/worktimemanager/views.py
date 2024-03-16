@@ -1,4 +1,6 @@
-from rest_framework.decorators import api_view, permission_classes
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from .models import User, Company, Employee, Owner, Event, HR, Feedback
@@ -13,7 +15,8 @@ from .decorators import is_hr, is_employee, is_owner;
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from django.contrib.auth import get_user_model
+from rest_framework.authentication import TokenAuthentication
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -90,7 +93,7 @@ def login_view(request):
             return Response({'error': 'Email does not exist.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([AllowAny])
 def acasa_view(request):
     if request.method == 'GET':
@@ -121,12 +124,11 @@ def create_employee_view(request):
 @api_view(['POST'])
 @permission_classes([IsAdminUser]) 
 def create_hr_user(request):
-    serializer = UserSerializer(data=request.data)
+    serializer = HRSerializer(data=request.data)
     if serializer.is_valid():
-        user = serializer.save(is_hr=True)  
-        return Response(serializer.data)
-    else:
-        return Response(serializer.errors)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser]) 
@@ -142,16 +144,12 @@ def create_employee_user(request):
 @permission_classes([IsAuthenticated])
 def logout_view(request):
     try:
-        refresh_token = request.data.get("refresh_token")
-        if refresh_token is None:
-            raise ValueError("Refresh token is required.")
-
+        refresh_token = request.data.get('refresh_token')
         token = RefreshToken(refresh_token)
         token.blacklist()
-
-        return Response({"detail": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
+        return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_205_RESET_CONTENT)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 
@@ -183,29 +181,38 @@ def company_details_view(request):
         return Response({'error': 'Acest utilizator nu este un owner.'}, status=404)
 
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_event(request):
+    company = request.user.hr.company 
+    event_data = request.data
+    event_data['company'] = company.id  
+    serializer = EventSerializer(data=event_data)
+    if serializer.is_valid():
+        serializer.save() 
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def events_view(request):
-    events = Event.objects.filter(company=request.user.company)
-    serializer = EventSerializer(events, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
 def hr_dashboard(request):
-    print('test',request)
     if not request.user.is_authenticated:
-        return Response({'error': 'Authentication required'}, status=403)   
+        return Response({'error': 'Authentication required'}, status=403)
 
     if not hasattr(request.user, 'hr'):
         return Response({'error': 'Nu aveți permisiunea de a accesa această resursă.'}, status=403)
-    
+
     try:
-        hr = request.user.hr  
+        hr = request.user.hr
+        company_name = hr.company.name if hr.company else None  
         return Response({
-            'name': hr.name,  
+            'id': hr.user.id,
+            'name': hr.name,
             'department': hr.department,
-            'position': hr.position
+            'position': hr.position,
+            'company': company_name,  
         })
     except HR.DoesNotExist:
         return Response({'error': 'HR profile not found'}, status=404)
@@ -248,12 +255,57 @@ class FeedbackList(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def events_view(request):
-    events = Event.objects.all()
-    serializer = EventSerializer(events, many=True)
-    return Response(serializer.data)
+    user = request.user
+    company = None
 
+    if hasattr(user, 'owner'):
+        company = user.owner.company
+    elif hasattr(user, 'hr'):
+        company = user.hr.company
+    elif hasattr(user, 'employee'):
+        company = user.employee.company
+
+    if company:
+        events = Event.objects.filter(company=company)
+        serializer = EventSerializer(events, many=True)
+        return Response(serializer.data)
+    else:
+        return Response({'error': 'No company found for user.'}, status=status.HTTP_404_NOT_FOUND)
+    
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
+
+@api_view(['PUT'])
+def update_profile(request, pk):
+    try:
+        hr = HR.objects.get(pk=pk)
+        serializer = HRSerializer(hr, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except HR.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+    
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_hr(request, pk):
+    try:
+        hr = HR.objects.get(pk=pk)
+        hr.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except HR.DoesNotExist:
+        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
+  
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_all_hr(request):
+    hrs = HR.objects.all()
+    serializer = HRSerializer(hrs, many=True)
+    return Response(serializer.data)

@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import NavbarAngajat from './components/Angajat/Navbar-angajat';
 import NavbarVizitator from './components/vizitator/Navbar';
-import NavbarHR from './components/Hr/NavbarHR';
+import NavbarHR from './components/HR/NavbarHR';
 import NavbarOwner from './components/Owner/NavbarOwner';
 
 const NavbarWrapper = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
+  const [isAuthenticated, setIsAuthenticated] = useState(!localStorage.getItem('token'));
   const userRole = localStorage.getItem('role');
 
   useEffect(() => {

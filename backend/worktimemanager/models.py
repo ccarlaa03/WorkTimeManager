@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError('The Email must be set')
+            raise ValueError(_('The Email must be set'))
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -20,14 +20,26 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_owner', True)
         extra_fields.setdefault('is_active', True)
         return self.create_user(email, password, **extra_fields)
-    
-def create_hr_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_hr', True)
-        return self.create_user(email, password, **extra_fields)
 
-def create_employee_user(self, email, password=None, **extra_fields):
+    def create_hr_user(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_hr', True)
+        # Asigură-te că 'company' este furnizat în extra_fields
+        if 'company' not in extra_fields:
+            raise ValueError(_('Company must be set for HR user'))
+        user = self.create_user(email, password, **extra_fields)
+        # Când creezi HR, asociază-l cu compania specificată
+        HR.objects.create(user=user, company=extra_fields['company'])
+        return user
+
+    def create_employee_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_employee', True)
-        return self.create_user(email, password, **extra_fields)
+        # Similar cu HR, asigură-te că 'company' este furnizat
+        if 'company' not in extra_fields:
+            raise ValueError(_('Company must be set for Employee user'))
+        user = self.create_user(email, password, **extra_fields)
+        # Asociază angajatul cu compania
+        Employee.objects.create(user=user, company=extra_fields['company'])
+        return user
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)

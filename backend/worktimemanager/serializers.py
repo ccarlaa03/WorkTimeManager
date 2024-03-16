@@ -25,44 +25,46 @@ class OwnerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Owner
         fields = '__all__'
-
-# Serializator pentru Employee
+        extra_kwargs = {'user': {'required': False}}
 class EmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
         fields = '__all__'
-
+        extra_kwargs = {'user': {'required': False}}
 class HRSerializer(serializers.ModelSerializer):
     class Meta:
         model = HR
         fields = '__all__'
+        extra_kwargs = {'user': {'required': False}}
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = '__all__'
-
+        extra_kwargs = {'user': {'required': False}}
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+     
         
 class WorkScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkSchedule
         fields = '__all__'
-
+        extra_kwargs = {'user': {'required': False}}
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback
         fields = '__all__'
-
+        extra_kwargs = {'user': {'required': False}}
 class LeaveSerializer(serializers.ModelSerializer):
     class Meta:
         model = Leave
         fields = '__all__'
-
+        extra_kwargs = {'user': {'required': False}}
 class TrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = '__all__'
+        extra_kwargs = {'user': {'required': False}}

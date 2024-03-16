@@ -1,37 +1,43 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import axiosInstance from '../../axiosConfig'; 
+import { useAuth  } from '../../AuthContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); 
+  const [isAuthenticated, setIsAuthenticated] = useState(!localStorage.getItem('token'));
   const navigate = useNavigate();
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const handleLogin = async (event) => {
     event.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await axiosInstance.post('/login/', {
-        email,
-        password,
-      });
+      const response = await axiosInstance.post('/login/', { email, password });
+      if (response.data.access) {
+        // Utilizează funcția login pentru a actualiza starea globală de autentificare
+        login({
+          user: response.data.email, 
+          token: response.data.access,
+        });
 
-      const { access, refresh, role } = response.data;
-      localStorage.setItem('access_token', access); // Salvarea access token
-      localStorage.setItem('refresh_token', refresh); // Salvarea refresh token
-      localStorage.setItem('role', role); // Salvarea rolului utilizatorului
-      console.log('Access Token:', access);
-      console.log('Refresh Token:', refresh);
-      console.log('Role:', role);
-      setIsAuthenticated(true);
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access}`; // Setarea header-ului pentru cererile ulterioare
-
-      navigate(`/${role}-dashboard`); // Navigarea către dashboard-ul specific rolului
+        // Salvează token-urile și rolul în localStorage pentru utilizare ulterioară
+       localStorage.setItem('access_token', response.data.access);
+        localStorage.setItem('refresh_token', response.data.refresh);
+        localStorage.setItem('role', response.data.role); 
+        console.log('Access Token:', localStorage.getItem('access_token'));
+        console.log('Refresh Token:', localStorage.getItem('refresh_token'));
+        console.log('Role:', localStorage.getItem('role'));
+        setIsAuthenticated(true);
+        // Redirecționează utilizatorul către dashboard-ul specific rolului său
+        navigate(`/${response.data.role}-dashboard`);
+      } else {
+        // Actualizează mesajul de eroare dacă autentificarea eșuează
+        setLoginError('Invalid credentials.');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setLoginError('Login failed');
