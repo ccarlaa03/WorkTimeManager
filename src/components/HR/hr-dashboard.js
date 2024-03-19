@@ -30,7 +30,7 @@ ChartJS.register(
 const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
-  const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '' });
+  const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '', company_id: ''});
   const [events, setEvents] = useState([]);
   const [profileEdit, setEditProfile] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
@@ -51,6 +51,7 @@ const HrDashboard = () => {
         const hrResponse = await instance.get('/hr-dashboard/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
+        
         if (hrResponse.data) {
           setHR({
             id: hrResponse.data.id || '',
@@ -58,10 +59,12 @@ const HrDashboard = () => {
             position: hrResponse.data.position || '',
             department: hrResponse.data.department || '',
             company: hrResponse.data.company || '',
+            company_id: hrResponse.data.company_id || '',
             user_id: hrResponse.data.user_id || '',
           });
         }
-        
+        console.log('Company data:', hrResponse.data.company_id);
+
         const eventsResponse = await axios.get('/events/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
@@ -90,7 +93,8 @@ const HrDashboard = () => {
     }
 
     const userId = HR.id;
-  
+    const company_id = HR.company_id;
+
     if (!userId) {
       console.error("User ID is undefined.");
       return;
@@ -102,6 +106,7 @@ const HrDashboard = () => {
       department: HR.department,
       company: HR.company.id,
       id: HR.id,
+      company_id: HR.company_id,
     };
 
     console.log('Submitting profile update:', profileData);
@@ -113,10 +118,10 @@ const HrDashboard = () => {
           'Content-Type': 'application/json',
         },
       });
-      
+
       console.log('Profile updated successfully', response.data);
-      setUpdateSuccess(true); 
-      closeEditProfileModal(); 
+      setUpdateSuccess(true);
+      closeEditProfileModal();
       setTimeout(() => {
         setUpdateSuccess(false);
       }, 3000);

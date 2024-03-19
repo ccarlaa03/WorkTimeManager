@@ -27,16 +27,24 @@ class OwnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
 class EmployeeSerializer(serializers.ModelSerializer):
+    user_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Employee
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
+
+    def create(self, validated_data):
+        user_id = validated_data.pop('user_id')
+        employee = Employee.objects.create(user_id=user_id, **validated_data)
+        return employee
+
 class HRSerializer(serializers.ModelSerializer):
+    company_id = serializers.IntegerField(source='company.id')
     class Meta:
         model = HR
         fields = '__all__'
-        read_only_fields = ('user',)
+
 class CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = Company

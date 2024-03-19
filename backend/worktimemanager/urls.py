@@ -34,11 +34,11 @@ urlpatterns = [
     path('owner-dashboard/', views.owner_dashboard, name='owner-dashboard'),
     path('hr-dashboard/', views.hr_dashboard, name='hr-dashboard'),
     path('employee-dashboard/', views.employee_dashboard, name='employee-dashboard'),
-    path('gestionare-ang/', views.employee_dashboard, name='gestionare-ang'),
+    path('gestionare-ang/', views.list_employees, name='gestionare-ang'),
     path('events/', views.events_view, name='events'),
     path('employees/', views.events_view, name='employees'),
     path('update-profile/<int:user_id>/', views.update_profile, name='update_profile'),
-
+    path('create_employee/', views.create_employee_user, name='create_employee'),
     path('add-event/', views.add_event, name='add-event'),
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

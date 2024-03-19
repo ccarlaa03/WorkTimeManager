@@ -131,14 +131,18 @@ def create_hr_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
-@permission_classes([IsAdminUser]) 
+@permission_classes([IsAuthenticated])
 def create_employee_user(request):
-    serializer = EmployeeSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save(is_employee=True)  
-        return Response(serializer.data)
-    else:
-        return Response(serializer.errors)
+    if request.method == 'POST':
+        hr_company_id = request.data.get('company_id')  
+        request.data['user_id'] = request.user.id
+        request.data['company_id'] = hr_company_id
+        serializer = EmployeeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=201)
+        else: 
+            return Response(serializer.errors, status=400)
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -213,6 +217,7 @@ def hr_dashboard(request):
             'department': hr.department,
             'position': hr.position,
             'company': company_name,  
+            'company_id': hr.company_id,
         })
     except HR.DoesNotExist:
         return Response({'error': 'HR profile not found'}, status=404)
@@ -237,10 +242,41 @@ def employee_dashboard(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-class EmployeeViewSet(viewsets.ModelViewSet):
-    queryset = Employee.objects.all()
-    serializer_class = EmployeeSerializer
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_employees(request):
+    employees = Employee.objects.all()
+    serializer = EmployeeSerializer(employees, many=True)
+    return Response(serializer.data)
 
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@is_hr
+def create_employee(request):
+    serializer = EmployeeSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=201)
+    return Response(serializer.errors, status=400)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+@is_hr
+def update_employee(request, pk):
+    employee = Employee.objects.get(pk=pk)
+    serializer = EmployeeSerializer(employee, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=400)
+
+@api_view(['DELETE'])
+@is_hr
+@permission_classes([IsAuthenticated])
+def delete_employee(request, pk):
+    employee = Employee.objects.get(pk=pk)
+    employee.delete()
+    return Response(status=204)
 
 class FeedbackList(viewsets.ModelViewSet):
     queryset = Feedback.objects.all()

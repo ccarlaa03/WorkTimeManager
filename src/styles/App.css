@@ -135,6 +135,10 @@ p {
 }
 
 .form-container {
+  display: flex;
+  flex-direction: column;
+}
+.form-container {
   max-width: 50%;
   padding: 50px;
 }
@@ -611,39 +615,39 @@ button {
 
 
 .tabel {
-  width: 100%;
-  max-width: 100%;
-  border-collapse: collapse;
-  margin: 0 auto;
+  width: auto;
+  max-width: auto;
+  margin: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   table-layout: fixed;
   overflow-x: auto;
   background-color: #A087BC;
   color: white;
+  border-collapse: collapse;
+  border-spacing: 20px;
 }
 
 .tabel.column th,
 .tabel.column td {
-  padding: 10px 15px;
+  padding:  15px 15px;
   background-color: #FFFFFF;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
+  border-bottom: 10px solid #ddd;
+  text-align: center;
 }
+
 
 .tabel.column th {
   background-color: #A087BC;
-  color: white;
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 1px solid #ddd;
 }
 
 
 .tabel td {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 5px solid #FFFFFF;
   background-color: white;
   color: #333;
+  padding: 8px;
+  text-align: center;
 }
 
 

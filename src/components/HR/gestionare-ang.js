@@ -1,42 +1,166 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
-import FormularAdaugareAngajat from './Formular-adaug';
 import ReactPaginate from 'react-paginate';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import instance from '../../axiosConfig';
 
 Modal.setAppElement('#root');
 
 const GestionareAngajati = () => {
-    const [angajati, setAngajati] = useState([]);
+    const [employee, setEmployees] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
     const [filter, setFilter] = useState({
-        nume: '',
-        functie: '',
-        departament: '',
-        dataAngajarii: '',
+        user: '',
+        name: '',
+        function: '',
+        telephone_number: '',
+        department: '',
+        hireDate: '',
     });
-    const [angajatEditat, setAngajatEditat] = useState(null);
-    const [modalEditareIsOpen, setModalEditareIsOpen] = useState(false);
-    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [employeeToEdit, setEmployeeToEdit] = useState(null);
+    const [modalEditOpen, setModalEditOpen] = useState(false);
+    const [modalAddOpen, setModalAddOpen] = useState(false);
+    const [newEmployee, setNewEmployee] = useState(false);
+    const [hrCompanyId, setHrCompany] = useState(null);
+    const employeesPerPage = 10;
+    const getAccessToken = () => localStorage.getItem('access_token');
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        await createEmployee(newEmployee);
+        setNewEmployee({
+            name: '',
+            position: '',
+            department: '',
+            hire_date: '',
+            email: '',
+            address: '',
+            telephone_number: '',
+        });
+        closeAddModal();
+    };;
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
+        setNewEmployee({ ...newEmployee, [name]: value });
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchHrCompany = async () => {
+            const accessToken = getAccessToken();
             try {
-                const response = await axios.get('http://localhost:3000/gestionare-ang/');
-                setAngajati(response.data);
+
+                const hrResponse = await instance.get('/hr-dashboard/', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                });
+                if (hrResponse.data && hrResponse.data.company_id) {
+                    setHrCompany(hrResponse.data.company_id);
+                    console.log('HR Company ID:', hrResponse.data.company_id);
+                    return hrResponse.data.company_id;
+                } else {
+                    console.log('HR Company data:', hrResponse.data);
+                    return null;
+                }
             } catch (error) {
-                console.error("Error fetching data: ", error.response ? error.response.data : error);
+                console.error('Error fetching HR company data:', error.response ? error.response.data : error);
+                return null;
+            }
+        };
+        const fetchEmployees = async (setHrCompany) => {
+            const accessToken = getAccessToken();
+            try {
+                const employeesResponse = await instance.get('/gestionare-ang/', {
+                    headers: { 'Authorization': `Bearer ${accessToken}` },
+                });
+                console.log('All Employees data:', employeesResponse.data);
+                const employeesOfSameCompany = employeesResponse.data.filter(
+                    (employee) => employee.company === setHrCompany
+                );
+                setEmployees(employeesOfSameCompany);
+                console.log('Filtered Employees for company ID ' + setHrCompany + ':', employeesOfSameCompany);
+            } catch (error) {
+                console.error('Error fetching employees:', error.response ? error.response.data : error);
+            }
+        };
+        const initializeData = async () => {
+            const accessToken = getAccessToken();
+            if (!accessToken) {
+                console.log("No access token found. User is not logged in.");
+                return;
+            }
+            const setHrCompany = await fetchHrCompany();
+            if (setHrCompany) {
+                await fetchEmployees(setHrCompany);
             }
         };
 
-        fetchData();
+        initializeData();
+
     }, []);
 
-    const handleSearch = () => {
-        // implementare căutare
+
+    const creatEmployee = (newEmployee) => {
+        setEmployees(prev => [...prev, newEmployee]);
+        closeAddModal();
     };
+    const removeEmployee = (id) => {
+        setEmployees(prevEmployees => prevEmployees.filter(employee => employee.id !== id));
+    }
+    const saveEmployeeEdit = (editedEmployee) => {
+        setEmployees(prev => prev.map(employee => employee.id === editedEmployee.id ? editedEmployee : employee));
+        closeEditModal();
+    };
+    // CREATE
+    const createEmployee = async (newEmployee) => {
+        newEmployee.company_id = hrCompanyId;
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.log("No access token found. User is not logged in.");
+            return;
+        }
+        try {
+            const response = await instance.post('/create_employee/', newEmployee, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            console.log('Angajat adăugat cu succes:', response.data);
+        } catch (error) {
+            console.error('Eroare la adăugarea unui nou angajat:', error.response ? error.response.data : error.message);
+        }
+    };
+
+
+    // UPDATE
+    const updateEmployee = async (id, employeeData) => {
+        try {
+            const response = await axios.put(`http://localhost:8000/employees/update/${id}/`, employeeData, {
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+            setEmployees(prevEmployees => prevEmployees.map(employee => employee.id === id ? response.data : employee));
+        } catch (error) {
+            console.error('Error updating employee:', error.response.data);
+        }
+    };
+
+    // DELETE
+    const deleteEmployee = async (id) => {
+        try {
+            await axios.delete(`http://localhost:8000/employees/delete/${id}/`, {
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                },
+            });
+            setEmployees(prevEmployees => prevEmployees.filter(employee => employee.id !== id));
+        } catch (error) {
+            console.error('Error deleting employee:', error.response.data);
+        }
+    };
+
+    const handlePageChange = (selectedItem) => {
+        setCurrentPage(selectedItem.selected);
+    };
+
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -45,79 +169,39 @@ const GestionareAngajati = () => {
             [name]: value
         }));
     };
+    const openAddModal = () => setModalAddOpen(true);
+    const closeAddModal = () => setModalAddOpen(false);
 
-    const handlePageChange = ({ selected }) => {
-        setCurrentPage(selected);
+    const openEditModal = (employee) => {
+        setEmployeeToEdit(employee);
+        setModalEditOpen(true);
+    };
+    const closeEditModal = () => {
+        setModalEditOpen(false);
+        setEmployeeToEdit(null);
     };
 
-    const handleSearchChange = (e) => {
-        setFilter({ ...filter, nume: e.target.value });
-        setCurrentPage(0);
-    };
+    const indexOfLastEmployee = (currentPage + 1) * employeesPerPage;
+    const indexOfFirstEmployee = indexOfLastEmployee - employeesPerPage;
 
-    const adaugaAngajat = (angajatNou) => {
-        setAngajati([...angajati, angajatNou]);
-        closeModal();
-    };
+    const filteredEmployees = employee?.filter(employee => {
+        const nameMatch = employee.name?.toLowerCase().includes(filter.name.toLowerCase());
+        const functionMatch = employee.function?.toLowerCase().includes(filter.function.toLowerCase());
+        const departmentMatch = employee.department?.toLowerCase().includes(filter.department.toLowerCase());
+        const hireDateMatch = filter.hireDate ? new Date(employee.hire_date).getTime() === new Date(filter.hireDate).getTime() : true;
 
-    const stergeAngajat = (id) => {
-        setAngajati(angajati.filter(angajat => angajat.id !== id));
-    };
-
-    const sortAngajati = (criteria) => {
-        const sortedAngajati = [...angajati];
-        sortedAngajati.sort((a, b) => {
-            if (a[criteria] < b[criteria]) {
-                return -1;
-            }
-            if (a[criteria] > b[criteria]) {
-                return 1;
-            }
-            return 0;
-        });
-        setAngajati(sortedAngajati);
-    };
-
-    const filteredAngajati = angajati.filter(angajat => {
-        return angajat.nume.toLowerCase().includes(filter.nume.toLowerCase()) &&
-            angajat.functie.toLowerCase().includes(filter.functie.toLowerCase()) &&
-            angajat.departament.toLowerCase().includes(filter.departament.toLowerCase()) &&
-            (!filter.dataAngajarii || angajat.data.includes(filter.dataAngajarii));
+        return nameMatch && functionMatch && departmentMatch && hireDateMatch;
     });
 
-    const angajatiPerPage = 10;
-    const indexOfLastAngajat = (currentPage + 1) * angajatiPerPage;
-    const indexOfFirstAngajat = indexOfLastAngajat - angajatiPerPage;
-    const angajatiPaginaCurenta = filteredAngajati.slice(indexOfFirstAngajat, indexOfLastAngajat);
+    const handleSearch = () => {
 
-    const openModal = () => {
-        setModalIsOpen(true);
     };
 
-    const closeModal = () => {
-        setModalIsOpen(false);
-    };
 
-    const deschideModalEditare = (angajat) => {
-        setAngajatEditat(angajat);
-        setModalEditareIsOpen(true);
-    };
-
-    const inchideModalEditare = () => {
-        setModalEditareIsOpen(false);
-        setAngajatEditat(null);
-    };
-
-    const salveazaEditare = (e) => {
-        e.preventDefault();
-        const { nume, departament, functie } = e.target.elements;
-        const angajatiActualizati = angajati.map(a => a.id === angajatEditat.id
-            ? { ...a, nume: nume.value, departament: departament.value, functie: functie.value }
-            : a
-        );
-        setAngajati(angajatiActualizati);
-        inchideModalEditare();
-    };
+    const employeesOnCurrentPage = filteredEmployees.slice(
+        currentPage * employeesPerPage,
+        (currentPage + 1) * employeesPerPage
+    );
 
     return (
         <div>
@@ -127,15 +211,15 @@ const GestionareAngajati = () => {
                     <input
                         type="text"
                         placeholder="Caută după nume..."
-                        value={filter.nume}
-                        onChange={(e) => setFilter({ ...filter, nume: e.target.value })}
+                        value={filter.name}
+                        onChange={(e) => setFilter({ ...filter, name: e.target.value })}
                         style={{ flexBasis: '100%' }}
                     />
                     <br></br>
                     <div style={{ display: 'flex', width: '100%', gap: '10px' }}>
                         <select
                             name="functie"
-                            value={filter.functie}
+                            value={filter.function}
                             onChange={handleFilterChange}
                             className="select-style"
                         >
@@ -146,7 +230,7 @@ const GestionareAngajati = () => {
 
                         <select
                             name="departament"
-                            value={filter.departament}
+                            value={filter.department}
                             onChange={handleFilterChange}
                             className="select-style"
                         >
@@ -159,7 +243,7 @@ const GestionareAngajati = () => {
                             type="date"
                             name="dataAngajarii"
                             placeholder="Caută după data angajării..."
-                            value={filter.dataAngajarii}
+                            value={filter.hireDate}
                             onChange={handleFilterChange}
                             style={{ flex: 1 }}
                         />
@@ -185,69 +269,95 @@ const GestionareAngajati = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {angajatiPaginaCurenta.map(angajat => (
-                            <tr key={angajat.id}>
-                                <td>{angajat.id}</td>
-                                <td>
-                                    <Link
-                                        to={`/profil-angajat/${angajat.id}`}
-                                        style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                                    >
-                                        {angajat.nume}
-                                    </Link>
-                                </td>
+                        {employee.map((employee) => {
+                            console.log('Rendering employee:', employee);
+                            return (
 
+                                <tr key={employee.user}>
+                                    <td>{employee.user}</td>
+                                    <td>
+                                        <Link
+                                            to={`/profil-employee/${employee.user}`}
+                                            style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                                        >
+                                            {employee.name}
+                                        </Link>
+                                    </td>
 
-                                <td>{angajat.telefon}</td>
-                                <td>{angajat.email}</td>
-                                <td>{angajat.departament}</td>
-                                <td>{angajat.functie}</td>
-                                <td>{angajat.prezenta}</td>
-                                <td>{angajat.adresa}</td>
-                                <td>{angajat.data}</td>
-                                <td>
-                                    <button className='buton' onClick={() => deschideModalEditare(angajat)}>Editează</button>
-                                    <button className='buton' onClick={() => stergeAngajat(angajat.id)}>Șterge</button>
-                                </td>
-                            </tr>
-                        ))}
+                                    <td>{employee.telephone_number}</td>
+                                    <td>{employee.email}</td>
+                                    <td>{employee.department}</td>
+                                    <td>{employee.position}</td>
+                                    <td>{employee.free_days}</td>
+                                    <td>{employee.address}</td>
+                                    <td>{employee.hire_date}</td>
+                                    <td>
+                                        <button className='buton' onClick={() => modalEditOpen(employee)}>Editează</button>
+                                        <button className='buton' onClick={() => removeEmployee(employee.id)}>Șterge</button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+
                     </tbody>
                 </table>
-                <div class="button-container">
-                    <button className="buton" onClick={openModal}>Adaugă angajat nou</button>
+
+                <div className="button-container">
 
                     <Link to="/gestionare-concedii">
                         <button className="buton">Gestionare concedii</button>
                     </Link>
+
+                    <button className="buton" onClick={openAddModal}>Adaugă angajat nou</button>
+
                     <Link to="/gestionare-prog">
                         <button className="buton">Gestionare program de lucru</button>
                     </Link>
 
-
                     <ReactPaginate
                         previousLabel={'Anterior'}
                         nextLabel={'Următorul'}
-                        pageCount={Math.ceil(filteredAngajati.length / angajatiPerPage)}
+                        pageCount={Math.ceil(filteredEmployees.length / employeesPerPage)}
                         onPageChange={handlePageChange}
                         containerClassName={'pagination'}
                         activeClassName={'active'}
                     />
+
                 </div>
                 <Modal
-                    isOpen={modalEditareIsOpen}
-                    onRequestClose={inchideModalEditare}
+                    isOpen={modalAddOpen}
+                    onRequestClose={closeAddModal}
+                    contentLabel="Adaugă angajat nou"
+                    className="modal-content"
+                >
+                    <h2>Adaugă angajat nou</h2>
+                    <form onSubmit={handleSubmit}>
+                        <label>Nume:<input type="text" name="name" value={newEmployee.name} onChange={handleInputChange} required /></label>
+                        <label>Număr de telefon:<input type="text" name="telephone_number" value={newEmployee.telephone_number} onChange={handleInputChange} required /></label>
+                        <label>Adresă de email:<input type="email" name="email" value={newEmployee.email} onChange={handleInputChange} required /></label>
+                        <label>Departament:<input type="text" name="department" value={newEmployee.department} onChange={handleInputChange} required /></label>
+                        <label>Funcție:<input type="text" name="position" value={newEmployee.position} onChange={handleInputChange} required /></label>
+                        <label>Adresă:<input type="text" name="address" value={newEmployee.address} onChange={handleInputChange} required /></label>
+                        <label>Data angajării:<input type="date" name="hire_date" value={newEmployee.hire_date} onChange={handleInputChange} required /></label>
+                        <button type="submit">Adaugă</button>
+                        <button type="button" onClick={closeAddModal}>Închide</button>
+                    </form>
+                </Modal>
+                <Modal
+                    isOpen={modalEditOpen}
+                    onRequestClose={openEditModal}
                     contentLabel="Editează angajat"
                     className="modal-content"
                 >
                     <h2>Editează Angajat</h2>
-                    {angajatEditat && (
-                        <form onSubmit={salveazaEditare}>
+                    {employeeToEdit && (
+                        <form onSubmit={saveEmployeeEdit}>
                             <label>
                                 Nume:
                                 <input
                                     type="text"
                                     name="nume"
-                                    defaultValue={angajatEditat.nume}
+                                    defaultValue={employeeToEdit.name}
                                     required
                                 />
                             </label>
@@ -256,7 +366,7 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="telefon"
-                                    defaultValue={angajatEditat.telefon}
+                                    defaultValue={employeeToEdit.telephone}
                                     required
                                 />
                             </label>
@@ -265,7 +375,7 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="email"
-                                    defaultValue={angajatEditat.email}
+                                    defaultValue={employeeToEdit.email}
                                     required
                                 />
                             </label>
@@ -274,7 +384,7 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="departament"
-                                    defaultValue={angajatEditat.departament}
+                                    defaultValue={employeeToEdit.department}
                                     required
                                 />
                             </label>
@@ -283,7 +393,7 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="functie"
-                                    defaultValue={angajatEditat.functie}
+                                    defaultValue={employeeToEdit.position}
                                     required
                                 />
                             </label>
@@ -292,7 +402,7 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="data"
-                                    defaultValue={angajatEditat.data}
+                                    defaultValue={employeeToEdit.hire_date}
                                     required
                                 />
                             </label>
@@ -301,19 +411,15 @@ const GestionareAngajati = () => {
                                 <input
                                     type="text"
                                     name="adresa"
-                                    defaultValue={angajatEditat.adresa}
+                                    defaultValue={employeeToEdit.address}
                                     required
                                 />
                             </label>
                             <button type="submit">Salvează modificările</button>
-                            <button type="button" onClick={inchideModalEditare}>Închide</button>
+                            <button type="button" onClick={closeEditModal}>Închide</button>
                         </form>
                     )}
 
-                </Modal>
-                <Modal isOpen={modalIsOpen} className="modal-content" onRequestClose={closeModal} contentLabel="Adaugă angajat">
-                    <h2>Adaugă angajat nou</h2>
-                    <FormularAdaugareAngajat onAdaugaAngajat={adaugaAngajat} onClose={closeModal} />
                 </Modal>
             </div>
         </div>
