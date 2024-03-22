@@ -3,10 +3,10 @@ from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, Feedback
+from .models import User, Company, Employee, Owner, Event, HR, Feedback, WorkSchedule
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer, WorkScheduleSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -132,10 +132,11 @@ def create_hr_user(request):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_employee_user(request):
+def create_employee(request):
     if request.method == 'POST':
-        hr_company_id = request.data.get('company_id')  
-        request.data['user_id'] = request.user.id
+        hr_company_id = request.data.get('company_id') 
+        employee_user_id = request.data.get('user_id') 
+        request.data['user_id'] = employee_user_id
         request.data['company_id'] = hr_company_id
         serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
@@ -143,6 +144,11 @@ def create_employee_user(request):
             return Response(serializer.data, status=201)
         else: 
             return Response(serializer.errors, status=400)
+
+@api_view(['GET'])  # sau metoda HTTP adecvată
+def check_user_exists(request):
+    # Implementează logica funcției aici
+    return Response({"message": "Funcția check_user_exists funcționează corect."})
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -249,21 +255,12 @@ def list_employees(request):
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@is_hr
-def create_employee(request):
-    serializer = EmployeeSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=201)
-    return Response(serializer.errors, status=400)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-@is_hr
-def update_employee(request, pk):
-    employee = Employee.objects.get(pk=pk)
+def update_employee(request, user_id):
+    employee = get_object_or_404(Employee, user = user_id)
     serializer = EmployeeSerializer(employee, data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -271,10 +268,9 @@ def update_employee(request, pk):
     return Response(serializer.errors, status=400)
 
 @api_view(['DELETE'])
-@is_hr
 @permission_classes([IsAuthenticated])
-def delete_employee(request, pk):
-    employee = Employee.objects.get(pk=pk)
+def delete_employee(request, user_id):
+    employee = get_object_or_404(Employee, user=user_id)
     employee.delete()
     return Response(status=204)
 
@@ -346,3 +342,42 @@ def get_all_hr(request):
     hrs = HR.objects.all()
     serializer = HRSerializer(hrs, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def workschedule_list_create(request):
+    if request.method == 'GET':
+        schedules = WorkSchedule.objects.all()
+        serializer = WorkScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = WorkScheduleSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def workschedule_detail(request, pk):
+    try:
+        schedule = WorkSchedule.objects.get(pk=pk)
+    except WorkSchedule.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        serializer = WorkScheduleSerializer(schedule)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        serializer = WorkScheduleSerializer(schedule, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        schedule.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

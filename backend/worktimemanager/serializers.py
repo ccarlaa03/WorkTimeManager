@@ -26,19 +26,12 @@ class OwnerSerializer(serializers.ModelSerializer):
         model = Owner
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
-class EmployeeSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(write_only=True)
 
+class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
-
-    def create(self, validated_data):
-        user_id = validated_data.pop('user_id')
-        employee = Employee.objects.create(user_id=user_id, **validated_data)
-        return employee
-
+        fields = '__all__'  
+  
 class HRSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(source='company.id')
     class Meta:
@@ -54,13 +47,16 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
-     
-        
+
 class WorkScheduleSerializer(serializers.ModelSerializer):
+    employee_user = serializers.CharField(source='employee.user', read_only=True)
+    employee_name = serializers.CharField(source='employee.name', read_only=True)
+    employee_department = serializers.CharField(source='employee.department', read_only=True)
+
     class Meta:
         model = WorkSchedule
         fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
+
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Feedback

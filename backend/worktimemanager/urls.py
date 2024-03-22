@@ -35,12 +35,18 @@ urlpatterns = [
     path('hr-dashboard/', views.hr_dashboard, name='hr-dashboard'),
     path('employee-dashboard/', views.employee_dashboard, name='employee-dashboard'),
     path('gestionare-ang/', views.list_employees, name='gestionare-ang'),
+    path('gestionare-prog/', views.list_employees, name='gestionare-prog'),
+    path('workschedules/', views.workschedule_list_create, name='workschedule-list-create'),
+    path('workschedules/<int:user_id>/', views.workschedule_detail, name='workschedule-detail'),
     path('events/', views.events_view, name='events'),
     path('employees/', views.events_view, name='employees'),
     path('update-profile/<int:user_id>/', views.update_profile, name='update_profile'),
-    path('create_employee/', views.create_employee_user, name='create_employee'),
+    path('create_employee/', views.create_employee, name='create_employee'),
+    path('check_user_exists/', views.check_user_exists, name='check_user_exists'),
+    path('update_employee/<int:user_id>/', views.update_employee, name='update_employee'),
+    path('delete_employee/<int:user_id>/', views.delete_employee, name='delete_employee'),
     path('add-event/', views.add_event, name='add-event'),
-
+    path('check_user_exists/', views.check_user_exists, name='check_user_exists'),
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

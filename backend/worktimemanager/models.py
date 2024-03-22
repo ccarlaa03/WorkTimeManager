@@ -103,7 +103,6 @@ class Employee(models.Model):
     email = models.EmailField(max_length=100, unique=True, db_index=True, null=True)
     address = models.CharField(max_length=100, null=True)
     telephone_number = models.CharField(max_length=100, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=True)
-    shift_type = models.CharField(max_length=100, null=True)
     is_employee = models.BooleanField(default=True)
     def __str__(self):
         return self.name
@@ -121,14 +120,28 @@ class Employee(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
+class LeaveType(models.TextChoices):
+    ANNUAL = 'AN', _('Annual Leave')
+    SICK = 'SI', _('Sick Leave')
+    UNPAID = 'UP', _('Unpaid Leave')
+    MATERNITY = 'MA', _('Maternity Leave')
+    PATERNITY = 'PA', _('Paternity Leave')
+    STUDY = 'ST', _('Study Leave')
+
 class WorkSchedule(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='work_schedules')
     start_time = models.TimeField()
     end_time = models.TimeField()
     date = models.DateField()
+    overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)  
+    shift_type = models.CharField(max_length=10, choices=(('day', 'Zi'), ('night', 'Noapte')), null=True)
 
     def __str__(self):
-        return f"{self.employee.name} - {self.date} Schedule"
+        shift = "Zi" if self.shift_type == 'day' else "Noapte"
+        department = self.employee.department if self.employee else "Unknown Department"
+        return f"{self.employee.name} - {self.date} Schedule - Schimb de {shift} - {department}"
+
+
 
 
 class Feedback(models.Model):
@@ -146,7 +159,10 @@ class Leave(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     reason = models.CharField(max_length=255)
-
+    is_leave = models.BooleanField(default=False, verbose_name=_('Is on Leave'))
+    leave_type = models.CharField(max_length=2, choices=LeaveType.choices, null=True, blank=True, verbose_name=_('Type of Leave'))
+    leave_description = models.TextField(null=True, blank=True, verbose_name=_('Leave Description'))
+    is_approved = models.BooleanField(default=False, verbose_name=_('Leave Approved'))
     def __str__(self):
         return f"{self.employee.name} - Leave from {self.start_date} to {self.end_date}"
 
