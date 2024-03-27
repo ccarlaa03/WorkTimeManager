@@ -344,40 +344,55 @@ def get_all_hr(request):
     return Response(serializer.data)
 
 
-@api_view(['GET', 'POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def workschedule_list_create(request):
-    if request.method == 'GET':
-        schedules = WorkSchedule.objects.all()
-        serializer = WorkScheduleSerializer(schedules, many=True)
-        return Response(serializer.data)
-    
-    elif request.method == 'POST':
-        serializer = WorkScheduleSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def workschedule_list(request):
+    schedules = WorkSchedule.objects.all()
+    serializer = WorkScheduleSerializer(schedules, many=True)
+    return Response(serializer.data)
 
-@api_view(['GET', 'PUT', 'DELETE'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def workschedule_detail(request, pk):
+def workschedule_create(request):
+    serializer = WorkScheduleSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def workschedule_retrieve(request, id):
     try:
-        schedule = WorkSchedule.objects.get(pk=pk)
+        schedule = WorkSchedule.objects.get(id=id)
     except WorkSchedule.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response({'message': 'The WorkSchedule does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
-    if request.method == 'GET':
-        serializer = WorkScheduleSerializer(schedule)
+    serializer = WorkScheduleSerializer(schedule)
+    return Response(serializer.data)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def workschedule_update(request, id):
+    try:
+        schedule = WorkSchedule.objects.get(id=id)
+    except WorkSchedule.DoesNotExist:
+        return Response({'message': 'The WorkSchedule does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = WorkScheduleSerializer(schedule, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
         return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def workschedule_delete(request, id):
+    try:
+        schedule = WorkSchedule.objects.get(id=id)
+    except WorkSchedule.DoesNotExist:
+        return Response({'message': 'The WorkSchedule does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
-    elif request.method == 'PUT':
-        serializer = WorkScheduleSerializer(schedule, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    elif request.method == 'DELETE':
-        schedule.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    schedule.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

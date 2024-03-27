@@ -137,7 +137,7 @@ class WorkSchedule(models.Model):
     shift_type = models.CharField(max_length=10, choices=(('day', 'Zi'), ('night', 'Noapte')), null=True)
 
     def __str__(self):
-        shift = "Zi" if self.shift_type == 'day' else "Noapte"
+        shift = "Zi" if self.shift_type == 'Zi' else "Noapte"
         department = self.employee.department if self.employee else "Unknown Department"
         return f"{self.employee.name} - {self.date} Schedule - Schimb de {shift} - {department}"
 

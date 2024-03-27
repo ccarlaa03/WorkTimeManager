@@ -55,7 +55,8 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = WorkSchedule
-        fields = '__all__'
+        fields = ['id', 'start_time', 'end_time', 'date', 'overtime_hours', 'shift_type', 'employee_user', 'employee_name', 'employee_department']
+
 
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:

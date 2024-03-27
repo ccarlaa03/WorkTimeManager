@@ -19,6 +19,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 STATIC_URL = '/staticfiles/'
 MEDIA_URL = '/media/'
 
+CSRF_USE_SESSIONS = True
+CSRF_COOKIE_HTTPONLY = False  
+
 
 
 DEBUG = True
