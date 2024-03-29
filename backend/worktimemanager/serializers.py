@@ -49,13 +49,13 @@ class EventSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class WorkScheduleSerializer(serializers.ModelSerializer):
-    employee_user = serializers.CharField(source='employee.user', read_only=True)
-    employee_name = serializers.CharField(source='employee.name', read_only=True)
-    employee_department = serializers.CharField(source='employee.department', read_only=True)
+    employee_name = serializers.CharField(source='user.name', read_only=True)
+    employee_department = serializers.CharField(source='user.department', read_only=True)
 
     class Meta:
         model = WorkSchedule
-        fields = ['id', 'start_time', 'end_time', 'date', 'overtime_hours', 'shift_type', 'employee_user', 'employee_name', 'employee_department']
+        fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
+        read_only_fields = ('id',)
 
 
 class FeedbackSerializer(serializers.ModelSerializer):

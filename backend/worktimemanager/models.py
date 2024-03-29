@@ -129,21 +129,16 @@ class LeaveType(models.TextChoices):
     STUDY = 'ST', _('Study Leave')
 
 class WorkSchedule(models.Model):
-    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='work_schedules')
+    user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')
     start_time = models.TimeField()
     end_time = models.TimeField()
     date = models.DateField()
     overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)  
-    shift_type = models.CharField(max_length=10, choices=(('day', 'Zi'), ('night', 'Noapte')), null=True)
 
     def __str__(self):
-        shift = "Zi" if self.shift_type == 'Zi' else "Noapte"
-        department = self.employee.department if self.employee else "Unknown Department"
-        return f"{self.employee.name} - {self.date} Schedule - Schimb de {shift} - {department}"
-
-
-
-
+        employee_name = self.user.name if self.user else "Unknown Employee"
+        department = self.user.department if self.user else "Unknown Department"
+        return f"{employee_name} - {department} - {self.date}"
 class Feedback(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='feedbacks')
     created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, related_name='given_feedbacks')

@@ -25,15 +25,6 @@ const GestionareProgramLucru = () => {
   const [allEmployees, setAllEmployees] = useState([]);
   const [employeeDepartment, setEmployeeDepartment] = useState('');
   const [employeeName, setEmployeeName] = useState('');
-  const [selectedWeekDays, setSelectedWeekDays] = useState({
-    monday: true,
-    tuesday: true,
-    wednesday: true,
-    thursday: true,
-    friday: true,
-    saturday: false,
-    sunday: false
-  });
   const csrfToken = Cookies.get('csrftoken');
   const [selectedDateRange, setSelectedDateRange] = useState([new Date(), new Date()]);
   const localizer = momentLocalizer(moment);
@@ -41,6 +32,7 @@ const GestionareProgramLucru = () => {
   const getAccessToken = () => localStorage.getItem('access_token');
   axios.defaults.xsrfCookieName = 'csrftoken';
   axios.defaults.xsrfHeaderName = 'X-CSRFToken';
+
 
   useEffect(() => {
     const initializeData = async () => {
@@ -69,6 +61,28 @@ const GestionareProgramLucru = () => {
     return config;
   });
 
+  // Așigură-te că această funcție este definită în afara lui useEffect, la nivelul componentei
+  const fetchWorkSchedules = async (hrCompanyId) => {
+    const accessToken = getAccessToken();
+    try {
+      const workSchedulesResponse = await instance.get(`/gestionare-prog/?company_id=${hrCompanyId}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      console.log('Work Schedules data:', workSchedulesResponse.data);
+      setWorkSchedules(workSchedulesResponse.data);
+    } catch (error) {
+      console.error('Error fetching work schedules:', error.response ? error.response.data : error);
+    }
+  };
+  // Folosește useEffect pentru a apela această funcție
+  useEffect(() => {
+    if (hrCompanyId) {
+      fetchWorkSchedules(hrCompanyId);
+    }
+  }, [hrCompanyId]);
+
   const fetchHrCompany = async () => {
     try {
       const accessToken = getAccessToken();
@@ -90,56 +104,59 @@ const GestionareProgramLucru = () => {
     }
   };
 
-  const fetchWorkSchedules = async (hrCompanyId) => {
-    const accessToken = getAccessToken();
-    try {
-      const workSchedulesResponse = await instance.get(`/gestionare-prog/?company_id=${hrCompanyId}`, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      console.log('Work Schedules data:', workSchedulesResponse.data);
-      setWorkSchedules(workSchedulesResponse.data);
-    } catch (error) {
-      console.error('Error fetching work schedules:', error.response ? error.response.data : error);
-    }
-  };
 
+  //CREATE
   const handleCreateWorkSchedule = async (e) => {
     e.preventDefault();
-    const accessToken = getAccessToken();
-    const daysToAdd = Object.entries(selectedWeekDays)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([day]) => day);
-    const datesToAdd = getDatesInRange(selectedDateRange[0], selectedDateRange[1], daysToAdd);
+    console.log("Submit was triggered");
+    if (selectedEmployeeIds.length === 0) {
+      console.error("No employee selected.");
+      return;
+    }
+    console.log('Selected Employee ID:', selectedEmployeeIds[0]);
 
-    for (const employeeId of selectedEmployeeIds) {
-      for (const date of datesToAdd) {
-        const scheduleData = {
-          department: department,
-          employee: employeeId,
-          date: moment(selectedDateRange[0]).format('YYYY-MM-DD'),
-          start_time: workHours.start,
-          end_time: workHours.end,
-          overtime_hours: workHours.overtime_hours
-        };
-        
-        try {
-          const response = await axios.post('http://localhost:8000/workschedule-create/', scheduleData, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrfToken  
-            }
-        })
-          console.log('Work schedule saved successfully:', response.data);
-        } catch (error) {
-          console.error('Error saving work schedule:', error.response ? error.response.data : error);
-        }
-      }
+    console.log('filteredEmployees', filteredEmployees);
+    const employeeId = parseInt(selectedEmployeeIds[0], 10);
+
+    if (isNaN(employeeId)) {
+      console.error("Selected Employee ID is undefined or not a number.");
+      return;
     }
 
-    handleCloseAddModal();
+    const employee = filteredEmployees.find(employee => employee.user === employeeId);
+    if (!employee) {
+      console.error('Employee not found for ID:', employeeId);
+      return;
+    }
+
+    const scheduleData = {
+      employee_user_id: employeeId,
+      employee_department: employee.department,
+      employee_name: employee.name,
+      start_time: workHours.start,
+      end_time: workHours.end,
+      date: moment(selectedDateRange[0]).format('YYYY-MM-DD'),
+      overtime_hours: workHours.overtime_hours,
+    };
+
+    try {
+      const accessToken = getAccessToken();
+      console.log("Access Token:", accessToken);
+      const response = await axios.post('http://localhost:8000/workschedule-create/', scheduleData, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken,
+        },
+      });
+
+      console.log('Work schedule created successfully:', response.data);
+      setWorkSchedules([...workSchedules, response.data]);
+      handleCloseAddModal();
+    } catch (error) {
+      console.error('Error creating work schedule:', error.response ? error.response.data : error);
+      alert('Error: ' + (error.response ? error.response.data : error.message));
+    }
   };
 
   useEffect(() => {
@@ -163,6 +180,7 @@ const GestionareProgramLucru = () => {
         });
 
         console.log(`Filtered Employees for company_id ${hrCompanyId}:`, filtered);
+        console.log('Filtered Employees structure:', filteredEmployees[0]);
 
         if (filtered.length === 0) {
           console.log('No matching employees found for company ID:', hrCompanyId);
@@ -205,7 +223,6 @@ const GestionareProgramLucru = () => {
   }, [allEmployees, hrCompanyId]);
 
 
-
   const handleEmployeeSelectionChange = (event) => {
     const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
     setSelectedEmployeeIds(selectedOptions);
@@ -213,13 +230,14 @@ const GestionareProgramLucru = () => {
       setEmployeeId(selectedOptions[0]);
     }
   };
-  
 
 
   const handleDateRangeChange = (dates) => {
     const [start, end] = dates;
     setSelectedDateRange([start, end]);
   };
+
+  //DELETE
 
   const handleDeleteWorkSchedule = async (id) => {
     const accessToken = getAccessToken();
@@ -234,26 +252,31 @@ const GestionareProgramLucru = () => {
     }
   };
 
+
+  //UPDATE
   const handleEditWorkSchedule = async (event) => {
     event.preventDefault();
+
     if (!selectedSchedule) {
       console.error('No schedule selected for editing.');
       return;
     }
+
     const accessToken = localStorage.getItem('access_token');
+
     if (!accessToken) {
       console.error("No access token found. User is not logged in.");
       return;
     }
 
     const updatedScheduleData = {
-      department: department,
-      employee: selectedSchedule.employee_user,
-      date: moment(selectedDateRange[0]).format('YYYY-MM-DD'),
+      user: selectedSchedule.user,
       start_time: workHours.start,
       end_time: workHours.end,
+      date: moment(selectedDateRange[0]).format('YYYY-MM-DD'),
       overtime_hours: workHours.overtime_hours,
-      id: selectedSchedule.id
+      shift_type: 'day',
+      id: selectedSchedule.id,
     };
 
     try {
@@ -262,19 +285,14 @@ const GestionareProgramLucru = () => {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           'X-CSRFToken': csrfToken,
-        }
+        },
       });
-
-
-      // The rest of your code can use `response` because it is in the same scope
-      console.log("Response status:", response.status);
-      console.log("Data received from the server:", response.data);
 
       if (response.status === 200) {
         console.log('Update successful', response.data);
         setWorkSchedules(previousSchedules =>
           previousSchedules.map(schedule =>
-            schedule.id === selectedSchedule.id ? { ...schedule, ...response.data } : schedule
+            schedule.id === selectedSchedule.id ? response.data : schedule
           )
         );
 
@@ -284,7 +302,6 @@ const GestionareProgramLucru = () => {
       console.error('Error updating work schedule:', error.response ? error.response.data : error);
     }
   };
-
 
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
@@ -320,7 +337,6 @@ const GestionareProgramLucru = () => {
       <table className="tabel">
         <thead>
           <tr>
-            <th>User</th>
             <th>Nume</th>
             <th>Departament</th>
             <th>Data</th>
@@ -333,10 +349,9 @@ const GestionareProgramLucru = () => {
         <tbody>
           {workSchedules.map((schedule) => (
             <tr key={schedule.id}>
-              <td>{schedule.employee_user}</td>
               <td>
                 <Link
-                  to={`/profil-employee/${schedule.employee_user}`}
+                  to={`/profil-employee/${schedule.user_id}`}
                   style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
                 >
                   {schedule.employee_name}
@@ -349,7 +364,6 @@ const GestionareProgramLucru = () => {
               <td>{schedule.overtime_hours}</td>
               <td>
                 <button className='buton' onClick={() => OpenEditModal(schedule)}>Editează</button>
-
                 <button className='buton' onClick={() => handleDeleteWorkSchedule(schedule.id)}>Șterge</button>
               </td>
             </tr>
@@ -384,11 +398,10 @@ const GestionareProgramLucru = () => {
             <select multiple value={selectedEmployeeIds} onChange={handleEmployeeSelectionChange}>
               {filteredEmployees.map((employee) => (
                 <option key={employee.user} value={employee.user}>
-                  {`${employee.name} - ${employee.department}`}
+                  {employee.name} - {employee.department} ({employee.user})
                 </option>
               ))}
             </select>
-
           </div>
 
           <div className="form-group">
@@ -429,9 +442,7 @@ const GestionareProgramLucru = () => {
           </div>
 
           <div className="button-container">
-            <button type="submit" className="buton">
-              Adaugă
-            </button>
+            <button type="submit" className="buton">Adaugă</button>
             <button type="button" className="buton" onClick={handleCloseAddModal}>
               Închide
             </button>
@@ -518,8 +529,6 @@ const GestionareProgramLucru = () => {
               required
             />
           </div>
-
-
           <div className="button-container">
             <button type="submit" className="buton">Salvează</button>
 

@@ -17,6 +17,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import get_object_or_404
+from datetime import datetime
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -354,11 +355,21 @@ def workschedule_list(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def workschedule_create(request):
+    employee_user_id = request.data.get('employee_user_id') 
+
+    try:
+        employee = Employee.objects.get(user_id=employee_user_id)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Employee does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+    request.data['user'] = employee_user_id  
     serializer = WorkScheduleSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save() 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 @api_view(['GET'])
