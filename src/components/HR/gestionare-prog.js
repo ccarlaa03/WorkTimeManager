@@ -15,7 +15,6 @@ const GestionareProgramLucru = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [department, setDepartment] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [workSchedules, setWorkSchedules] = useState([]);

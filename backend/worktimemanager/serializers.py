@@ -63,13 +63,18 @@ class FeedbackSerializer(serializers.ModelSerializer):
         model = Feedback
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
+
 class LeaveSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='user.name', read_only=True)
+    employee_department = serializers.CharField(source='user.department', read_only=True)
     class Meta:
         model = Leave
         fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
+        read_only_fields = ('id',)
+
 class TrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
+ 

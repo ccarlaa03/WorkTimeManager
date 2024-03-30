@@ -30,7 +30,7 @@ ChartJS.register(
 const localizer = momentLocalizer(moment);
 
 const HrDashboard = () => {
-  const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '', company_id: ''});
+  const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '', company_id: '' });
   const [events, setEvents] = useState([]);
   const [profileEdit, setEditProfile] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
@@ -51,7 +51,7 @@ const HrDashboard = () => {
         const hrResponse = await instance.get('/hr-dashboard/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        
+
         if (hrResponse.data) {
           setHR({
             id: hrResponse.data.id || '',
@@ -217,7 +217,7 @@ const HrDashboard = () => {
         <p>Post: {HR.position || 'Poziție Implicită'}</p>
         <p>Departament: {HR.department || 'Departament Implicit'}</p>
         <p>Companie: {HR.company || 'Companie Implicită'}</p>
-        <button onClick={openEditProfileModal}>Editează Profilul</button>
+
       </div>
       {updateSuccess && <div className="update-success-message">Datele au fost actualizate cu succes!</div>}
       <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content">

@@ -3,10 +3,10 @@ from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, Feedback, WorkSchedule
+from .models import User, Company, Employee, Owner, Event, HR, Feedback, WorkSchedule, Leave
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer, WorkScheduleSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer, WorkScheduleSerializer, LeaveSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -306,6 +306,7 @@ def events_view(request):
         return Response(serializer.data)
     else:
         return Response({'error': 'No company found for user.'}, status=status.HTTP_404_NOT_FOUND)
+
     
 class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
@@ -403,6 +404,66 @@ def workschedule_delete(request, id):
     try:
         schedule = WorkSchedule.objects.get(id=id)
     except WorkSchedule.DoesNotExist:
+        return Response({'message': 'The WorkSchedule does not exist'}, status=status.HTTP_404_NOT_FOUND)
+    
+    schedule.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def leave_list_create(request):
+    # Filtrăm concediile doar pentru angajatul logat dacă nu este superuser
+    if request.user.is_superuser:
+        leaves = Leave.objects.all()
+    else:
+        leaves = Leave.objects.filter(user=request.user)
+
+    if request.method == 'GET':
+        serializer = LeaveSerializer(leaves, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        serializer = LeaveSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def leave_detail(request, id):
+    try:
+        leave = Leave.objects.get(id=id)
+        if not request.user.is_superuser and leave.user != request.user:
+            return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
+    except Leave.DoesNotExist:
+        return Response({'message': 'Concediul nu există.'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        serializer = LeaveSerializer(leave)
+        return Response(serializer.data)
+    elif request.method == 'PUT':
+        serializer = LeaveSerializer(leave, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        leave.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def leave_list(request):
+    schedules = Leave.objects.all()
+    serializer = LeaveSerializer(schedules, many=True)
+    return Response(serializer.data)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def leave_delete(request, id):
+    try:
+        schedule = Leave.objects.get(id=id)
+    except Leave.DoesNotExist:
         return Response({'message': 'The WorkSchedule does not exist'}, status=status.HTTP_404_NOT_FOUND)
     
     schedule.delete()

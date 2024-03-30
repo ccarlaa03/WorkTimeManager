@@ -120,14 +120,6 @@ class Employee(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
-class LeaveType(models.TextChoices):
-    ANNUAL = 'AN', _('Annual Leave')
-    SICK = 'SI', _('Sick Leave')
-    UNPAID = 'UP', _('Unpaid Leave')
-    MATERNITY = 'MA', _('Maternity Leave')
-    PATERNITY = 'PA', _('Paternity Leave')
-    STUDY = 'ST', _('Study Leave')
-
 class WorkSchedule(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')
     start_time = models.TimeField()
@@ -139,6 +131,7 @@ class WorkSchedule(models.Model):
         employee_name = self.user.name if self.user else "Unknown Employee"
         department = self.user.department if self.user else "Unknown Department"
         return f"{employee_name} - {department} - {self.date}"
+    
 class Feedback(models.Model):
     employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='feedbacks')
     created_by = models.ForeignKey('Employee', on_delete=models.SET_NULL, null=True, related_name='given_feedbacks')
@@ -148,20 +141,33 @@ class Feedback(models.Model):
     def __str__(self):
         return f"Feedback for {self.employee.name} by {self.created_by.name}"
 
-
+class LeaveType(models.TextChoices):
+    ANNUAL = 'AN', _('Concediu Anual')
+    SICK = 'SI', _('Concediu Medical')
+    UNPAID = 'UP', _('Concediu Fără Plată')
+    MATERNITY = 'MA', _('Concediu Maternitate')
+    PATERNITY = 'PA', _('Concediu Paternitate')
+    STUDY = 'ST', _('Concediu de Studii')
+class LeaveStatus(models.TextChoices):
+    ACCEPTED = 'AC', _('Acceptat')
+    REFUSED = 'RE', _('Refuzat')
+    PENDING = 'PE', _('În așteptare')
+    
 class Leave(models.Model):
-    employee = models.ForeignKey('Employee', on_delete=models.CASCADE, related_name='leaves')
+    user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='leaves')
     start_date = models.DateField()
     end_date = models.DateField()
-    reason = models.CharField(max_length=255)
     is_leave = models.BooleanField(default=False, verbose_name=_('Is on Leave'))
     leave_type = models.CharField(max_length=2, choices=LeaveType.choices, null=True, blank=True, verbose_name=_('Type of Leave'))
     leave_description = models.TextField(null=True, blank=True, verbose_name=_('Leave Description'))
     is_approved = models.BooleanField(default=False, verbose_name=_('Leave Approved'))
+    status = models.CharField(max_length=2, choices=LeaveStatus.choices, default=LeaveStatus.PENDING, verbose_name=_('Leave Status'))
+
     def __str__(self):
-        return f"{self.employee.name} - Leave from {self.start_date} to {self.end_date}"
-
-
+        employee_name = self.user.name if self.user else "Unknown Employee"
+        department = self.user.department if self.user else "Unknown Department"
+        return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()}"
+    
 class Training(models.Model):
     employee = models.ManyToManyField('Employee', related_name='trainings')
     title = models.CharField(max_length=255)
