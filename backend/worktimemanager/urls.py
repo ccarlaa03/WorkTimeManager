@@ -50,7 +50,7 @@ urlpatterns = [
     path('add-event/', views.add_event, name='add-event'),
     path('check_user_exists/', views.check_user_exists, name='check_user_exists'),
     path('leaves/', views.leave_list_create, name='leave-list-create'),
-    path('leaves/<int:pk>/', views.leave_detail, name='leave-detail'),
+    path('leaves/<int:id>/', views.leave_detail, name='leave-detail'),
     path('gestionare-concedii/', views.leave_list, name='gestionare-concedii'),
     path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
 

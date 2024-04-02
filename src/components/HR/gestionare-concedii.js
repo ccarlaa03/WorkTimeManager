@@ -17,7 +17,6 @@ const GestionareConcedii = () => {
 
     const [employees, setEmployees] = useState([]);
     const [department, setDepartment] = useState([]);
-    const [leaveType, setLeaveType] = useState([]);
     const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [selectedLeave, setSelectedLeave] = useState(null);
@@ -25,11 +24,10 @@ const GestionareConcedii = () => {
     const [AddModalOpen, setAddModalOpen] = useState(false);
     const [EditModalOpen, setEditModalOpen] = useState(false);
     const [selectedLeaveType, setSelectedLeaveType] = useState('');
-
     const [employeeId, setEmployeeId] = useState('');
+    const [leaveType, setLeaveType] = useState([]);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [reason, setReason] = useState('');
     const [modalError, setModalError] = useState('');
@@ -49,13 +47,14 @@ const GestionareConcedii = () => {
     });
 
     const LEAVE_TYPES = [
-        { value: 'AN', label: 'Annual Leave' },
-        { value: 'SI', label: 'Sick Leave' },
-        { value: 'UP', label: 'Unpaid Leave' },
-        { value: 'MA', label: 'Maternity Leave' },
-        { value: 'PA', label: 'Paternity Leave' },
-        { value: 'ST', label: 'Study Leave' },
+        { value: 'AN', label: 'Concediu Anual' },
+        { value: 'SI', label: 'Concediu Medical' },
+        { value: 'UP', label: 'Concediu Fără Plată' },
+        { value: 'MA', label: 'Concediu de Maternitate' },
+        { value: 'PA', label: 'Concediu de Paternitate' },
+        { value: 'ST', label: 'Concediu de Studii' },
     ];
+
     const statusMap = {
         'AC': 'Acceptat',
         'RE': 'Refuzat',
@@ -98,6 +97,7 @@ const GestionareConcedii = () => {
                     });
                     console.log('Leaves data:', LeavesResponse.data);
                     setLeaves(LeavesResponse.data);
+
                 } else {
                     console.log('HR Company data:', hrResponse.data);
                 }
@@ -108,6 +108,7 @@ const GestionareConcedii = () => {
 
         initializeData();
     }, []);
+
 
     //CREATE
     const handleAddLeave = async (e) => {
@@ -134,21 +135,47 @@ const GestionareConcedii = () => {
         }
     };
 
-    //UPDATE
+    // UPDATE
+    const handleUpdateLeave = async (e) => {
+        e.preventDefault();
 
-    const handleUpdateLeave = async (leaveId, leaveData) => {
+        if (!selectedLeave) {
+            console.error('No leave selected for editing.');
+            return;
+        }
+
+        const accessToken = getAccessToken();
+
+        if (!accessToken) {
+            console.error("No access token found. User is not logged in.");
+            return;
+        }
+
+        const updatedLeaveData = {
+            ...selectedLeave,
+            start_date: moment(selectedLeave.start_date).format('YYYY-MM-DD'),
+            end_date: moment(selectedLeave.end_date).format('YYYY-MM-DD'),
+            leave_type: selectedLeave.leave_type,
+            status: selectedLeave.status,
+
+        };
+
         try {
-            const accessToken = getAccessToken();
-            const response = await axios.put(`/leaves/${leaveId}/`, leaveData, {
+            const response = await axios.put(`http://localhost:8000/leaves/${selectedLeave.id}/`, updatedLeaveData, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
                 },
             });
-            // Update leaves state accordingly
-            setLeaves(prevLeaves => prevLeaves.map(leave => leave.id === leaveId ? response.data : leave));
+
+            if (response.status === 200) {
+                console.log('Leave update successful', response.data);
+                setLeaves(prevLeaves => prevLeaves.map(leave => leave.id === selectedLeave.id ? response.data : leave));
+
+                CloseEditModal();
+            }
         } catch (error) {
-            console.error('Error updating leave:', error);
+            console.error('Error updating leave:', error.response ? error.response.data : error);
         }
     };
 
@@ -160,7 +187,7 @@ const GestionareConcedii = () => {
             await axios.delete(`/leave_delete/${leaveId}/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
             });
-            // Update your state to remove the leave
+
             setLeaves(prevLeaves => prevLeaves.filter(leave => leave.id !== leaveId));
         } catch (error) {
             console.error('Error deleting leave:', error);
@@ -171,9 +198,9 @@ const GestionareConcedii = () => {
         resetForm();
     };
 
-    // Handler for updating filters
+
     const handleFilterChange = (newFilter) => {
-        // Update filter state
+
     };
 
     const CloseEditModal = () => {
@@ -188,14 +215,14 @@ const GestionareConcedii = () => {
 
 
     const holidays = [
-        new Date('2024-01-01'), // New Year
-        new Date('2024-04-01'), // Easter
-        // ... other holidays
+        new Date('2024-01-01'),
+        new Date('2024-04-01'),
+
     ];
 
-    // Function to check if a date is a holiday
+
     const isHoliday = (date) => {
-        // Check if the date is in the holidays array
+
     };
 
 
@@ -207,12 +234,12 @@ const GestionareConcedii = () => {
     };
 
     const publicHolidays = [
-        new Date('2024-01-01'), // New Year
-        new Date('2024-04-01'), // Easter
-        // ... other public holidays
+        new Date('2024-01-01'),
+        new Date('2024-04-01'),
+
     ];
 
-    // Function to check if a specific date is a public holiday
+
     const isPublicHoliday = (date) => {
         return publicHolidays.some(
             (holiday) =>
@@ -222,7 +249,7 @@ const GestionareConcedii = () => {
         );
     };
 
-    // Function to check leave excluding public holidays
+
     const checkLeave = (startDate, endDate) => {
         let totalDays = 0;
         for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
@@ -240,9 +267,9 @@ const GestionareConcedii = () => {
         if (!employee) return false;
         return employee.leaveBalance >= leaveDuration;
     };
-    // Function to check if there's overlapping leave for an employee
+
     const checkOverlap = (startDate, endDate, department) => {
-        // Assuming each employee has a 'leaveBalance' and a 'department'
+
         const employeesOnLeave = leaves.filter((leave) => {
             const employee = employees.find(emp => emp.id === leave.employeeId && emp.department === department);
             if (!employee) return false;
@@ -253,7 +280,7 @@ const GestionareConcedii = () => {
         });
 
     }
-    // Function to reset the form
+
     const resetForm = () => {
         setSelectedDepartment('');
         setEmployeeId('');
@@ -262,59 +289,35 @@ const GestionareConcedii = () => {
         setLeaveType('');
     };
 
-    // Function to calculate the number of leave days
     const calculateLeaveDays = (startDate, endDate) => {
         return Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
     };
 
-    // Function to get leave history for an employee
+
     const getLeaveHistory = (employeeId, leaves, totalLeaveDays) => {
-        // Filter leaves for a specific employee
+
         const employeeLeaves = leaves.filter(leave => leave.employeeId === employeeId);
 
-        // Calculate the total number of leave days taken
+
         const usedLeaveDays = employeeLeaves.reduce((total, leave) => {
             return total + calculateLeaveDays(leave.startDate, leave.endDate);
         }, 0);
 
-        // Calculate the leave balance
         const leaveBalance = totalLeaveDays - usedLeaveDays;
 
         return { leaves: employeeLeaves, leaveBalance };
     };
 
-    // Function to handle opening edit modal
+
     const OpenEditModal = (leave) => {
-        setEditModalOpen(true);
         setSelectedLeave(leave);
         setSelectedDepartment(leave.department);
-        if (leave) {
-            const backdrop = document.querySelector('.backdrop');
-            if (backdrop) {
-                backdrop.style.display = 'block';
-            }
-            // If editing an existing leave, populate states with its data
-            const employee = employees.find(employee => employee.user === leave.employeeId);
-            setSelectedDepartment(employee ? employee.department : '');
-            setEmployeeId(leave.employeeId);
-            setLeaveType(leave.leaveType);
-            setStartDate(leave.startDate);
-            setEndDate(leave.endDate);
-            setSelectedLeave(leave);
-            setIsEditing(true);
-        } else {
-            // For adding, reset the form and indicate it's not editing
-            resetForm();
-            setSelectedLeave(null);
-            setIsEditing(false);
-        }
         setEditModalOpen(true);
     };
 
-    // Function to save leave
+
     const handleSaveLeave = () => {
         if (selectedLeave) {
-            // Modify an existing leave
             const updatedLeaves = leaves.map((leave) => {
                 if (leave.id === selectedLeave.id) {
                     return { ...leave };
@@ -323,33 +326,29 @@ const GestionareConcedii = () => {
             });
             setLeaves(updatedLeaves);
         } else {
-            // Add a new leave
-            setLeaves([...leaves, { ...selectedLeave, id: Date.now() }]); // id is just a placeholder
+            setLeaves([...leaves, { ...selectedLeave, id: Date.now() }]);
         }
 
         if (checkOverlap(startDate, endDate, selectedDepartment)) {
             alert('There is already a leave in this interval for an employee.');
             return;
         }
-
-        // Check if the employee has leave balance
         if (!checkLeaveBalance(employeeId, calculateLeaveDays(startDate, endDate))) {
             alert('The employee does not have enough leave balance for the selected interval.');
             return;
         }
     };
-  
+
 
     const CloseAddModal = () => {
         setAddModalOpen(false);
         resetForm();
     };
-    // Filtering leaves before display
     const filteredLeaves = leaves.filter(leave => {
         const employee = employees.find(employee => employee.user === leave.employeeId);
-        if (!employee) return false; // If employee doesn't exist, don't include the leave
+        if (!employee) return false; // 
 
-        // Apply filters if they are set
+
         const filterByDepartment = selectedDepartment ? employee.department === selectedDepartment : true;
         const filterByLeaveType = leaveType ? leave.leaveType === leaveType : true;
         const filterByName = selectedEmployee ? employee.name.toLowerCase().includes(selectedEmployee.toLowerCase()) : true;
@@ -358,7 +357,7 @@ const GestionareConcedii = () => {
         return filterByDepartment && filterByLeaveType && filterByName;
     });
 
-    // Function to handle changing leave status
+
     const handleChangeLeaveStatus = (leaveId, newStatus) => {
         if (leaveId === null) return;
 
@@ -372,7 +371,7 @@ const GestionareConcedii = () => {
         setLeaves(updatedLeaves);
     };
     const handleSearch = () => {
-        // logica pentru căutare
+
     };
     const filter = {};
     return (
@@ -405,10 +404,16 @@ const GestionareConcedii = () => {
                         onChange={(e) => handleFilterChange({ ...filter, leaveType: e.target.value })}
                     >
                         <option value="">Toate tipurile</option>
-                        {leaveType.map((tip, index) => (
-                            <option key={index} value={tip}>{tip}</option>
-                        ))}
+                        {leaveType ? (
+                            leaveType.map((tip, index) => (
+                                <option key={index} value={tip.value}>{tip.label}</option>
+                            ))
+                        ) : (
+                            <option value="">Loading...</option>
+                        )}
+
                     </select>
+
                     <select
                         id="status-filter"
                         className="select-style"
@@ -459,7 +464,7 @@ const GestionareConcedii = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="9">No data available</td>
+                                <td colSpan="9">Nu există concedii.</td>
                             </tr>
                         )}
                     </tbody>
@@ -489,7 +494,6 @@ const GestionareConcedii = () => {
                             <label htmlFor="leaveType">Leave Type:</label>
                             <select
                                 className="select-style"
-                                id="leaveType"
                                 value={selectedLeaveType}
                                 onChange={(e) => setSelectedLeaveType(e.target.value)}
                             >
@@ -540,108 +544,96 @@ const GestionareConcedii = () => {
                     contentLabel="Edit Leave"
                     className="modal-content"
                 >
-                    <h2>Edit Leave</h2>
-                    <form onSubmit={handleSaveLeave}>
+                    <h2>Editare</h2>
+                    <form onSubmit={handleUpdateLeave}>
+
                         <div className="form-row">
+
                             <div className="form-group">
-                                <label htmlFor="department">Department:</label>
+                                <label htmlFor="employeeName">Nume angajat:</label>
+                                <input
+                                    type="text"
+                                    id="employeeName"
+                                    className="select-style"
+                                    value={selectedLeave?.employee_name || ''}
+                                    readOnly
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="department">Departament:</label>
+                                <input
+                                    type="text"
+                                    id="department"
+                                    className="select-style"
+                                    value={selectedLeave?.employee_department || ''}
+                                    readOnly
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="startDate">Data de început:</label>
+                                <input
+                                    type="date"
+                                    id="startDate"
+                                    className="select-style"
+                                    value={selectedLeave?.start_date || ''}
+                                    onChange={(e) => setSelectedLeave({ ...selectedLeave, start_date: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="endDate">Data de sfârșit:</label>
+                                <input
+                                    type="date"
+                                    id="endDate"
+                                    className="select-style"
+                                    value={selectedLeave?.end_date || ''}
+                                    onChange={(e) => setSelectedLeave({ ...selectedLeave, end_date: e.target.value })}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="leaveType">Tipul de concediu:</label>
                                 <select
                                     className="select-style"
-                                    id="department"
-                                    value={selectedDepartment}
-                                    onChange={(e) => {
-                                        setSelectedDepartment(e.target.value);
-                                        setEmployeeId('');
-                                    }}
+                                    value={filter.leaveType}
+                                    onChange={(e) => handleFilterChange({ ...filter, leaveType: e.target.value })}
                                 >
-                                    <option value="">Select a department</option>
-                                    {department.map((dep) => (
-                                        <option key={dep} value={dep}>{dep}</option>
+                                    <option value="">Toate tipurile</option>
+                                    {LEAVE_TYPES.map((tip, index) => (
+                                        <option key={index} value={tip.value}>{tip.label}</option>
                                     ))}
                                 </select>
                             </div>
-
-                            <div className="form-group">
-                                <label htmlFor="employee">Employee:</label>
-                                <select
-                                    className="select-style"
-                                    id="employee"
-                                    value={employeeId}
-                                    onChange={(e) => setEmployeeId(e.target.value)}
-                                    disabled={!selectedDepartment}
-                                >
-                                    <option value="">Select an employee</option>
-                                    {employees
-                                        .filter(emp => emp.department === selectedDepartment)
-                                        .map((emp) => (
-                                            <option key={emp.id} value={emp.id}>
-                                                {emp.name}
-                                            </option>
-                                        ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="form-row">
-                            <div className="form-group">
-                                <label htmlFor="startDate">Start Date:</label>
-                                <input
-                                    id="startDate"
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                />
-                            </div>
-
-                            <div className="form-group">
-                                <label htmlFor="endDate">End Date:</label>
-                                <input
-                                    id="endDate"
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="form-row">
                             <div className="form-group">
                                 <label htmlFor="status">Status:</label>
                                 <select
                                     className="select-style"
                                     id="status"
-                                    value={selectedLeave ? selectedLeave.status : ''}
-                                    onChange={(e) => handleChangeLeaveStatus(selectedLeave ? selectedLeave.id : null, e.target.value)}
-                                    disabled={!selectedLeave}
+                                    value={selectedLeave?.status || ''}
+                                    onChange={(e) => setSelectedLeave({ ...selectedLeave, status: e.target.value })}
                                 >
-                                    <option value="Pending">Pending</option>
-                                    <option value="Approved">Approved</option>
-                                    <option value="Rejected">Rejected</option>
+                                    <option value="PE">În așteptare</option>
+                                    <option value="AC">Aprobat</option>
+                                    <option value="RE">Respins</option>
                                 </select>
                             </div>
-
                             <div className="form-group">
-                                <label htmlFor="leaveType">Leave Type:</label>
+                                <label htmlFor="is_approved">Aprobare:</label>
                                 <select
                                     className="select-style"
-                                    id="leaveType"
-                                    value={selectedLeaveType}
-                                    onChange={(e) => setSelectedLeaveType(e.target.value)}
+                                    id="is_approved"
+                                    value={selectedLeave?.is_approved ? 'Da' : 'Nu'}
+                                    onChange={(e) => setSelectedLeave({ ...selectedLeave, is_approved: e.target.value === 'Da' })}
                                 >
-                                    <option value="">Select a Leave Type</option>
-                                    {LEAVE_TYPES.map((type) => (
-                                        <option key={type.value} value={type.value}>{type.label}</option>
-                                    ))}
+                                    <option value="Da">Da</option>
+                                    <option value="Nu">Nu</option>
                                 </select>
 
-
-
                             </div>
-                        </div>
 
+                        </div>
                         <div className="button-container">
-                            <button className="button" type="submit">Save</button>
-                            <button className="button" type="button" onClick={CloseEditModal}>Close</button>
+                            <button className="buton" type="submit">Salvează</button>
+                            <button className="buton" onClick={CloseEditModal}>Închide</button>
                         </div>
                     </form>
                 </Modal>

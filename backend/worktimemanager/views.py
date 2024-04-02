@@ -433,7 +433,7 @@ def leave_list_create(request):
 def leave_detail(request, id):
     try:
         leave = Leave.objects.get(id=id)
-        if not request.user.is_superuser and leave.user != request.user:
+        if not request.user.is_hr and leave.user != request.user:
             return Response({'message': 'Unauthorized'}, status=status.HTTP_401_UNAUTHORIZED)
     except Leave.DoesNotExist:
         return Response({'message': 'Concediul nu există.'}, status=status.HTTP_404_NOT_FOUND)
