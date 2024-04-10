@@ -409,24 +409,33 @@ def workschedule_delete(request, id):
     schedule.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['GET', 'POST'])
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def leave_list_create(request):
-    # Filtrăm concediile doar pentru angajatul logat dacă nu este superuser
-    if request.user.is_superuser:
-        leaves = Leave.objects.all()
-    else:
-        leaves = Leave.objects.filter(user=request.user)
+    leave_data = request.data
+    leave_type = leave_data.get('leave_type')
+    start_date = leave_data.get('start_date')
+    end_date = leave_data.get('end_date')
+    reason = leave_data.get('reason')
 
-    if request.method == 'GET':
-        serializer = LeaveSerializer(leaves, many=True)
-        return Response(serializer.data)
-    elif request.method == 'POST':
-        serializer = LeaveSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    created_leaves = []
+
+    for user_id in leave_data.get('users', []):
+        employee_instance = get_object_or_404(Employee, pk=user_id)
+        leave_instance = Leave.objects.create(
+            user=employee_instance,
+            start_date=start_date,
+            end_date=end_date,
+            leave_type=leave_type,
+            leave_description=reason,
+            # alte câmpuri după caz
+        )
+        created_leaves.append(leave_instance)
+
+    serializer = LeaveSerializer(created_leaves, many=True)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])

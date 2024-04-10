@@ -14,13 +14,12 @@ const localizer = momentLocalizer(moment);
 
 const GestionareConcedii = () => {
     const [renderData, setRenderData] = useState([]);
-
+    const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [employees, setEmployees] = useState([]);
     const [department, setDepartment] = useState([]);
     const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [selectedLeave, setSelectedLeave] = useState(null);
-    const [selectedEmployee, setSelectedEmployee] = useState('');
     const [AddModalOpen, setAddModalOpen] = useState(false);
     const [EditModalOpen, setEditModalOpen] = useState(false);
     const [selectedLeaveType, setSelectedLeaveType] = useState('');
@@ -113,27 +112,49 @@ const GestionareConcedii = () => {
     //CREATE
     const handleAddLeave = async (e) => {
         e.preventDefault();
+        console.log("Submit was triggered");
+    
+        if (selectedEmployeeIds.length === 0) {
+            console.error("No employees selected.");
+            return;
+        }
+    
+        // Presupunem că `selectedEmployeeIds` este un array de string-uri cu ID-uri de angajați
         const leaveData = {
-            user: selectedEmployee,
+            users: selectedEmployeeIds, 
             leave_type: selectedLeaveType,
-            start_date: startDate,
-            end_date: endDate,
+            start_date: moment(startDate).format('YYYY-MM-DD'),
+            end_date: moment(endDate).format('YYYY-MM-DD'),
             reason: reason,
-            // Set `is_leave` and `is_approved` as needed
         };
+    
         try {
             const accessToken = getAccessToken();
-            const response = await axios.post('/leaves/', leaveData, {
+            const csrfToken = Cookies.get('csrftoken');
+            const response = await axios.post('http://localhost:8000/leaves/', leaveData, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
                 },
             });
+    
+            console.log('Leave added successfully:', response.data);
             setLeaves(prevLeaves => [...prevLeaves, response.data]);
+            CloseAddModal();
         } catch (error) {
-            console.error('Error creating leave:', error);
+            console.error('Error creating leave:', error.response ? error.response.data : error);
+            alert('Error: ' + (error.response ? error.response.data : error.message));
         }
     };
+    
+
+
+    const handleEmployeeSelectionChange = (event) => {
+        const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
+        setSelectedEmployeeIds(selectedOptions);
+    };
+    
 
     // UPDATE
     const handleUpdateLeave = async (e) => {
@@ -311,7 +332,6 @@ const GestionareConcedii = () => {
 
     const OpenEditModal = (leave) => {
         setSelectedLeave(leave);
-        setSelectedDepartment(leave.department);
         setEditModalOpen(true);
     };
 
@@ -351,7 +371,7 @@ const GestionareConcedii = () => {
 
         const filterByDepartment = selectedDepartment ? employee.department === selectedDepartment : true;
         const filterByLeaveType = leaveType ? leave.leaveType === leaveType : true;
-        const filterByName = selectedEmployee ? employee.name.toLowerCase().includes(selectedEmployee.toLowerCase()) : true;
+        const filterByName = selectedEmployeeIds ? employee.name.toLowerCase().includes(selectedEmployeeIds.toLowerCase()) : true;
 
 
         return filterByDepartment && filterByLeaveType && filterByName;
@@ -474,69 +494,101 @@ const GestionareConcedii = () => {
                     isOpen={AddModalOpen}
                     onRequestClose={CloseAddModal}
                     className="modal-content"
+                    handleSubmit={handleAddLeave}
                 >
-                    <h2>Add Leave Form</h2>
+                    <h2>Înregistrează un concediu</h2>
                     <form onSubmit={handleAddLeave}>
                         <div className="form-group">
-                            <label htmlFor="employee">Employee:</label>
+                            <label htmlFor="employee">Angajat:</label>
                             <select
-                                id="employee"
-                                value={selectedEmployee}
-                                onChange={(e) => setSelectedEmployee(e.target.value)}
-                            >
-                                <option value="">Select an employee</option>
-                                {employees.map((employee) => (
-                                    <option key={employee.user} value={employee.user}>{employee.name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="leaveType">Leave Type:</label>
-                            <select
+                                multiple
+                                value={selectedEmployeeIds}
+                                onChange={handleEmployeeSelectionChange}
                                 className="select-style"
-                                value={selectedLeaveType}
-                                onChange={(e) => setSelectedLeaveType(e.target.value)}
                             >
-                                <option value="">Select a Leave Type</option>
-                                {LEAVE_TYPES.map((type) => (
-                                    <option key={type.value} value={type.value}>{type.label}</option>
+                                {filteredEmployees.map((employee) => (
+                                    <option key={employee.user} value={employee.user}>
+                                        {employee.name} - {employee.department} ({employee.user})
+                                    </option>
                                 ))}
                             </select>
 
                         </div>
+
                         <div className="form-group">
-                            <label htmlFor="startDate">Start Date:</label>
+                            <label htmlFor="leaveType">Tip concediu:</label>
+                            <select
+                                className="select-style"
+                                id="leaveType"
+                                value={selectedLeaveType}
+                                onChange={(e) => setSelectedLeaveType(e.target.value)}
+                            >
+                                <option value="">Selectează tipul de concediu</option>
+                                {LEAVE_TYPES.map((type) => (
+                                    <option key={type.value} value={type.value}>{type.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="startDate">Data început:</label>
                             <input
                                 id="startDate"
                                 type="date"
+                                className="select-style"
                                 value={startDate}
                                 onChange={(e) => setStartDate(e.target.value)}
                             />
                         </div>
+
                         <div className="form-group">
-                            <label htmlFor="endDate">End Date:</label>
+                            <label htmlFor="endDate">Data sfârșit:</label>
                             <input
                                 id="endDate"
                                 type="date"
+                                className="select-style"
                                 value={endDate}
                                 onChange={(e) => setEndDate(e.target.value)}
                             />
                         </div>
+
+
                         <div className="form-group">
-                            <label htmlFor="reason">Reason:</label>
-                            <textarea
-                                id="reason"
-                                value={reason}
-                                onChange={(e) => setReason(e.target.value)}
-                            />
+                            <label htmlFor="status">Stare:</label>
+                            <select
+                                className="select-style"
+                                id="status"
+                                value={selectedLeave?.status || ''}
+                                onChange={(e) => setSelectedLeave({ ...selectedLeave, status: e.target.value })}
+                            >
+                                <option value="PE">În așteptare</option>
+                                <option value="AC">Aprobat</option>
+                                <option value="RE">Respins</option>
+                            </select>
                         </div>
+
+                        <div className="form-group">
+                            <label htmlFor="is_approved">Aprobare:</label>
+                            <select
+                                className="select-style"
+                                id="is_approved"
+                                value={selectedLeave?.is_approved ? 'Da' : 'Nu'}
+                                onChange={(e) => setSelectedLeave({ ...selectedLeave, is_approved: e.target.value === 'Da' })}
+                            >
+                                <option value="Da">Da</option>
+                                <option value="Nu">Nu</option>
+                            </select>
+                        </div>
+
                         {modalError && <p className="error">{modalError}</p>}
+
                         <div className="button-container">
                             <button className="button" type="submit">Adaugă</button>
                             <button className="button" type="button" onClick={CloseAddModal}>Închide</button>
                         </div>
                     </form>
                 </Modal>
+
 
                 <Modal
                     isOpen={EditModalOpen}
