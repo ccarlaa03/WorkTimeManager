@@ -350,7 +350,7 @@ const GestionareProgramLucru = () => {
             <tr key={schedule.id}>
               <td>
                 <Link
-                  to={`/profil-employee/${schedule.user_id}`}
+                  to={`/angajat-profil/${schedule.user}`}
                   style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
                 >
                   {schedule.employee_name}

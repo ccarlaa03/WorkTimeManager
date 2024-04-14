@@ -32,6 +32,7 @@ const GestionareAngajati = () => {
 
     });
 
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         await createEmployee(newEmployee);
@@ -120,7 +121,7 @@ const GestionareAngajati = () => {
             return;
         }
         try {
-            const response = await instance.post('/create_employee/', newEmployee, {
+            const response = await axios.post('/create_employee/', newEmployee, {
                 headers: { Authorization: `Bearer ${accessToken}` },
             });
             console.log('Angajat adăugat cu succes:', response.data);
@@ -262,6 +263,7 @@ const GestionareAngajati = () => {
         }));
     };
 
+    console.log(employee);
 
     return (
         <div>
@@ -338,7 +340,7 @@ const GestionareAngajati = () => {
                                     <td>{employee.user}</td>
                                     <td>
                                         <Link
-                                            to={`/profil-employee/${employee.user}`}
+                                            to={`/angajat-profil/${employee.user}`}
                                             style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
                                         >
                                             {employee.name}

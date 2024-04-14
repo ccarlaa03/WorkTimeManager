@@ -23,8 +23,7 @@ import ProfilAngajat from './components/Angajat/angajat-profil';
 import OwnerDashboard from './components/Owner/owner-dashboard';
 import LogoutComponent from './components/Logare/logout';
 import { AuthProvider } from './AuthContext';
-import ErrorBoundary from './ErrorBoundary';
-import ReactDOM from 'react-dom';
+
 
 const App = () => {
 
@@ -44,10 +43,10 @@ const App = () => {
           <Route path="/program-lucru" element={<ProgramLucru />} />
           <Route path="/concedii" element={<Concedii />} />
           <Route path="/feedback-ang" element={<Feedback />} />
-          <Route path="/angajat-profil" element={<ProfilAngajat />} />
           <Route path="/Hr-dashboard" element={<HrDashboard />} />
           <Route path="/gestionare-feedback" element={<GestionareFeedback />} />
           <Route path="/gestionare-prog" element={<GestionareProgramLucru />} />
+          <Route path="/angajat-profil/:user_id" element={<ProfilAngajat/>} />
           <Route path="/gestionare-ang" element={<GestionareAngajati />} />
           <Route path="/gestionare-concedii" element={<GestionareConcedii />} />
           <Route path="/gestionare-formular" element={<GestionareFormular />} />

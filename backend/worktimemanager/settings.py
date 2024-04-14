@@ -25,7 +25,9 @@ CSRF_COOKIE_HTTPONLY = False
 
 
 DEBUG = True
-
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True,  
+}
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 if DEBUG:

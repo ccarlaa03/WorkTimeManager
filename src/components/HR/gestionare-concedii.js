@@ -32,18 +32,21 @@ const GestionareConcedii = () => {
     const [modalError, setModalError] = useState('');
     const [events, setEvents] = useState([]);
     const [hrCompanyId, setHrCompany] = useState(null);
+    const [filteredLeaves, setFilteredLeaves] = useState(leaves);
     const navigate = useNavigate();
     const getAccessToken = () => localStorage.getItem('access_token');
     axios.defaults.xsrfCookieName = 'csrftoken';
     axios.defaults.xsrfHeaderName = 'X-CSRFToken';
     const csrfToken = Cookies.get('csrftoken');
-    const [leaveForm, setLeaveForm] = useState({
-        employeeId: '',
-        startDate: '',
-        endDate: '',
+    const [displayedLeaves, setDisplayedLeaves] = useState(leaves);
+
+    const [filter, setFilter] = useState({
+        nume: '',
+        department: '',
         leaveType: '',
-        reason: '',
+        status: '',
     });
+    const departments = ["IT", "Marketing", "HR", "Contabilitate"];
 
     const LEAVE_TYPES = [
         { value: 'AN', label: 'Concediu Anual' },
@@ -113,21 +116,21 @@ const GestionareConcedii = () => {
     const handleAddLeave = async (e) => {
         e.preventDefault();
         console.log("Submit was triggered");
-    
+
         if (selectedEmployeeIds.length === 0) {
             console.error("No employees selected.");
             return;
         }
-    
+
         // Presupunem că `selectedEmployeeIds` este un array de string-uri cu ID-uri de angajați
         const leaveData = {
-            users: selectedEmployeeIds, 
+            users: selectedEmployeeIds,
             leave_type: selectedLeaveType,
             start_date: moment(startDate).format('YYYY-MM-DD'),
             end_date: moment(endDate).format('YYYY-MM-DD'),
             reason: reason,
         };
-    
+
         try {
             const accessToken = getAccessToken();
             const csrfToken = Cookies.get('csrftoken');
@@ -138,7 +141,7 @@ const GestionareConcedii = () => {
                     'X-CSRFToken': csrfToken,
                 },
             });
-    
+
             console.log('Leave added successfully:', response.data);
             setLeaves(prevLeaves => [...prevLeaves, response.data]);
             CloseAddModal();
@@ -147,14 +150,14 @@ const GestionareConcedii = () => {
             alert('Error: ' + (error.response ? error.response.data : error.message));
         }
     };
-    
+
 
 
     const handleEmployeeSelectionChange = (event) => {
         const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
         setSelectedEmployeeIds(selectedOptions);
     };
-    
+
 
     // UPDATE
     const handleUpdateLeave = async (e) => {
@@ -217,11 +220,6 @@ const GestionareConcedii = () => {
     const OpenAddModal = () => {
         setAddModalOpen(true);
         resetForm();
-    };
-
-
-    const handleFilterChange = (newFilter) => {
-
     };
 
     const CloseEditModal = () => {
@@ -364,21 +362,9 @@ const GestionareConcedii = () => {
         setAddModalOpen(false);
         resetForm();
     };
-    const filteredLeaves = leaves.filter(leave => {
-        const employee = employees.find(employee => employee.user === leave.employeeId);
-        if (!employee) return false; // 
 
 
-        const filterByDepartment = selectedDepartment ? employee.department === selectedDepartment : true;
-        const filterByLeaveType = leaveType ? leave.leaveType === leaveType : true;
-        const filterByName = selectedEmployeeIds ? employee.name.toLowerCase().includes(selectedEmployeeIds.toLowerCase()) : true;
-
-
-        return filterByDepartment && filterByLeaveType && filterByName;
-    });
-
-
-    const handleChangeLeaveStatus = (leaveId, newStatus) => {
+    const leaveStatus = (leaveId, newStatus) => {
         if (leaveId === null) return;
 
         const updatedLeaves = leaves.map((leave) => {
@@ -390,10 +376,33 @@ const GestionareConcedii = () => {
 
         setLeaves(updatedLeaves);
     };
-    const handleSearch = () => {
 
+    const handleFilterChange = (updatedFilters) => {
+        setFilter(updatedFilters);
     };
-    const filter = {};
+
+
+    const handleSearch = () => {
+        const filteredResults = leaves.filter(leave => {
+          // Find the corresponding employee for the leave entry
+          const employee = employees.find(emp => emp.user_id === leave.user_id); // Ensure the user_id fields match your database and JSON structure
+          if (!employee) return false; // Skip the leave if the employee isn't found
+      
+          // Filter conditions
+          const matchesName = filter.nume ? employee.name.toLowerCase().includes(filter.nume.toLowerCase()) : true;
+          const matchesDepartment = filter.department ? employee.department === filter.department : true;
+          const matchesLeaveType = filter.leaveType ? leave.leave_type === filter.leaveType : true;
+          const matchesStatus = filter.status ? leave.status === filter.status : true;
+      
+          // Return true if all conditions are met
+          return matchesName && matchesDepartment && matchesLeaveType && matchesStatus;
+        });
+      
+        // Update the state with the filtered results
+        setFilteredLeaves(filteredResults);
+      };
+      
+
     return (
         <div>
             <div className="container-dashboard">
@@ -402,37 +411,32 @@ const GestionareConcedii = () => {
                     <input
                         type="text"
                         placeholder="Caută după nume"
-                        value={filter.nume}
-                        onChange={(e) => handleFilterChange({ ...filter, nume: e.target.value })}
+                        value={filter.name}
+                        onChange={(e) => handleFilterChange({ ...filter, name: e.target.value })}
                     />
-                    <button onClick={handleSearch} className="buton">
-                        Caută
-                    </button>
+                    <button onClick={handleSearch}>Caută</button>
                     <select
                         className="select-style"
                         value={filter.department}
                         onChange={(e) => handleFilterChange({ ...filter, department: e.target.value })}
                     >
                         <option value="">Toate departamentele</option>
-                        {department.map((dep, index) => (
-                            <option key={index} value={dep}>{dep}</option>
+                        {departments.map((department) => (
+                            <option key={department} value={department}>{department}</option>
                         ))}
                     </select>
+
                     <select
                         className="select-style"
                         value={filter.leaveType}
                         onChange={(e) => handleFilterChange({ ...filter, leaveType: e.target.value })}
                     >
                         <option value="">Toate tipurile</option>
-                        {leaveType ? (
-                            leaveType.map((tip, index) => (
-                                <option key={index} value={tip.value}>{tip.label}</option>
-                            ))
-                        ) : (
-                            <option value="">Loading...</option>
-                        )}
-
+                        {LEAVE_TYPES.map((type) => (
+                            <option key={type.value} value={type.value}>{type.label}</option>
+                        ))}
                     </select>
+
 
                     <select
                         id="status-filter"
@@ -447,7 +451,7 @@ const GestionareConcedii = () => {
                     </select>
 
                 </div>
-                <br></br>
+
                 <table className="tabel column">
                     <thead>
                         <tr>
@@ -467,7 +471,7 @@ const GestionareConcedii = () => {
                             leaves.map((leave) => (
                                 <tr key={leave.id}>
                                     <td>{leave.user}</td>
-                                    <td onClick={() => navigate(`/user-profile/${leave.user}`)} style={{ cursor: 'pointer' }}>
+                                    <td onClick={() => navigate(`/angajat-profil/${leave.user}`)} style={{ cursor: 'pointer' }}>
                                         {leave.employee_name}
                                     </td>
                                     <td>{leave.employee_department}</td>

@@ -53,6 +53,10 @@ urlpatterns = [
     path('leaves/<int:id>/', views.leave_detail, name='leave-detail'),
     path('gestionare-concedii/', views.leave_list, name='gestionare-concedii'),
     path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
+    path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
+
+
+
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

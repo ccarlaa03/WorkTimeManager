@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -477,3 +478,13 @@ def leave_delete(request, id):
     
     schedule.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_detail(request, user_id):
+    logger.debug(f"Starting employee_detail view for user_id: {user_id}")
+    employee = get_object_or_404(Employee, user=user_id)
+    serializer = EmployeeSerializer(employee)
+    logger.debug(f"Serialized data: {serializer.data}")
+    return Response(serializer.data)
