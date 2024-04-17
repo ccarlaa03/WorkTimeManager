@@ -228,10 +228,7 @@ const GestionareConcedii = () => {
     };
 
 
-    const navigateToProfile = (employeeId) => {
-        navigate(`/user-profile/${employeeId}`);
-    };
-
+    
 
     const holidays = [
         new Date('2024-01-01'),
@@ -384,24 +381,24 @@ const GestionareConcedii = () => {
 
     const handleSearch = () => {
         const filteredResults = leaves.filter(leave => {
-          // Find the corresponding employee for the leave entry
-          const employee = employees.find(emp => emp.user_id === leave.user_id); // Ensure the user_id fields match your database and JSON structure
-          if (!employee) return false; // Skip the leave if the employee isn't found
-      
-          // Filter conditions
-          const matchesName = filter.nume ? employee.name.toLowerCase().includes(filter.nume.toLowerCase()) : true;
-          const matchesDepartment = filter.department ? employee.department === filter.department : true;
-          const matchesLeaveType = filter.leaveType ? leave.leave_type === filter.leaveType : true;
-          const matchesStatus = filter.status ? leave.status === filter.status : true;
-      
-          // Return true if all conditions are met
-          return matchesName && matchesDepartment && matchesLeaveType && matchesStatus;
+            // Find the corresponding employee for the leave entry
+            const employee = employees.find(emp => emp.user_id === leave.user_id); // Ensure the user_id fields match your database and JSON structure
+            if (!employee) return false; // Skip the leave if the employee isn't found
+
+            // Filter conditions
+            const matchesName = filter.nume ? employee.name.toLowerCase().includes(filter.nume.toLowerCase()) : true;
+            const matchesDepartment = filter.department ? employee.department === filter.department : true;
+            const matchesLeaveType = filter.leaveType ? leave.leave_type === filter.leaveType : true;
+            const matchesStatus = filter.status ? leave.status === filter.status : true;
+
+            // Return true if all conditions are met
+            return matchesName && matchesDepartment && matchesLeaveType && matchesStatus;
         });
-      
+
         // Update the state with the filtered results
         setFilteredLeaves(filteredResults);
-      };
-      
+    };
+
 
     return (
         <div>
@@ -694,7 +691,7 @@ const GestionareConcedii = () => {
                     </form>
                 </Modal>
 
-                <div class="button-container">
+                <div className="button-container">
                     <button className='buton' onClick={OpenAddModal}>Adaugă concediu</button>
                 </div>
 
@@ -706,7 +703,6 @@ const GestionareConcedii = () => {
                     endAccessor="end"
                     style={{ height: 500 }}
                 />
-
 
             </div>
         </div>

@@ -354,6 +354,13 @@ def workschedule_list(request):
     serializer = WorkScheduleSerializer(schedules, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_workschedule_list(request, user_id):
+    schedules = WorkSchedule.objects.filter(user_id=user_id)
+    serializer = WorkScheduleSerializer(schedules, many=True)
+    return Response(serializer.data)
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def workschedule_create(request):
@@ -467,6 +474,14 @@ def leave_list(request):
     schedules = Leave.objects.all()
     serializer = LeaveSerializer(schedules, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_leaves(request, user_id):
+    leaves = Leave.objects.filter(user_id=user_id)
+    serializer = LeaveSerializer(leaves, many=True)
+    return Response(serializer.data)
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])

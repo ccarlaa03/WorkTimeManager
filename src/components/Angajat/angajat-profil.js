@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import instance from '../../axiosConfig';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+
 
 
 const ProfilAngajat = () => {
   const { user_id } = useParams();
-  const instance = axios.create({
-    baseURL: "http://localhost:8000",
-  });
 
   const initialEmployeeState = {
     user_id: '',
@@ -23,15 +20,13 @@ const ProfilAngajat = () => {
 
 
   const handleSaveClick = () => {
-    // Logic to save the edited employee details
-    // You can send a POST or PUT request to your API endpoint here with the employee data
+
     console.log('Save changes for employee:', employee);
-    setEditMode(false); // Exit edit mode after save
+    setEditMode(false);
   };
   const [editMode, setEditMode] = useState(false);
   const [employee, setEmployee] = useState(initialEmployeeState);
-
-  const [workingSchedule, setWorkSchedule] = useState(null);
+  const [workschedule, setWorkSchedule] = useState(null);
   const [leaves, setLeaves] = useState(null);
 
   useEffect(() => {
@@ -95,11 +90,45 @@ const ProfilAngajat = () => {
     };
 
 
+    const fetchLeaves = async () => {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.error("No access token found. User is not logged in.");
+        return;
+      }
+      try {
+        const leaveResponse = await instance.get(`http://localhost:8000/angajat-concedii/${user_id}/`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setLeaves(leaveResponse.data);
+      } catch (error) {
+        console.error('Error fetching leaves:', error);
+      }
+    };
+
+
+    const fetchWorkSchedule = async () => {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.error("No access token found. User is not logged in.");
+        return;
+      }
+      try {
+        const leaveResponse = await instance.get(`http://localhost:8000/angajat-prog/${user_id}/`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setWorkSchedule(leaveResponse.data);
+      } catch (error) {
+        console.error('Error fetching workschedule:', error);
+      }
+    };
 
     const initializeData = async () => {
       const hrCompanyId = await fetchHrCompany();
       if (hrCompanyId) {
         await fetchEmployeeDetails();
+        await fetchLeaves();
+        await fetchWorkSchedule();
       }
     };
 
@@ -165,6 +194,57 @@ const ProfilAngajat = () => {
             className="input-field"
           />
         </div>
+        <div className="detail">
+          <label>Data angajării:</label>
+          <input
+            type="text"
+            name="hire_date"
+            value={employee.hire_date || ''}
+            onChange={onChange}
+            className="input-field"
+          />
+        </div>
+        <div className="detail">
+          <label>Ore lucrate:</label>
+          <input
+            type="text"
+            name="working_hours"
+            value={employee.working_hours || ''}
+            onChange={onChange}
+            className="input-field"
+          />
+        </div>
+        <div className="detail">
+          <label>Zile libere:</label>
+          <input
+            type="text"
+            name="free_days"
+            value={employee.free_days || ''}
+            onChange={onChange}
+            className="input-field"
+          />
+        </div>
+        <div className="detail">
+          <label>Adresa:</label>
+          <input
+            type="text"
+            name="address"
+            value={employee.address || ''}
+            onChange={onChange}
+            className="input-field"
+          />
+        </div>
+
+        <div className="detail">
+          <label>Număr de telefon:</label>
+          <input
+            type="text"
+            name="telephone"
+            value={employee.telephone_number || ''}
+            onChange={onChange}
+            className="input-field"
+          />
+        </div>
         <button className="button" onClick={onSaveClick}>
           Salvează modificările
         </button>
@@ -190,6 +270,26 @@ const ProfilAngajat = () => {
           <label>Post:</label>
           <span>{employee.position}</span>
         </div>
+        <div className="detail">
+          <label>Data angajării:</label>
+          <span>{employee.hire_date}</span>
+        </div>
+        <div className="detail">
+          <label>Ore lucrate:</label>
+          <span>{employee.working_hours}</span>
+        </div>
+        <div className="detail">
+          <label>Zile libere:</label>
+          <span>{employee.free_days}</span>
+        </div>
+        <div className="detail">
+          <label>Adresă:</label>
+          <span>{employee.address}</span>
+        </div>
+        <div className="detail">
+          <label>Număr de telefon:</label>
+          <span>{employee.telephone_number}</span>
+        </div>
         <button className="button" onClick={onEditClick}>
           Editează profilul
         </button>
@@ -211,18 +311,15 @@ const ProfilAngajat = () => {
           <EmployeeDetailsView employee={employee} onEditClick={handleEdit} />
         )}
 
-        {/* Informații suplimentare (concedii, program de lucru) */}
         <div className="additional-info">
           <h2>Concedii</h2>
           {
             leaves ? (
-              // Presupunând că "leaves" este un array, îl parcurgi și afișezi fiecare concediu
               leaves.map(leave => (
                 <div key={leave.id}>
-                  {/* Aici afișezi detaliile fiecărui concediu, în funcție de structura datelor tale */}
                   <p>Tip Concediu: {leave.leave_type}</p>
-                  <p>Descriere: {leave.leave_description}</p>
-                  {/* Adaugă restul detaliilor necesare */}
+                  <p>Perioada: {`${leave.start_date} - ${leave.end_date}`}</p>
+                  <p>Status: {leave.status}</p>
                 </div>
               ))
             ) : (
@@ -232,12 +329,14 @@ const ProfilAngajat = () => {
 
           <h2>Program de lucru</h2>
           {
-            workingSchedule ? (
-              // Afișează detaliile programului de lucru, similar cu concediile
-              <div>
-                <p>Ore de lucru: {workingSchedule.hours}</p>
-                {/* Adaugă restul detaliilor necesare */}
-              </div>
+            workschedule ? (
+              workschedule.map((schedule) => (
+                <div key={schedule.id}>
+                  <p>Data: {schedule.date}</p>
+                  <p>Program: {`${schedule.start_time} - ${schedule.end_time}`}</p>
+                  <p>Ore suplimentare: {schedule.overtime_hours}</p>
+                </div>
+              ))
             ) : (
               <p>Încărcarea programului de lucru...</p>
             )

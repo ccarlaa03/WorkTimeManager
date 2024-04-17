@@ -35,7 +35,8 @@ urlpatterns = [
     path('hr-dashboard/', views.hr_dashboard, name='hr-dashboard'),
     path('employee-dashboard/', views.employee_dashboard, name='employee-dashboard'),
     path('gestionare-ang/', views.list_employees, name='gestionare-ang'),
-    path('gestionare-prog/', views.workschedule_list, name='gestionare-prog'),
+    path('gestionare-prog/', views.workschedule_list, name='employee-workschedules'),
+    path('angajat-prog/<int:user_id>/', views.employee_workschedule_list, name='angajat-prog'),
     path('workschedule-create/', views.workschedule_create, name='workschedule-create'),
     path('workschedules/<int:id>/', views.workschedule_retrieve, name='workschedule-retrieve'),
     path('workschedule_update/<int:id>/', views.workschedule_update, name='workschedule_update'),
@@ -54,7 +55,7 @@ urlpatterns = [
     path('gestionare-concedii/', views.leave_list, name='gestionare-concedii'),
     path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
     path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
-
+    path('angajat-concedii/<int:user_id>/', views.employee_leaves, name='employee-leaves'),
 
 
 
