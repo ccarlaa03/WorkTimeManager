@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import instance from '../../axiosConfig';
 import { useParams } from 'react-router-dom';
-
-
+import Modal from 'react-modal';
 
 const ProfilAngajat = () => {
   const { user_id } = useParams();
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState('');
   const initialEmployeeState = {
     user_id: '',
     name: '',
@@ -18,16 +18,20 @@ const ProfilAngajat = () => {
     telephone_number: '',
   };
 
-
-  const handleSaveClick = () => {
-
-    console.log('Save changes for employee:', employee);
-    setEditMode(false);
+  const handleEdit = () => {
+    setIsModalOpen(true);
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setConfirmationMessage("");
+  };
+
   const [editMode, setEditMode] = useState(false);
   const [employee, setEmployee] = useState(initialEmployeeState);
   const [workschedule, setWorkSchedule] = useState(null);
   const [leaves, setLeaves] = useState(null);
+  const [employeedetails, seEmployeeDetails] = useState(null);
 
   useEffect(() => {
     const getAccessToken = () => localStorage.getItem('access_token');
@@ -72,8 +76,6 @@ const ProfilAngajat = () => {
 
       console.log(`Requesting employee details from URL: http://localhost:8000${url}`);
 
-
-
       const headers = {
         'Authorization': `Bearer ${accessToken}`,
       };
@@ -88,7 +90,6 @@ const ProfilAngajat = () => {
         console.error('Error fetching employee details:', error);
       }
     };
-
 
     const fetchLeaves = async () => {
       const accessToken = getAccessToken();
@@ -123,25 +124,52 @@ const ProfilAngajat = () => {
       }
     };
 
+
     const initializeData = async () => {
       const hrCompanyId = await fetchHrCompany();
       if (hrCompanyId) {
         await fetchEmployeeDetails();
         await fetchLeaves();
         await fetchWorkSchedule();
+
       }
     };
 
     initializeData(user_id);
   }, [user_id]);
 
-  const handleEdit = () => {
-    setEditMode(!editMode);
+
+  const saveEmployeeDetails = async () => {
+    const getAccessToken = () => localStorage.getItem('access_token');
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      console.error("No access token found. User is not logged in.");
+      return;
+    }
+
+    const url = `/employee-edit/${user_id}/`;
+    const headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    };
+
+    try {
+      const response = await instance.put(url, employee, { headers });
+      console.log(typeof saveEmployeeDetails);
+      seEmployeeDetails(response.data);
+      setConfirmationMessage('Modificările au fost salvate cu succes!');
+      setTimeout(() => {
+        setConfirmationMessage('');
+        setIsModalOpen(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error updating employee details:', error);
+    }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEmployee(prevState => ({
+    setEmployee((prevState) => ({
       ...prevState,
       [name]: value,
     }));
@@ -151,7 +179,7 @@ const ProfilAngajat = () => {
     return <div>Încărcarea detaliilor angajatului...</div>;
   }
 
-  const EmployeeDetailsEdit = ({ employee, onSaveClick, onChange }) => {
+  const EmployeeDetailsEdit = ({ employee, onSave, onChange, confirmationMessage }) => {
     return (
       <div className="personal-info">
         <div className="detail">
@@ -159,7 +187,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="name"
-            value={employee.name || ''}
+            value={employee.name}
             onChange={onChange}
             className="input-field"
           />
@@ -169,7 +197,7 @@ const ProfilAngajat = () => {
           <input
             type="email"
             name="email"
-            value={employee.email || ''}
+            value={employee.email}
             onChange={onChange}
             className="input-field"
           />
@@ -179,7 +207,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="department"
-            value={employee.department || ''}
+            value={employee.department}
             onChange={onChange}
             className="input-field"
           />
@@ -189,7 +217,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="position"
-            value={employee.position || ''}
+            value={employee.position}
             onChange={onChange}
             className="input-field"
           />
@@ -199,7 +227,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="hire_date"
-            value={employee.hire_date || ''}
+            value={employee.hire_date}
             onChange={onChange}
             className="input-field"
           />
@@ -209,7 +237,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="working_hours"
-            value={employee.working_hours || ''}
+            value={employee.working_hours}
             onChange={onChange}
             className="input-field"
           />
@@ -219,7 +247,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="free_days"
-            value={employee.free_days || ''}
+            value={employee.free_days}
             onChange={onChange}
             className="input-field"
           />
@@ -229,7 +257,7 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="address"
-            value={employee.address || ''}
+            value={employee.address}
             onChange={onChange}
             className="input-field"
           />
@@ -240,112 +268,131 @@ const ProfilAngajat = () => {
           <input
             type="text"
             name="telephone"
-            value={employee.telephone_number || ''}
+            value={employee.telephone_number}
             onChange={onChange}
             className="input-field"
           />
         </div>
-        <button className="button" onClick={onSaveClick}>
-          Salvează modificările
-        </button>
+        {confirmationMessage && <div className="save-confirmation">{confirmationMessage}</div>}
+        <button className='buton' onClick={onSave}>Salvează modificările</button>
       </div>
     );
   };
   const EmployeeDetailsView = ({ employee, onEditClick }) => {
     return (
       <div className="personal-info">
-        <div className="detail">
-          <label>Nume:</label>
-          <span>{employee.name}</span>
-        </div>
-        <div className="detail">
-          <label>Email:</label>
-          <span>{employee.email}</span>
-        </div>
-        <div className="detail">
-          <label>Departament:</label>
-          <span>{employee.department}</span>
-        </div>
-        <div className="detail">
-          <label>Post:</label>
-          <span>{employee.position}</span>
-        </div>
-        <div className="detail">
-          <label>Data angajării:</label>
-          <span>{employee.hire_date}</span>
-        </div>
-        <div className="detail">
-          <label>Ore lucrate:</label>
-          <span>{employee.working_hours}</span>
-        </div>
-        <div className="detail">
-          <label>Zile libere:</label>
-          <span>{employee.free_days}</span>
-        </div>
-        <div className="detail">
-          <label>Adresă:</label>
-          <span>{employee.address}</span>
-        </div>
-        <div className="detail">
-          <label>Număr de telefon:</label>
-          <span>{employee.telephone_number}</span>
-        </div>
-        <button className="button" onClick={onEditClick}>
-          Editează profilul
-        </button>
+        <table className="info-table">
+          <tbody>
+            <tr>
+              <th>Nume:</th>
+              <td><b>{employee.name}</b></td>
+            </tr>
+            <tr>
+              <th>Email:</th>
+              <td>{employee.email}</td>
+            </tr>
+            <tr>
+              <th>Departament:</th>
+              <td>{employee.department}</td>
+            </tr>
+            <tr>
+              <th>Post:</th>
+              <td><b>{employee.position}</b></td>
+            </tr>
+            <tr>
+              <th>Adresă:</th>
+              <td>{employee.address}</td>
+            </tr>
+            <tr>
+              <th>Număr de telefon:</th>
+              <td>{employee.telephone_number}</td>
+            </tr>
+            <tr>
+              <th>Data angajării:</th>
+              <td><b>{employee.hire_date}</b></td>
+            </tr>
+            <tr>
+              <th>Ore lucrate:</th>
+              <td>{employee.working_hours}</td>
+            </tr>
+            <tr>
+              <th>Zile libere:</th>
+              <td>{employee.free_days}</td>
+            </tr>
+          </tbody>
+        </table>
+        <button className='buton' onClick={handleEdit}>Editează profilul</button>
       </div>
     );
   };
   return (
-    <div className="employee-profile">
-
+    <div className="container-dashboard">
       <div className="profile-content">
-
-        {editMode ? (
+        <Modal className="modal-content" isOpen={isModalOpen} onRequestClose={handleCloseModal}>
           <EmployeeDetailsEdit
             employee={employee}
-            onSaveClick={handleSaveClick}
+            onSave={saveEmployeeDetails}
             onChange={handleChange}
           />
-        ) : (
-          <EmployeeDetailsView employee={employee} onEditClick={handleEdit} />
-        )}
+          <button className='buton' onClick={handleCloseModal}>Închide</button>
+        </Modal>
 
-        <div className="additional-info">
-          <h2>Concedii</h2>
-          {
-            leaves ? (
-              leaves.map(leave => (
-                <div key={leave.id}>
-                  <p>Tip Concediu: {leave.leave_type}</p>
-                  <p>Perioada: {`${leave.start_date} - ${leave.end_date}`}</p>
-                  <p>Status: {leave.status}</p>
-                </div>
-              ))
+        <div className="card-curs">
+          <EmployeeDetailsView employee={employee} onEditClick={handleEdit} />
+        </div>
+
+        <div className="lista-cursuri">
+          <div className="card-curs">
+            <h2>Concedii</h2>
+            {leaves ? (
+              <table>
+                <tbody>
+                  {leaves.map((leave) => (
+                    <tr key={leave.id} className="leave-item">
+                      <th style={{ color: '#A087BC' }}>Id:</th>
+                      <td>{leave.id}</td>
+                      <th style={{ color: '#A087BC' }}>Status:</th>
+                      <td>{leave.status}</td>
+                      <th style={{ color: '#A087BC' }}>Tipul de concediu:</th>
+                      <td>{leave.leave_type}</td>
+                      <th style={{ color: '#A087BC' }}>Perioada:</th>
+                      <td>{`${leave.start_date} - ${leave.end_date}`}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p>Încărcarea datelor despre concedii...</p>
-            )
-          }
+            )}
+          </div>
 
-          <h2>Program de lucru</h2>
-          {
-            workschedule ? (
-              workschedule.map((schedule) => (
-                <div key={schedule.id}>
-                  <p>Data: {schedule.date}</p>
-                  <p>Program: {`${schedule.start_time} - ${schedule.end_time}`}</p>
-                  <p>Ore suplimentare: {schedule.overtime_hours}</p>
-                </div>
-              ))
+          <div className="card-curs">
+            <h2>Program de lucru</h2>
+            {workschedule ? (
+              <table>
+                <tbody>
+                  {workschedule.map((schedule) => (
+                    <tr key={schedule.id} className="schedule-item">
+                      <th style={{ color: '#A087BC' }}>Id:</th>
+                      <td>{schedule.id}</td>
+                      <th style={{ color: '#A087BC' }}>Data:</th>
+                      <td>{schedule.date}</td>
+                      <th style={{ color: '#A087BC' }}>Program:</th>
+                      <td>{`${schedule.start_time} - ${schedule.end_time}`}</td>
+                      <th style={{ color: '#A087BC' }}>Ore suplimentare:</th>
+                      <td>{schedule.overtime_hours}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p>Încărcarea programului de lucru...</p>
-            )
-          }
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
-
 };
 
 export default ProfilAngajat;

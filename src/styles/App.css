@@ -205,9 +205,14 @@ select {
   border: 1px solid #A087BC;
   border-radius: 5px;
 }
-
+.login-button {
+  width: 50%;
+  padding: 10px;
+  margin-top: 0px;
+}
 button {
   padding: 10px 20px;
+  width: auto;
   margin-right: 10px;
   background-color: #A087BC;
   color: white;
@@ -343,7 +348,7 @@ button {
   border: 0;
   outline: 0;
   transition: all 0.25s;
-
+ 
 }
 
 .content h2 {
@@ -663,6 +668,37 @@ button {
   transition: background-color 0.3s ease;
 }
 
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table th {
+  text-align: left;
+  padding: 8px;
+  color:  #A087BC; 
+}
+
+.info-table td {
+  padding: 8px;
+}
+
+.detail {
+  display: flex;
+  align-items: center;
+}
+.detail label {
+  font-weight: bold;
+  color: #404040;
+}
+
+.detail span {
+  color: #606060;
+}
+.form-row {
+  margin-bottom: 10px;
+}
+
 
 .rapoarte-cursuri {
   background-color: #FFF;
@@ -672,20 +708,87 @@ button {
   margin-top: 20px;
 }
 
-.card-curs {
-  background-color: white;
-  padding: 15px;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+.employee-profile {
+  background-color: #f5f5f5; /* or your preferred background color */
+  padding: 20px;
 }
 
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  width: 100%;
+}
+
+.card-curs {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* for hover effect */
+}
+.card-curs:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-content {
+  margin-bottom: 15px;
+}
+
+.card-content p {
+  margin: 5px 0;
+  line-height: 1.4;
+  color: #333;
+}
+
+.card-content strong {
+  color: #000;
+}
+
+.item {
+  margin-bottom: 15px;
+}
+
+.item label {
+  font-weight: 600;
+  color: #333333;
+  display: block; /* Make the label take its own line */
+}
+
+.item input {
+  width: 100%;
+  border: none;
+  padding: 5px 0; /* Just a little spacing on top and bottom */
+  border-bottom: 1px solid #cccccc; /* Just a simple line below the input */
+  margin-top: 5px;
+  font-size: 16px;
+  background-color: transparent; /* No background */
+  color: #333333;
+}
+
+.item input[readonly] {
+  pointer-events: none; /* No interaction */
+  color: #666666; /* Lighter text for read-only */
+}
+
+
+/* Remove input focus outline */
+input:focus {
+  outline: none;
+}
 .lista-cursuri {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
 }
-
 
 
 .select-style:disabled {
@@ -751,3 +854,4 @@ select::-ms-expand {
   }
 
 }
+

@@ -56,7 +56,7 @@ urlpatterns = [
     path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
     path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
     path('angajat-concedii/<int:user_id>/', views.employee_leaves, name='employee-leaves'),
-
+    path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),
 
 
 

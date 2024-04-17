@@ -503,3 +503,14 @@ def employee_detail(request, user_id):
     serializer = EmployeeSerializer(employee)
     logger.debug(f"Serialized data: {serializer.data}")
     return Response(serializer.data)
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def edit_employee(request, user_id):
+    employee = get_object_or_404(Employee, user_id=user_id)
+    serializer = EmployeeSerializer(employee, data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
