@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule, Feedback, Leave, Training
+from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,12 +58,39 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
         fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
         read_only_fields = ('id',)
 
-
-class FeedbackSerializer(serializers.ModelSerializer):
+        
+class FeedbackQuestionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Feedback
+        model = FeedbackQuestion
         fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
+class EmployeeFeedbackSerializer(serializers.ModelSerializer):
+    questions = FeedbackQuestionSerializer(many=True, read_only=True)
+    employee_name = serializers.CharField(source='employee.name')
+    questions_and_responses = serializers.SerializerMethodField()
+    total_score = serializers.IntegerField()
+    class Meta:
+        model = EmployeeFeedback
+        fields = ['id', 'employee_name', 'employee_department', 'form', 'questions', 'date_completed', 'questions_and_responses', 'total_score']
+        depth = 1  
+    def get_questions_and_responses(self, obj):
+        responses = obj.responses.all()  
+        return [
+            {
+                'question': response.question.text,
+                'response': response.response,
+                'score': response.score
+            } for response in responses
+        ]
+
+class FeedbackFormSerializer(serializers.ModelSerializer):
+    employee_feedbacks = EmployeeFeedbackSerializer(many=True, read_only=True, source='feedback_responses')
+    hr_review_status_display = serializers.SerializerMethodField()
+    class Meta:
+        model = FeedbackForm
+        fields = '__all__'
+
+    def get_hr_review_status_display(self, obj):
+        return obj.get_hr_review_status_display()
 
 class LeaveSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='user.name', read_only=True)

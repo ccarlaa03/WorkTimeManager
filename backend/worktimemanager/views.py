@@ -1,13 +1,14 @@
 from django.http import Http404
+from django.db.models import Count
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, Feedback, WorkSchedule, Leave
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer, FeedbackSerializer, WorkScheduleSerializer, LeaveSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -19,10 +20,17 @@ from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import get_object_or_404
 from datetime import datetime
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
-                           
+
+@receiver(post_save, sender=Response)
+def update_total_score(sender, instance, created, **kwargs):
+    if instance.feedback:
+        instance.feedback.calculate_total_score()
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def signup_view(request):
@@ -275,18 +283,7 @@ def delete_employee(request, user_id):
     employee = get_object_or_404(Employee, user=user_id)
     employee.delete()
     return Response(status=204)
-
-class FeedbackList(viewsets.ModelViewSet):
-    queryset = Feedback.objects.all()
-    serializer_class = FeedbackSerializer
-
-
-    def post(self, request):
-        serializer = FeedbackSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)   
+ 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -514,3 +511,131 @@ def edit_employee(request, user_id):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated]) 
+def list_feedback_forms(request):
+    forms = FeedbackForm.objects.all().order_by('-created_at')  
+    serializer = FeedbackFormSerializer(forms, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_feedback(request):
+    if not request.user.is_hr:
+        return Response({'error': 'Only HR can create feedback.'}, status=status.HTTP_403_FORBIDDEN)
+
+    serializer = EmployeeFeedbackSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(created_by=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_feedback_question(request, form_id):
+    try:
+        feedback_form = FeedbackForm.objects.get(id=form_id)
+    except FeedbackForm.DoesNotExist:
+        return Response({'error': 'Formularul de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+    question_data = {
+        'form': feedback_form.id,
+        'text': request.data.get('text'),
+        'order': request.data.get('order')
+    }
+    serializer = FeedbackQuestionSerializer(data=question_data)
+    if serializer.is_valid():
+        feedback_question = serializer.save()
+        return Response(FeedbackQuestionSerializer(feedback_question).data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def submit_employee_feedback(request, form_id):
+    try:
+        feedback_form = FeedbackForm.objects.get(id=form_id, is_active=True)
+    except FeedbackForm.DoesNotExist:
+        return Response({'error': 'Formularul de feedback nu este activ sau nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+    questions = request.data.get('questions', {})
+
+    for question_id, response in questions.items():
+        try:
+            feedback_question = FeedbackQuestion.objects.get(id=question_id, form=feedback_form)
+        except FeedbackQuestion.DoesNotExist:
+            continue  
+
+        EmployeeFeedback.objects.create(
+            employee=request.user,
+            form=feedback_form,
+            question=feedback_question,
+            response=response
+        )
+    return Response({'message': 'Feedback-ul a fost trimis cu succes!'}, status=status.HTTP_201_CREATED)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def feedback_form_details(request, form_id):
+    form = FeedbackForm.objects.get(pk=form_id)
+    responses = EmployeeFeedback.objects.filter(form=form)
+    form_serializer = FeedbackFormSerializer(form)
+    responses_serializer = EmployeeFeedbackSerializer(responses, many=True)
+    return Response({
+        'form_details': form_serializer.data,
+        'responses': responses_serializer.data
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def feedback_statistics(request):
+    # Generați statistici, de exemplu, numărul de răspunsuri per formular
+    stats = EmployeeFeedback.objects.values('form__title').annotate(response_count=Count('id')).order_by('-response_count')
+    return Response({'statistics': stats})
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_feedback_form(request, form_id):
+    try:
+        feedback_form = FeedbackForm.objects.get(id=form_id)
+        feedback_form.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except FeedbackForm.DoesNotExist:
+        return Response({'error': 'Formularul de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_feedback_question(request, question_id):
+    try:
+        feedback_question = FeedbackQuestion.objects.get(id=question_id)
+        feedback_question.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except FeedbackQuestion.DoesNotExist:
+        return Response({'error': 'Întrebarea de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_feedback_question(request, question_id):
+    try:
+        feedback_question = FeedbackQuestion.objects.get(id=question_id)
+        serializer = FeedbackQuestionSerializer(feedback_question, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except FeedbackQuestion.DoesNotExist:
+        return Response({'error': 'Întrebarea de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_feedback_form(request, form_id):
+    try:
+        feedback_form = FeedbackForm.objects.get(id=form_id)
+        serializer = FeedbackFormSerializer(feedback_form, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except FeedbackForm.DoesNotExist:
+        return Response({'error': 'Formularul de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)

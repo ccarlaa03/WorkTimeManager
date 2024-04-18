@@ -1,8 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Modal from 'react-modal';
 import { Bar } from 'react-chartjs-2';
 import Chart from 'chart.js/auto';
+import axios from 'axios';
+import instance from '../../axiosConfig';
 
 
 const GestionareFeedback = () => {
@@ -12,34 +14,87 @@ const GestionareFeedback = () => {
   const [filtrareLuna, setFiltrareLuna] = useState('');
   const navigate = useNavigate();
   const NUMAR_ANGAJATI_PER_PAGINA = 5;
+  const [isLoading, setIsLoading] = useState(true);
+  const [employees, setEmployees] = useState([]);
+  const [hrCompanyId, setHrCompany] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [feedbackForms, setFeedbackForms] = useState([]);
+  const [feedbackList, setFeedbackList] = useState([]);
+
+  useEffect(() => {
+    const fetchFeedbackForms = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        console.error("No access token found. User is not logged in.");
+        return;
+      }
+
+      try {
+        const hrResponse = await instance.get('/hr-dashboard/', {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+
+        if (hrResponse.data && hrResponse.data.company_id) {
+          console.log('HR Company ID:', hrResponse.data.company_id);
+          const hrCompanyId = hrResponse.data.company_id;
+          setHrCompany(hrCompanyId);
+
+          const employeeResponse = await axios.get('/gestionare-ang/', {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          });
+          console.log('All Employees:', employeeResponse.data);
+
+          console.log("Employees data:", employees);
+          const filteredEmployees = employees.filter(employee =>
+            employee.name?.toLowerCase().includes(searchTerm.toLowerCase())
+          );
 
 
-  // Inițializează lista angajaților aici
-  const angajati = [
-    { id: 1, nume: 'Angajat 1', departament: 'HR', data: '2024-01-01', puncte: 85 },
-    { id: 2, nume: 'Angajat 2', departament: 'Marketing', data: '2024-01-02', puncte: 92 },
+          const feedbackResponse = await axios.get(`/gestionare-feedback/?company_id=${hrCompanyId}`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+          });
+          console.log('Feedback Forms:', feedbackResponse.data);
+          setFeedbackForms(feedbackResponse.data);
 
-  ];
+          setIsLoading(false);
+
+        } else {
+          console.log('HR Company data:', hrResponse.data);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error fetching feedback data:', error.response ? error.response.data : error);
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeedbackForms();
+  }, []);
+
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   // Calculul mediei punctajelor pentru fiecare departament
-  const mediiPunctajeDepartamente = useMemo(() => {
+  /* const mediiPunctajeDepartamente = useMemo(() => {
     const sume = {};
     const counts = {};
 
-    angajati.forEach(angajat => {
-      if (!sume[angajat.departament]) {
-        sume[angajat.departament] = 0;
-        counts[angajat.departament] = 0;
+    employees.forEach(employee => {
+      if (!sume[employee.department]) {
+        sume[employee.department] = 0;
+        counts[employee.department] = 0;
       }
-      sume[angajat.departament] += angajat.puncte;
-      counts[angajat.departament] += 1;
+      sume[employee.department] += employee.puncte;
+      counts[employee.department] += 1;
     });
 
     return Object.keys(sume).map(departament => ({
       departament,
       punctajMediu: sume[departament] / counts[departament],
     }));
-  }, [angajati]);
+  }, [employees]);
 
   const dataForChart = {
     labels: mediiPunctajeDepartamente.map(item => item.departament),
@@ -51,13 +106,13 @@ const GestionareFeedback = () => {
       borderWidth: 1,
     }]
   };
-
+*/
   const options = {
     // opțiunile tale pentru grafic, dacă este cazul
   };
 
   // Apoi folosește logica de filtrare și paginație
-  const angajatiFiltrati = angajati
+  const angajatiFiltrati = employees
     .filter(angajat => angajat.nume.toLowerCase().includes(cautare.toLowerCase()))
     .filter(angajat => filtrareDepartament ? angajat.departament === filtrareDepartament : true);
 
@@ -91,7 +146,7 @@ const GestionareFeedback = () => {
         value={cautare}
         onChange={(e) => setCautare(e.target.value)}
       />
-        <button onClick={handleSearch} className="buton">
+      <button onClick={handleSearch} className="buton">
         Caută
       </button>
 
@@ -109,7 +164,7 @@ const GestionareFeedback = () => {
         <option value="">Toate lunile</option>
         {/* Opțiuni pentru luni */}
       </select>
-  
+
     </div>
   );
 
@@ -122,40 +177,43 @@ const GestionareFeedback = () => {
     <div>
       <div className="container-dashboard">
         <h1>Gestionare feedback angajați</h1>
-        {componentaCautare}
         <table className="tabel column">
+
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nume angajat</th>
-              <th>Departament</th>
-              <th>Data</th>
-              <th>Punctaj</th>
+              <th>Titlu</th>
+              <th>Creat de</th>
+              <th>Creat la ora</th>
+              <th> Status</th>
+              <th>Angajat</th>
+              <th>Data completată</th>
+              <th>Scorul</th>
             </tr>
           </thead>
           <tbody>
-            {angajatiCurenti.map(angajat => (
-              <tr key={angajat.id}>
-                <td>{angajat.id}</td>
-                <td onClick={() => handleNavigateToProfile(angajat.id)} style={{ cursor: 'pointer' }}>
-                  {angajat.nume}
-                </td>
-
-                <td>{angajat.departament}</td>
-                <td>{angajat.data}</td>
-                <td>{angajat.puncte}</td>
-              </tr>
+            {feedbackForms.map((form) => (
+              form.employee_feedbacks.map((feedback, index) => (
+                <tr key={feedback.id}>
+                  <td>{form.title}</td>
+                  <td>{form.created_by}</td>
+                  <td>{new Date(form.created_at).toLocaleDateString()}</td>
+                  <td>{form.hr_review_status}</td>
+                  <td>{feedback.employee_name}</td>
+                  <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
+                  <td>{feedback.total_score}</td>
+                </tr>
+              ))
             ))}
           </tbody>
         </table>
 
-        <div class="button-container">
+        <div className="button-container">
           <Link to="/gestionare-formular">
             <button className="buton">Modifică formular Feedback</button>
           </Link>
         </div>
 
-        <Bar data={dataForChart} options={options} />
+
 
         {butoanePaginatie}
 

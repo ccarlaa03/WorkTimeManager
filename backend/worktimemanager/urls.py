@@ -57,6 +57,16 @@ urlpatterns = [
     path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
     path('angajat-concedii/<int:user_id>/', views.employee_leaves, name='employee-leaves'),
     path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),
+    path('gestionare-feedback/', views.list_feedback_forms, name='list_feedback_forms'),
+    path('feedback/create/', views.create_feedback, name='create_feedback'),
+    path('feedback/add-question/<int:form_id>/', views.add_feedback_question, name='add_feedback_question'),
+    path('feedback/submit/<int:form_id>/', views.submit_employee_feedback, name='submit_employee_feedback'),
+    path('feedback/details/<int:form_id>/', views.feedback_form_details, name='feedback_form_details'),
+    path('feedback/statistics/', views.feedback_statistics, name='feedback_statistics'),
+    path('feedback/delete-form/<int:form_id>/', views.delete_feedback_form, name='delete_feedback_form'),
+    path('feedback/delete-question/<int:question_id>/', views.delete_feedback_question, name='delete_feedback_question'),
+    path('feedback/update-question/<int:question_id>/', views.update_feedback_question, name='update_feedback_question'),
+    path('feedback/update-form/<int:form_id>/', views.update_feedback_form, name='update_feedback_form'),
 
 
 
