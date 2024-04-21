@@ -18,6 +18,7 @@ import GestionareAngajati from './components/HR/gestionare-ang';
 import GestionareProgramLucru from './components/HR/gestionare-prog';
 import GestionareConcedii from './components/HR/gestionare-concedii';
 import GestionareTraining from './components/HR/gestionare-training';
+import FeedbackForm from './components/HR/formulare-feeedback';
 import ProfilAngajatHR from './components/HR/profil-angajat';
 import ProfilAngajat from './components/Angajat/angajat-profil';
 import OwnerDashboard from './components/Owner/owner-dashboard';
@@ -52,6 +53,7 @@ const App = () => {
           <Route path="/gestionare-formular" element={<GestionareFormular />} />
           <Route path="/gestionare-training" element={<GestionareTraining />} />
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
+          <Route path="/formulare-feeedback" element={<FeedbackForm />} />
         </Routes>
         <Footer />
       </Router>

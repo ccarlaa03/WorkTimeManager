@@ -58,6 +58,8 @@ urlpatterns = [
     path('angajat-concedii/<int:user_id>/', views.employee_leaves, name='employee-leaves'),
     path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),
     path('gestionare-feedback/', views.list_feedback_forms, name='list_feedback_forms'),
+    path('formulare-feedback/', views.list_feedback_forms, name='formulare_feedback'),
+
     path('feedback/create/', views.create_feedback, name='create_feedback'),
     path('feedback/add-question/<int:form_id>/', views.add_feedback_question, name='add_feedback_question'),
     path('feedback/submit/<int:form_id>/', views.submit_employee_feedback, name='submit_employee_feedback'),

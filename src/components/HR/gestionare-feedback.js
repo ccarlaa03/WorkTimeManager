@@ -197,7 +197,7 @@ const GestionareFeedback = () => {
                   <td>{form.title}</td>
                   <td>{form.created_by}</td>
                   <td>{new Date(form.created_at).toLocaleDateString()}</td>
-                  <td>{form.hr_review_status}</td>
+                  <td>{form.hr_review_status_display}</td>
                   <td>{feedback.employee_name}</td>
                   <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
                   <td>{feedback.total_score}</td>
@@ -211,12 +211,13 @@ const GestionareFeedback = () => {
           <Link to="/gestionare-formular">
             <button className="buton">Modifică formular Feedback</button>
           </Link>
+          <Link to="/formulare-feeedback">
+            <button className="buton">Formulare Feedback</button>
+          </Link>
         </div>
 
 
-
         {butoanePaginatie}
-
 
       </div>
     </div>
