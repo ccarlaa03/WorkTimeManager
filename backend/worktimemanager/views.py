@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -557,6 +557,8 @@ def create_feedback(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_feedback_question(request, form_id):
+    print("Received data:", request.data)  # Log the incoming data
+
     try:
         feedback_form = FeedbackForm.objects.get(id=form_id)
     except FeedbackForm.DoesNotExist:
@@ -565,14 +567,28 @@ def add_feedback_question(request, form_id):
     question_data = {
         'form': feedback_form.id,
         'text': request.data.get('text'),
-        'order': request.data.get('order')
+        'order': request.data.get('order'),
+        'response_type': request.data.get('response_type'),
+        'rating_scale': request.data.get('rating_scale') if 'rating_scale' in request.data else None,
+        'importance': request.data.get('importance') if 'importance' in request.data else None,
     }
-    serializer = FeedbackQuestionSerializer(data=question_data)
-    if serializer.is_valid():
-        feedback_question = serializer.save()
+    question_serializer = FeedbackQuestionSerializer(data=question_data)
+    
+    if question_serializer.is_valid():
+        feedback_question = question_serializer.save()
+        
+        options_data = request.data.get('options', [])
+        for option_data in options_data:
+            option_serializer = FeedbackResponseOptionSerializer(data=option_data)
+            if option_serializer.is_valid():
+                option_serializer.save(question=feedback_question)
+            else:
+                return Response(option_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(FeedbackQuestionSerializer(feedback_question).data, status=status.HTTP_201_CREATED)
     else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print(question_serializer.errors)  
+        return Response(question_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

@@ -167,19 +167,10 @@ class FeedbackQuestion(models.Model):
     choices=RESPONSE_TYPE_CHOICES,
     default='text' 
 )
+    importance = models.IntegerField(default=1, help_text="Importanț")
     rating_scale = models.IntegerField(null=True, blank=True, help_text="Scara de rating, de exemplu, 1-5")
     def __str__(self):
         return f"Question {self.order}: {self.text}"
-class FeedbackResponseOption(models.Model):
-    question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
-    text = models.CharField(max_length=255)
-    score = models.IntegerField() 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        self.employee_feedback.calculate_total_score()
-    def __str__(self):
-        return f"{self.text} ({self.score} puncte)"
     
 class EmployeeFeedback(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='feedbacks')
@@ -197,6 +188,18 @@ class EmployeeFeedback(models.Model):
         return self.employee.department
     def __str__(self):
         return f"Feedback from {self.employee.name} for form {self.form.title}"
+class FeedbackResponseOption(models.Model):
+    question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
+    text = models.CharField(max_length=255)
+    score = models.IntegerField() 
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.text} ({self.score} puncte)"
+
+
 
 class FeedbackResponse(models.Model):
     feedback = models.ForeignKey(EmployeeFeedback, on_delete=models.CASCADE, related_name='responses')

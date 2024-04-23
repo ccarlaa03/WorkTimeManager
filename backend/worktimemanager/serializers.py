@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training
+from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -58,12 +58,62 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
         fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
         read_only_fields = ('id',)
 
-        
+class FeedbackResponseOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FeedbackResponseOption
+        fields = ['id', 'text', 'score']      
+
 class FeedbackQuestionSerializer(serializers.ModelSerializer):
-    
+    options = FeedbackResponseOptionSerializer(many=True, required=False, allow_null=True)
+    importance = serializers.IntegerField(required=False, default=1)
+    rating_scale = serializers.IntegerField(required=False, allow_null=True)
+
     class Meta:
         model = FeedbackQuestion
         fields = '__all__'
+
+    def create(self, validated_data):
+        options_data = validated_data.pop('options', None)
+        question = FeedbackQuestion.objects.create(**validated_data)
+        
+        if options_data:
+            for option_data in options_data:
+                FeedbackResponseOption.objects.create(question=question, **option_data)
+
+        return question
+
+    def update(self, instance, validated_data):
+        options_data = validated_data.pop('options', [])
+        
+        # Actualizează întrebarea
+        instance.text = validated_data.get('text', instance.text)
+        instance.order = validated_data.get('order', instance.order)
+        instance.response_type = validated_data.get('response_type', instance.response_type)
+        instance.rating_scale = validated_data.get('rating_scale', instance.rating_scale)
+        instance.save()
+
+        current_option_ids = [option['id'] for option in options_data if 'id' in option]
+        
+        if instance.response_type == 'multiple_choice':
+            # Procesează opțiunile doar pentru întrebările de tip "Multiple Choice"
+            for option_data in options_data:
+                option_id = option_data.get('id', None)
+                if option_id:
+                    option_instance = FeedbackResponseOption.objects.get(id=option_id, question=instance)
+                    option_instance.text = option_data.get('text', option_instance.text)
+                    option_instance.score = option_data.get('score', option_instance.score)
+                    option_instance.save()
+                else:
+                    FeedbackResponseOption.objects.create(question=instance, **option_data)
+                    
+            # Șterge opțiunile care nu sunt incluse în actualizare
+            FeedbackResponseOption.objects.filter(question=instance).exclude(id__in=current_option_ids).delete()
+        
+        return instance
+    def validate(self, data):
+        if data['response_type'] == 'multiple_choice' and not data.get('options'):
+            raise serializers.ValidationError({"options": "This field is required for multiple choice questions."})
+        return data
 class EmployeeFeedbackSerializer(serializers.ModelSerializer):
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     employee_name = serializers.CharField(source='employee.name')

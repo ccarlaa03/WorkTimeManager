@@ -16,6 +16,16 @@ const FeedbackDetails = () => {
     const [newQuestionOrder, setNewQuestionOrder] = useState('');
     const [newQuestionResponseType, setNewQuestionResponseType] = useState('text');
     const [newQuestionRatingScale, setNewQuestionRatingScale] = useState('');
+    const [options, setOptions] = useState([]);
+    const [importance, setImportance] = useState(1);
+
+    const [newQuestion, setNewQuestion] = useState({
+        text: '',
+        importance: 1,
+        order: 0,
+        responseType: '',
+        options: [],
+    });
 
 
     useEffect(() => {
@@ -73,13 +83,26 @@ const FeedbackDetails = () => {
     // CREATE
     const handleAddQuestion = async (e) => {
         e.preventDefault();
+    
+        // Prepare the data structure
         const newQuestionData = {
-            text: newQuestionText,
+            text: newQuestion.text.trim(),
             order: formDetails.questions.length + 1,
-            response_type: newQuestionResponseType,
-            rating_scale: newQuestionResponseType === 'rating' ? parseInt(newQuestionRatingScale) : null,
+            response_type: newQuestion.responseType,
+            rating_scale: newQuestion.responseType === 'rating' ? parseInt(newQuestion.ratingScale, 10) : null,
+            importance: newQuestion.importance,
         };
-
+    
+        // Add options if it's a multiple-choice question
+        if (newQuestion.responseType === 'multiple_choice') {
+            newQuestionData.options = newQuestion.options.map(option => ({
+                text: option.text.trim(),
+                score: parseInt(option.score, 10)
+            }));
+        }
+    
+        console.log('Data sent to backend:', newQuestionData);
+    
         try {
             const response = await instance.post(`/feedback/add-question/${form_id}/`, newQuestionData, {
                 headers: {
@@ -87,45 +110,46 @@ const FeedbackDetails = () => {
                     'Content-Type': 'application/json',
                 },
             });
-
             setFormDetails(prevFormDetails => ({
                 ...prevFormDetails,
                 questions: [...prevFormDetails.questions, response.data],
             }));
-
             setIsAddModalOpen(false);
             setNewQuestionText('');
         } catch (error) {
-            console.error('Error adding a new question:', error);
+            console.error('Error adding a new question:', error.response ? error.response.data : error);
         }
     };
+    
+
 
     // UPDATE
     const handleEditQuestion = async (e) => {
         e.preventDefault();
 
-        const accessToken = localStorage.getItem('access_token'); // Sau orice metodă folosiți pentru a obține token-ul
+        const accessToken = localStorage.getItem('access_token');
 
         const updatedQuestionData = {
             text: currentQuestion.text,
             order: currentQuestion.order,
             response_type: currentQuestion.response_type,
-            rating_scale: currentQuestion.rating_scale, // asigurați-vă că acesta este un număr dacă `response_type` este 'rating'
-            form: form_id, // ID-ul formularului la care aparține întrebarea
+            rating_scale: currentQuestion.rating_scale,
+            form: form_id,
+            options: options,
+            importance: importance,
         };
 
         try {
             const response = await instance.put(`/feedback/update-question/${currentQuestion.id}/`, updatedQuestionData, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }, // Asigurați-vă că înlocuiți acest lucru cu token-ul dvs. de acces real
+                headers: { 'Authorization': `Bearer ${accessToken}` },
             });
             if (response.status === 200) {
-                // Acum, actualizați starea locală
                 const updatedQuestions = formDetails.questions.map(q =>
                     q.id === currentQuestion.id ? { ...q, ...response.data } : q
                 );
                 setFormDetails({ ...formDetails, questions: updatedQuestions });
 
-                setIsEditModalOpen(false); // Închideți modalul de editare
+                setIsEditModalOpen(false);
             } else {
                 console.error('Unexpected response status:', response.status);
             }
@@ -153,6 +177,65 @@ const FeedbackDetails = () => {
         }
     };
 
+    const loadQuestionForEditing = (questionData) => {
+        setCurrentQuestion({
+            ...questionData,
+            options: questionData.options || []
+        });
+    };
+
+    const handleNewQuestionResponseTypeChange = (e) => {
+        const selectedResponseType = e.target.value;
+        setNewQuestion((prevQuestion) => ({
+            ...prevQuestion,
+            responseType: selectedResponseType,
+            options: selectedResponseType === 'multiple_choice' ? [{ text: '', score: 0 }] : prevQuestion.options,
+        }));
+    };
+
+
+    const handleNewOptionTextChange = (index, newText) => {
+        setNewQuestion(prevQuestion => {
+            const newOptions = [...prevQuestion.options];
+            newOptions[index].text = newText;
+            return { ...prevQuestion, options: newOptions };
+        });
+    };
+
+    const handleNewOptionScoreChange = (index, newScore) => {
+        setNewQuestion(prevQuestion => {
+            const newOptions = [...prevQuestion.options];
+            newOptions[index].score = parseInt(newScore, 10) || 0;
+            return { ...prevQuestion, options: newOptions };
+        });
+    };
+
+    const handleAddNewOption = () => {
+        setNewQuestion(prevQuestion => ({
+            ...prevQuestion,
+            options: [...prevQuestion.options, { text: '', score: 0 }],
+        }));
+    };
+
+    const handleOptionTextChange = (index, newText) => {
+        setNewQuestion(prevNewQuestion => {
+            const updatedOptions = prevNewQuestion.options.map((option, idx) =>
+                idx === index ? { ...option, text: newText } : option
+            );
+            return { ...prevNewQuestion, options: updatedOptions };
+        });
+    };
+
+    const handleOptionScoreChange = (index, newScore) => {
+        setNewQuestion(prevNewQuestion => {
+            const updatedOptions = prevNewQuestion.options.map((option, idx) =>
+                idx === index ? { ...option, score: Number(newScore) } : option
+            );
+            return { ...prevNewQuestion, options: updatedOptions };
+        });
+    };
+
+
     const openAddModal = () => {
         setIsAddModalOpen(true);
     };
@@ -161,9 +244,10 @@ const FeedbackDetails = () => {
     };
 
     const openEditModal = (question) => {
-        setCurrentQuestion(question);
+        loadQuestionForEditing(question);
         setIsEditModalOpen(true);
     };
+
 
     const closeEditModal = () => {
         setIsEditModalOpen(false);
@@ -250,6 +334,38 @@ const FeedbackDetails = () => {
                             />
                         </div>
                     )}
+                    <label htmlFor="questionImportance">Importanța întrebării:</label>
+                    <input
+                        id="questionImportance"
+                        type="number"
+                        value={currentQuestion.importance}
+                        onChange={(e) => setCurrentQuestion({ ...currentQuestion, importance: parseInt(e.target.value) })}
+                    />
+                    {currentQuestion.response_type === 'multiple_choice' && currentQuestion.options && currentQuestion.options.length > 0 && (
+                        <div>
+                            <h3>Opțiuni de Răspuns</h3>
+                            {currentQuestion.options.map((option, index) => (
+                                <div key={index}>
+                                    <label htmlFor={`optionText-${index}`}>Text Opțiune:</label>
+                                    <input
+                                        id={`optionText-${index}`}
+                                        type="text"
+                                        value={option.text}
+                                        onChange={(e) => handleOptionTextChange(index, e.target.value)}
+                                    />
+                                    <label htmlFor={`optionScore-${index}`}>Scor Opțiune:</label>
+                                    <input
+                                        id={`optionScore-${index}`}
+                                        type="number"
+                                        value={option.score}
+                                        onChange={(e) => handleOptionScoreChange(index, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+
+                        </div>
+
+                    )}
                     <button type="submit">Salvează</button>
                     <button type="button" onClick={closeEditModal}>Anulează</button>
                 </form>
@@ -267,42 +383,71 @@ const FeedbackDetails = () => {
                     <input
                         id="newQuestionText"
                         type="text"
-                        value={newQuestionText}
-                        onChange={(e) => setNewQuestionText(e.target.value)}
+                        value={newQuestion.text}
+                        onChange={(e) => setNewQuestion({ ...newQuestion, text: e.target.value })}
                     />
-                    <label htmlFor="newQuestionOrder">Ordinea întrebării:</label>
+                    <label htmlFor="newQuestionImportance">Importanța întrebării:</label>
                     <input
-                        id="newQuestionOrder"
+                        id="newQuestionImportance"
                         type="number"
-                        value={newQuestionOrder}
-                        onChange={(e) => setNewQuestionOrder(e.target.value)}
+                        value={newQuestion.importance}
+                        onChange={(e) => setNewQuestion({ ...newQuestion, importance: parseInt(e.target.value) })}
                     />
+
                     <label htmlFor="newQuestionResponseType">Tip de răspuns:</label>
                     <select
                         id="newQuestionResponseType"
-                        value={newQuestionResponseType}
-                        onChange={(e) => setNewQuestionResponseType(e.target.value)}
+                        value={newQuestion.responseType}
+                        onChange={handleNewQuestionResponseTypeChange}
                     >
                         <option value="text">Text</option>
                         <option value="rating">Rating</option>
                         <option value="multiple_choice">Multiple Choice</option>
                     </select>
-                    <label htmlFor="newQuestionRatingScale">Scara de rating:</label>
-                    <input
-                        id="newQuestionRatingScale"
-                        type="number"
-                        value={newQuestionRatingScale}
-                        onChange={(e) => setNewQuestionRatingScale(e.target.value)}
-                    />
+
+                    {newQuestion.responseType === 'multiple_choice' && (
+                        <div>
+                            {newQuestion.options.map((option, index) => (
+                                <div key={index}>
+                                    <label htmlFor={`newOptionText-${index}`}>Opțiune {String.fromCharCode(65 + index)}:</label>
+                                    <input
+                                        id={`newOptionText-${index}`}
+                                        type="text"
+                                        value={option.text}
+                                        onChange={(e) => handleNewOptionTextChange(index, e.target.value)}
+                                    />
+                                    <label htmlFor={`newOptionScore-${index}`}>Scor:</label>
+                                    <input
+                                        id={`newOptionScore-${index}`}
+                                        type="number"
+                                        value={option.score}
+                                        onChange={(e) => handleNewOptionScoreChange(index, e.target.value)}
+                                    />
+                                </div>
+                            ))}
+                            <button type="button" onClick={handleAddNewOption}>Adaugă Opțiune</button>
+                        </div>
+                    )}
+
+                    {newQuestion.responseType === 'rating' && (
+                        <div>
+                            <label htmlFor="newQuestionRatingScale">Scara de rating:</label>
+                            <input
+                                id="newQuestionRatingScale"
+                                type="number"
+                                value={newQuestionRatingScale}
+                                onChange={(e) => setNewQuestionRatingScale(e.target.value)}
+                            />
+                        </div>
+                    )}
+
                     <button type="submit">Adaugă</button>
                     <button onClick={closeAddModal}>Anulează</button>
                 </form>
             </Modal>
 
-        </div>
+        </div >
     );
-
-
 
 };
 
