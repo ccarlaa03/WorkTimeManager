@@ -73,7 +73,7 @@ const GestionareFeedback = () => {
 
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Se încarcă...</div>;
   }
 
   // Calculul mediei punctajelor pentru fiecare departament

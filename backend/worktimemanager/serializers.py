@@ -60,6 +60,7 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
 
         
 class FeedbackQuestionSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = FeedbackQuestion
         fields = '__all__'
@@ -85,6 +86,7 @@ class EmployeeFeedbackSerializer(serializers.ModelSerializer):
 class FeedbackFormSerializer(serializers.ModelSerializer):
     employee_feedbacks = EmployeeFeedbackSerializer(many=True, read_only=True, source='feedback_responses')
     hr_review_status_display = serializers.SerializerMethodField()
+    questions = FeedbackQuestionSerializer(many=True, read_only=True)
     class Meta:
         model = FeedbackForm
         fields = '__all__'

@@ -24,6 +24,7 @@ import ProfilAngajat from './components/Angajat/angajat-profil';
 import OwnerDashboard from './components/Owner/owner-dashboard';
 import LogoutComponent from './components/Logare/logout';
 import { AuthProvider } from './AuthContext';
+import FeedbackDetails from './components/HR/feedback-details';
 
 
 const App = () => {
@@ -47,13 +48,16 @@ const App = () => {
           <Route path="/Hr-dashboard" element={<HrDashboard />} />
           <Route path="/gestionare-feedback" element={<GestionareFeedback />} />
           <Route path="/gestionare-prog" element={<GestionareProgramLucru />} />
-          <Route path="/angajat-profil/:user_id" element={<ProfilAngajat/>} />
+          <Route path="/angajat-profil/:user_id" element={<ProfilAngajat />} />
           <Route path="/gestionare-ang" element={<GestionareAngajati />} />
           <Route path="/gestionare-concedii" element={<GestionareConcedii />} />
           <Route path="/gestionare-formular" element={<GestionareFormular />} />
           <Route path="/gestionare-training" element={<GestionareTraining />} />
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
           <Route path="/formulare-feeedback" element={<FeedbackForm />} />
+          <Route path="/feedback-details/:form_id" element={<FeedbackDetails />} />
+
+
         </Routes>
         <Footer />
       </Router>

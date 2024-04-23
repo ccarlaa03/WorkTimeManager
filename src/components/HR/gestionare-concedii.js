@@ -228,7 +228,7 @@ const GestionareConcedii = () => {
     };
 
 
-    
+
 
     const holidays = [
         new Date('2024-01-01'),
@@ -584,8 +584,8 @@ const GestionareConcedii = () => {
                         {modalError && <p className="error">{modalError}</p>}
 
                         <div className="button-container">
-                            <button className="button" type="submit">Adaugă</button>
-                            <button className="button" type="button" onClick={CloseAddModal}>Închide</button>
+                            <button className="buton" type="submit">Adaugă</button>
+                            <button className="buton" type="button" onClick={CloseAddModal}>Închide</button>
                         </div>
                     </form>
                 </Modal>
