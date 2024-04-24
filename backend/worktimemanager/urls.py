@@ -69,6 +69,7 @@ urlpatterns = [
     path('feedback/update-question/<int:question_id>/', views.update_feedback_question, name='update_feedback_question'),
     path('feedback/add-question/<int:form_id>/', views.add_feedback_question, name='add_feedback_question'),
     path('feedback/update-form/<int:form_id>/', views.update_feedback_form, name='update_feedback_form'),
+    path('feedback/add-form/', views.create_feedback_form, name='create_feedback_form'),
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

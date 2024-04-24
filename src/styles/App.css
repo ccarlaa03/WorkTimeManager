@@ -754,10 +754,16 @@ button {
   color: #555;
   margin-bottom: 5px;
 }
+@media screen and (max-width: 768px) {
 
+  .responsive-table {
+    max-width: 100%;
+    overflow-x: auto;
+  }}
 .options {
   margin-left: 20px;
 }
+
 .content-container {
   max-width: 800px; 
   margin: 0 auto; 
@@ -803,6 +809,8 @@ button {
 .card-content strong {
   color: #000;
 }
+
+
 
 .item {
   margin-bottom: 15px;

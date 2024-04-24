@@ -208,9 +208,7 @@ const GestionareFeedback = () => {
         </table>
 
         <div className="button-container">
-          <Link to="/gestionare-formular">
-            <button className="buton">Modifică formular Feedback</button>
-          </Link>
+
           <Link to="/formulare-feeedback">
             <button className="buton">Formulare Feedback</button>
           </Link>

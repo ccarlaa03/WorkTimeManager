@@ -110,10 +110,15 @@ class FeedbackQuestionSerializer(serializers.ModelSerializer):
             FeedbackResponseOption.objects.filter(question=instance).exclude(id__in=current_option_ids).delete()
         
         return instance
-    def validate(self, data):
-        if data['response_type'] == 'multiple_choice' and not data.get('options'):
-            raise serializers.ValidationError({"options": "This field is required for multiple choice questions."})
-        return data
+    
+def validate(self, attrs):
+    if attrs.get('response_type') == 'multiple_choice':
+        options = attrs.get('options', [])
+        if not options or any(not option.get('text') or option.get('score') is None for option in options):
+            raise serializers.ValidationError({'options': 'This field is required and each option must have text and a score.'})
+    return attrs
+
+
 class EmployeeFeedbackSerializer(serializers.ModelSerializer):
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     employee_name = serializers.CharField(source='employee.name')

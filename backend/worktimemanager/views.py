@@ -670,3 +670,13 @@ def update_feedback_form(request, form_id):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except FeedbackForm.DoesNotExist:
         return Response({'error': 'Formularul de feedback nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_feedback_form(request):
+    serializer = FeedbackFormSerializer(data=request.data)
+    if serializer.is_valid():
+        feedback_form = serializer.save(created_by=request.user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
