@@ -77,13 +77,14 @@ const GestionareTrainingHR = () => {
     }, []);
 
     //CREATE
+
     const handleCreateTraining = async () => {
         const newTrainingData = {
             title: title.trim(),
             description: description.trim(),
             date,
-            duration_days: `${duration_days} zile`,
-            capacity: `${capacity} persoane`,
+            duration_days: parseInt(duration_days),
+            capacity: parseInt(capacity),
             enrollment_deadline: enrollmentDeadline,
         };
         console.log('Data sent to backend for new training:', newTrainingData);
@@ -96,16 +97,19 @@ const GestionareTrainingHR = () => {
                 },
             });
 
-            setTrainings(prevTrainings => [...prevTrainings, response.data]);
-            alert('Training-ul a fost creat cu succes!');
-            closeAddModal();
+            if (response.status === 201) {
+                setTrainings(prevTrainings => [...prevTrainings, response.data]);
+                closeAddModal();
+            } else {
+                console.error('Unexpected response status:', response.status);
+            }
         } catch (error) {
             console.error('Error creating new training:', error.response ? error.response.data : error);
-            alert('A apărut o eroare la crearea training-ului.');
         }
     };
-    //UPDATE
 
+
+    //UPDATE
     const handleEditTraining = async (event) => {
         event.preventDefault();
         if (!editingTraining) {
@@ -121,7 +125,7 @@ const GestionareTrainingHR = () => {
             enrollment_deadline: editingTraining.enrollment_deadline,
             status: editingTraining.status,
         };
-        console.log('Data sent to backend for edit:', formData); // Adaugă acest console log
+        console.log('Data sent to backend for edit:', formData);
         try {
             const response = await instance.put(`http://localhost:8000/trainings/update/${editingTraining.id}/`, formData, {
                 headers: {
@@ -129,7 +133,7 @@ const GestionareTrainingHR = () => {
                     'Content-Type': 'application/json',
                 },
             });
-            console.log('Response from backend:', response); // Adaugă acest console log
+            console.log('Response from backend:', response);
             if (response.status === 200) {
                 const updatedTrainings = trainings.map(training =>
                     training.id === editingTraining.id ? { ...training, ...response.data } : training
@@ -142,7 +146,7 @@ const GestionareTrainingHR = () => {
             }
         } catch (error) {
             console.error('Error updating training:', error.response ? error.response.data : error);
-    
+
         }
     };
 
@@ -156,12 +160,10 @@ const GestionareTrainingHR = () => {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
                 });
                 if (response.status === 204) {
-                    alert('Training-ul a fost șters cu succes!');
                     setTrainings(prevTrainings => prevTrainings.filter(training => training.id !== trainingId));
                 }
             } catch (error) {
                 console.error('Error deleting training:', error.response ? error.response.data : error);
-                alert('A apărut o eroare la ștergerea training-ului.');
             }
         }
     };
@@ -273,7 +275,7 @@ const GestionareTrainingHR = () => {
                         <input
                             id="duration"
                             type="number"
-                            name="duration_days" 
+                            name="duration_days"
                             value={editingTraining.duration_days}
                             onChange={handleChange}
                             required
@@ -338,7 +340,7 @@ const GestionareTrainingHR = () => {
                         />
                     </label>
                     <label>
-                        Durata (ore):
+                        Durata (zile):
                         <input
                             type="number"
                             value={duration_days}
