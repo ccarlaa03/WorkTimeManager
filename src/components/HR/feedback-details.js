@@ -83,7 +83,7 @@ const FeedbackDetails = () => {
     // CREATE
     const handleAddQuestion = async (e) => {
         e.preventDefault();
-    
+
         // Prepare the data structure
         const newQuestionData = {
             text: newQuestion.text.trim(),
@@ -92,7 +92,7 @@ const FeedbackDetails = () => {
             rating_scale: newQuestion.responseType === 'rating' ? parseInt(newQuestion.ratingScale, 10) : null,
             importance: newQuestion.importance,
         };
-    
+
         // Add options if it's a multiple-choice question
         if (newQuestion.responseType === 'multiple_choice') {
             newQuestionData.options = newQuestion.options.map(option => ({
@@ -100,9 +100,9 @@ const FeedbackDetails = () => {
                 score: parseInt(option.score, 10)
             }));
         }
-    
+
         console.log('Data sent to backend:', newQuestionData);
-    
+
         try {
             const response = await instance.post(`/feedback/add-question/${form_id}/`, newQuestionData, {
                 headers: {
@@ -120,7 +120,7 @@ const FeedbackDetails = () => {
             console.error('Error adding a new question:', error.response ? error.response.data : error);
         }
     };
-    
+
 
 
     // UPDATE

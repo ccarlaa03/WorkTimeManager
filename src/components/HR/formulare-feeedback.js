@@ -131,7 +131,6 @@ const FeedbackForm = () => {
             title: editFormTitle.trim(),
             description: editFormDescription.trim(),
             hr_review_status: editHrReviewStatus,
-            // You don't need to send 'created_by' or 'created_at' as they should not change on update
         };
 
         try {

@@ -70,6 +70,11 @@ urlpatterns = [
     path('feedback/add-question/<int:form_id>/', views.add_feedback_question, name='add_feedback_question'),
     path('feedback/update-form/<int:form_id>/', views.update_feedback_form, name='update_feedback_form'),
     path('feedback/add-form/', views.create_feedback_form, name='create_feedback_form'),
+    path('trainings/', views.list_trainings, name='list-trainings'),
+    path('trainings/create/', views.create_training, name='create-training'),
+    path('trainings/update/<int:training_id>/', views.update_training, name='update-training'),
+    path('trainings/delete/<int:training_id>/', views.delete_training, name='delete-training'),
+    path('trainings/statistics/', views.training_statistics, name='training-statistics'),
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

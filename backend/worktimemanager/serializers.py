@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption
-
+from datetime import timedelta
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -161,5 +161,25 @@ class TrainingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Training
         fields = '__all__'
-        extra_kwargs = {'user': {'required': False}}
- 
+        
+    def validate_duration_days(self, value):
+        if not isinstance(value, int) or value < 1:
+            raise serializers.ValidationError("Duration must be a positive integer.")
+        return value
+
+
+    def validate_capacity(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Capacity must be a positive number.")
+        return value
+
+    def update(self, instance, validated_data):
+        instance.title = validated_data.get('title', instance.title)
+        instance.description = validated_data.get('description', instance.description)
+        instance.date = validated_data.get('date', instance.date)
+        instance.status = validated_data.get('status', instance.status)
+        instance.duration_days = validated_data.get('duration_days', instance.duration_days)
+        instance.capacity = validated_data.get('capacity', instance.capacity)
+        instance.enrollment_deadline = validated_data.get('enrollment_deadline', instance.enrollment_deadline)
+        instance.save()
+        return instance

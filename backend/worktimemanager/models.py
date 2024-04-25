@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 import logging
 from django.core.validators import RegexValidator
 from django.db.models import Sum
+from datetime import timedelta
 
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
@@ -188,6 +189,7 @@ class EmployeeFeedback(models.Model):
         return self.employee.department
     def __str__(self):
         return f"Feedback from {self.employee.name} for form {self.form.title}"
+    
 class FeedbackResponseOption(models.Model):
     question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
@@ -240,13 +242,27 @@ class Leave(models.Model):
         return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()}"
     
 class Training(models.Model):
-    employee = models.ManyToManyField('Employee', related_name='trainings')
+    employee = models.ManyToManyField('Employee', related_name='trainings', blank=True)
     title = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
+    status = models.CharField(
+        max_length=50,
+        choices=[
+            ('planned', 'Planificat'),
+            ('in_progress', 'În progres'),
+            ('completed', 'Completat'),
+            ('canceled', 'Anulat'),
+        ],
+        default='planned'
+    )
+    duration_days = models.PositiveIntegerField(default=1) 
+    capacity = models.PositiveIntegerField(default=0)
+    enrollment_deadline = models.DateField(null=True, blank=True)
 
     def __str__(self):
         return self.title
+
 class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()

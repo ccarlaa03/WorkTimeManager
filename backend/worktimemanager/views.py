@@ -5,10 +5,10 @@ from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -680,3 +680,62 @@ def create_feedback_form(request):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_trainings(request):
+    trainings = Training.objects.all().order_by('-date')
+    serializer = TrainingSerializer(trainings, many=True)
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_training(request):
+    serializer = TrainingSerializer(data=request.data)
+    if serializer.is_valid():
+        training = serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_training(request, training_id):
+    try:
+        training = Training.objects.get(id=training_id)
+        serializer = TrainingSerializer(training, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Training.DoesNotExist as e:
+        logging.error("Training-ul nu există: %s", str(e)) 
+        return Response({'error': 'Training-ul nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_training(request, training_id):
+    try:
+        training = Training.objects.get(id=training_id)
+        training.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Training.DoesNotExist:
+        return Response({'error': 'Training-ul nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def training_statistics(request):
+    stats = Training.objects.annotate(response_count=Count('employee')).order_by('-response_count')
+    return Response({'statistics': [{ 'title': t.title, 'response_count': t.response_count } for t in stats]})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_participants_to_training(request, training_id):
+    training = get_object_or_404(Training, id=training_id)
+    employees = request.data.get('employees')
+    for employee_id in employees:
+        employee = get_object_or_404(Employee, id=employee_id)
+        training.employee.add(employee)
+    training.save()
+    return Response(status=status.HTTP_200_OK)

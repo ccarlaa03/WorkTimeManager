@@ -19,18 +19,18 @@ ChartJS.register(
   Legend
 );
 
-const Rapoarte = ({ cursuri }) => {
-  const raportInscrieri = cursuri.map(curs => ({
-    titlu: curs.titlu,
-    inscrieri: curs.inscrieri ? curs.inscrieri.length : 0
+const Rapoarte = ({ trainings }) => {
+  const raportInscrieri = trainings.map(training => ({
+    titlu: training.title,
+    inscrieri: training.employee.length,
   }));
 
   const data = {
-    labels: raportInscrieri.map(curs => curs.titlu),
+    labels: raportInscrieri.map(training => training.titlu),
     datasets: [
       {
         label: 'Număr de înscrieri',
-        data: raportInscrieri.map(curs => curs.inscrieri),
+        data: raportInscrieri.map(training => training.inscrieri),
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
       },
     ],
