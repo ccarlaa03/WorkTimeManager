@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -22,6 +22,7 @@ from django.shortcuts import get_object_or_404
 from datetime import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils import timezone
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -739,3 +740,72 @@ def add_participants_to_training(request, training_id):
         training.employee.add(employee)
     training.save()
     return Response(status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def training_report(request):
+    trainings = Training.objects.filter(date__month=timezone.now().month)
+    report = [
+        {
+            'title': training.title,
+            'date': training.date,
+            'participant_count': training.get_participant_count()
+        } for training in trainings
+    ]
+    return Response(report, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_to_training(request, training_id):
+    try:
+        training = Training.objects.get(id=training_id)
+        employee = request.user.employee 
+        training.employee.add(employee)
+        training.save()
+        return Response({'message': 'Registered successfully'}, status=status.HTTP_200_OK)
+    except Training.DoesNotExist:
+        return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Not an employee'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_participant(request, training_id):
+    try:
+        training = Training.objects.get(id=training_id)
+        employee_id = request.data.get('employee_id')
+        employee = Employee.objects.get(user_id=employee_id)
+
+        if training.has_space():
+            if not training.employee.filter(id=employee_id).exists():
+                training.employee.add(employee)
+                return Response({'message': 'Participant added successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Participant already enrolled'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'error': 'No space available in the training'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Training.DoesNotExist:
+        return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def training_details(request, training_id):
+    training = get_object_or_404(Training, id=training_id)
+    serializer = TrainingDetailSerializer(training)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def department_report(request):
+    department_counts = Employee.objects.values('department').annotate(employee_count=Count('user_id')).order_by('department')
+    data = list(department_counts)  
+    return Response(data)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption
+from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption, TrainingParticipant
 from datetime import timedelta
 
 class UserSerializer(serializers.ModelSerializer):
@@ -158,6 +158,7 @@ class LeaveSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 class TrainingSerializer(serializers.ModelSerializer):
+    participant_count = serializers.IntegerField(read_only=True)
     class Meta:
         model = Training
         fields = '__all__'
@@ -183,3 +184,27 @@ class TrainingSerializer(serializers.ModelSerializer):
         instance.enrollment_deadline = validated_data.get('enrollment_deadline', instance.enrollment_deadline)
         instance.save()
         return instance
+    
+class TrainingParticipantSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='employee.name', read_only=True)
+    employee_department = serializers.CharField(source='employee.department', read_only=True)
+
+    class Meta:
+        model = TrainingParticipant
+        fields = ('employee_name', 'employee_department')
+    
+
+class TrainingDetailSerializer(serializers.ModelSerializer):
+    participants = TrainingParticipantSerializer(
+        source='training_participants', 
+        many=True,
+        read_only=True
+    )
+    participant_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Training
+        fields = ('id', 'title', 'participant_count', 'participants')
+
+    def get_participant_count(self, obj):
+        return obj.training_participants.count()

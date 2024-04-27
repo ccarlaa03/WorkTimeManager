@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 import logging
 from django.core.validators import RegexValidator
 from django.db.models import Sum
-from datetime import timedelta
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
@@ -119,6 +119,7 @@ class Employee(models.Model):
 
     def get_trainings(self):
         return self.trainings.all()
+    
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
 
@@ -189,7 +190,6 @@ class EmployeeFeedback(models.Model):
         return self.employee.department
     def __str__(self):
         return f"Feedback from {self.employee.name} for form {self.form.title}"
-    
 class FeedbackResponseOption(models.Model):
     question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
@@ -242,7 +242,12 @@ class Leave(models.Model):
         return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()}"
     
 class Training(models.Model):
-    employee = models.ManyToManyField('Employee', related_name='trainings', blank=True)
+    participants = models.ManyToManyField(
+        'Employee',
+        related_name='trainings',
+        blank=True,
+        through='TrainingParticipant'  
+    )
     title = models.CharField(max_length=255)
     description = models.TextField()
     date = models.DateField()
@@ -263,6 +268,13 @@ class Training(models.Model):
     def __str__(self):
         return self.title
 
+    def get_participant_count(self):
+        return self.training_participants.count() 
+
+
+    def has_space(self):
+        return self.employees.count() < self.capacity
+    
 class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
@@ -272,3 +284,10 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+class TrainingParticipant(models.Model):
+    training = models.ForeignKey(Training, on_delete=models.CASCADE, related_name='training_participants')
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.employee.name} - {self.training.title}"

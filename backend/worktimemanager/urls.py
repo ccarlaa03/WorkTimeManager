@@ -75,6 +75,10 @@ urlpatterns = [
     path('trainings/update/<int:training_id>/', views.update_training, name='update-training'),
     path('trainings/delete/<int:training_id>/', views.delete_training, name='delete-training'),
     path('trainings/statistics/', views.training_statistics, name='training-statistics'),
+    path('training-rapoarte/', views.training_report, name='training-report'),
+    path('trainings/<int:training_id>/add-participant/', views.add_participant, name='add-participant'),
+    path('trainings/<int:training_id>/details/', views.training_details, name='training-details'),
+    path('department-rapoarte/', views.department_report, name='department-rapoarte'),
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
