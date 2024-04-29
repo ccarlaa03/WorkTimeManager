@@ -5,7 +5,6 @@ import ReactPaginate from 'react-paginate';
 import axios from 'axios';
 import instance from '../../axiosConfig';
 import { AuthContext } from '../../AuthContext';
-import { useAuth } from '../../AuthContext';
 
 Modal.setAppElement('#root');
 
@@ -25,12 +24,12 @@ const GestionareAngajati = () => {
     const [modalEditOpen, setModalEditOpen] = useState(false);
     const [modalAddOpen, setModalAddOpen] = useState(false);
     const [hrCompanyId, setHrCompany] = useState(null);
-    const employeesPerPage = 10;
     const getAccessToken = () => localStorage.getItem('access_token');
     const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [newEmployee, setNewEmployee] = useState({
-
     });
+    const employeesPerPage = 5;
+    const [totalPages, setTotalPages] = useState(0);
 
 
     const handleSubmit = async (event) => {
@@ -72,37 +71,45 @@ const GestionareAngajati = () => {
                 return null;
             }
         };
-        const fetchEmployees = async (setHrCompany) => {
+        const fetchEmployees = async () => {
             const accessToken = getAccessToken();
             try {
-                const employeesResponse = await instance.get('/gestionare-ang/', {
+                const response = await axios.get('/gestionare-ang/', {
                     headers: { 'Authorization': `Bearer ${accessToken}` },
+                    params: {
+                        offset: currentPage * employeesPerPage,
+                        limit: employeesPerPage,
+                    },
                 });
-                console.log('All Employees data:', employeesResponse.data);
-                const employeesOfSameCompany = employeesResponse.data.filter(
-                    (employee) => employee.company === setHrCompany
-                );
-                setEmployees(employeesOfSameCompany);
-                console.log('Filtered Employees for company ID ' + setHrCompany + ':', employeesOfSameCompany);
+
+                if (response.data) {
+                    const fetchedEmployees = response.data;
+                    setEmployees(fetchedEmployees);
+
+                    setTotalPages(Math.ceil(response.total / employeesPerPage));
+                }
             } catch (error) {
-                console.error('Error fetching employees:', error.response ? error.response.data : error);
+                console.error('Error fetching employees:', error);
             }
         };
+
         const initializeData = async () => {
-            const accessToken = getAccessToken();
-            if (!accessToken) {
-                console.log("No access token found. User is not logged in.");
-                return;
-            }
-            const setHrCompany = await fetchHrCompany();
-            if (setHrCompany) {
-                await fetchEmployees(setHrCompany);
+            const hrCompanyResponse = await fetchHrCompany();
+            if (hrCompanyResponse) {
+                fetchEmployees(hrCompanyResponse, currentPage);
             }
         };
 
         initializeData();
+    }, [currentPage, employeesPerPage]);
 
-    }, []);
+    const handlePageChange = (selectedItem) => {
+        const newPage = selectedItem.selected;
+        setCurrentPage(newPage);
+
+        console.log(`Page changed to: ${newPage}`);
+
+    };
 
     const handleEmployeeEditChange = (e) => {
         const { name, value } = e.target;
@@ -111,6 +118,7 @@ const GestionareAngajati = () => {
             [name]: value,
         }));
     };
+
 
     /// CREATE
     const createEmployee = async (newEmployee) => {
@@ -205,10 +213,6 @@ const GestionareAngajati = () => {
     };
 
 
-    const handlePageChange = (selectedItem) => {
-        setCurrentPage(selectedItem.selected);
-    };
-
 
     const openAddModal = () => setModalAddOpen(true);
     const closeAddModal = () => setModalAddOpen(false);
@@ -231,30 +235,28 @@ const GestionareAngajati = () => {
 
     const handleSearch = () => {
         const { name, position, department, hireDate } = filter;
-    
+
         // Filtrăm angajații în funcție de criteriile specificate în filtru
         const filtered = employee.filter(employee => {
             const nameMatch = !name || (employee && employee.name && employee.name.toLowerCase().includes(name.toLowerCase()));
             const positionMatch = !position || (employee && employee.position && employee.position.toLowerCase().includes(position.toLowerCase()));
             const departmentMatch = !department || (employee && employee.department && employee.department.toLowerCase().includes(department.toLowerCase()));
             const hireDateMatch = !hireDate || (employee && employee.hire_date && new Date(employee.hire_date).getTime() === new Date(hireDate).getTime());
-        
+
             return nameMatch && positionMatch && departmentMatch && hireDateMatch;
         });
-        
-    
-        // Actualizăm lista filtrată de angajați pentru a reflecta rezultatul căutării
+
+
         setFilteredEmployees(filtered);
-    
-        // Dacă dorești să revii la prima pagină după căutare, poți reseta pagina curentă
-        setCurrentPage(0);
+
     };
-    
 
     const employeesOnCurrentPage = filteredEmployees ? filteredEmployees.slice(
         currentPage * employeesPerPage,
         (currentPage + 1) * employeesPerPage
     ) : [];
+
+
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
         setFilter(prevFilters => ({
@@ -357,7 +359,7 @@ const GestionareAngajati = () => {
                                     <td>
                                         <button className='buton' onClick={() => openEditModal(employee)}>Editează</button>
 
-                                        <button className='button' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
+                                        <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
 
                                     </td>
                                 </tr>
@@ -382,7 +384,7 @@ const GestionareAngajati = () => {
                     <ReactPaginate
                         previousLabel={'Anterior'}
                         nextLabel={'Următorul'}
-                        pageCount={Math.ceil(filteredEmployees.length / employeesPerPage)}
+                        pageCount={totalPages}
                         onPageChange={handlePageChange}
                         containerClassName={'pagination'}
                         activeClassName={'active'}

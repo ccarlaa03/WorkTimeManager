@@ -23,6 +23,7 @@ from datetime import datetime
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.db.models.functions import Lower
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -294,7 +295,7 @@ def events_view(request):
 
     if hasattr(user, 'owner'):
         company = user.owner.company
-    elif hasattr(user, 'hr'):
+    elif hasattr(user, 'HR'):
         company = user.hr.company
     elif hasattr(user, 'employee'):
         company = user.employee.company
@@ -304,7 +305,7 @@ def events_view(request):
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
     else:
-        return Response({'error': 'No company found for user.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'No company found for events.'}, status=status.HTTP_404_NOT_FOUND)
 
     
 class EmployeeViewSet(viewsets.ModelViewSet):
@@ -806,6 +807,36 @@ def training_details(request, training_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def department_report(request):
-    department_counts = Employee.objects.values('department').annotate(employee_count=Count('user_id')).order_by('department')
-    data = list(department_counts)  
+    # Query to count the employees per department, lowercasing the department names
+    department_counts = Employee.objects.annotate(
+        department_lower=Lower('department')
+    ).values(
+        'department_lower'
+    ).annotate(
+        employee_count=Count('user_id')
+    ).order_by('department_lower')
+
+    # Query to count the HR employees per department, also lowercasing the department names
+    hr_counts = HR.objects.annotate(
+        department_lower=Lower('department')
+    ).values(
+        'department_lower'
+    ).annotate(
+        employee_count=Count('user_id')
+    ).filter(
+        department_lower='hr'
+    ).order_by('department_lower')
+
+    # Combine the counts from both Employee and HR into a single data structure
+    combined_counts = {dept['department_lower']: dept['employee_count'] for dept in department_counts}
+    for hr in hr_counts:
+        department = hr['department_lower']
+        combined_counts[department] = combined_counts.get(department, 0) + hr['employee_count']
+
+    # Convert the combined_counts dictionary to a list of dictionaries
+    data = [
+        {'department': dept.capitalize(), 'employee_count': count}
+        for dept, count in combined_counts.items()
+    ]
+    
     return Response(data)

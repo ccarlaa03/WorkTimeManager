@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Modal from 'react-modal';
-import Rapoarte from './rapoarte';
+import Rapoarte from './training-rapoarte';
 import instance from '../../axiosConfig';
 import axios from 'axios';
 
@@ -19,7 +19,6 @@ const GestionareTrainingHR = () => {
     const [capacity, setCapacity] = useState('');
     const [enrollmentDeadline, setEnrollmentDeadline] = useState('');
     const [trainings, setTrainings] = useState([]);
-    const [status, setStatus] = useState('');
     const [editingTraining, setEditingTraining] = useState({
         title: '',
         description: '',
@@ -29,6 +28,9 @@ const GestionareTrainingHR = () => {
         enrollment_deadline: '',
         status: '',
     });
+    const [selectedTrainingId, setSelectedTrainingId] = useState(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [training, setTraining] = useState({ participants: [] });
 
 
     useEffect(() => {
@@ -204,12 +206,72 @@ const GestionareTrainingHR = () => {
         return <div>Se încarcă...</div>;
     }
 
+    const TrainingDetailsModal = ({ isOpen, onClose, training_id }) => {
+        useEffect(() => {
+            const fetchDetails = async () => {
+
+                const accessToken = localStorage.getItem('access_token');
+
+                if (!accessToken) {
+                    console.error("No access token found. User is not logged in.");
+                    return;
+                }
+
+                try {
+                    const response = await instance.get(`/trainings/${training_id}/details/`, {
+                        headers: { 'Authorization': `Bearer ${accessToken}` },
+                    });
+                    setTraining(response.data);
+                } catch (error) {
+                    console.error('Error fetching training details:', error.response ? error.response.data : error);
+                }
+
+            };
+
+            if (isOpen && training_id) {
+                fetchDetails();
+            }
+        }, [isOpen, training_id]);
+
+
+
+
+        return (
+            <Modal isOpen={isOpen} className="modal-content" onRequestClose={onClose} contentLabel="Training Details">
+                <h2>Detali</h2>
+                {training && (
+                    <div>
+                        <h3>{training.title}</h3>
+                        <p>Numărul de participanți: {training.participant_count}</p>
+                        <h3>Participanți:</h3>
+                        {training.participants && training.participants.length > 0 ? (
+                            <ul>
+                                {training.participants.map(participant => (
+                                    <li key={participant.employee_name}>
+                                        {participant.employee_name} - {participant.employee_department}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>Nu există participanți înregistrați la acest training.</p>
+                        )}
+                    </div>
+                )}
+
+                <button onClick={onClose}>Închide</button>
+            </Modal>
+        );
+    };
+    const handleOpenDetails = (training_id) => {
+        setSelectedTrainingId(training_id);
+        setIsDetailsModalOpen(true);
+    };
     return (
         <div className="container-dashboard">
             <h1>Training</h1>
             <div className="lista-cursuri">
                 {trainings.map(training => (
-                    <div key={training.id} className="card-curs">
+                    <div key={training.id} className="card">
                         <h3>{training.title}</h3>
                         <p>{training.description}</p>
                         <p>Data: {new Date(training.date).toLocaleDateString()}</p>
@@ -217,12 +279,18 @@ const GestionareTrainingHR = () => {
                         <p>Durata: {training.duration_days} zile</p>
                         <p>Capacitate: {training.capacity} persoane</p>
                         <p>Înregistrare până la: {training.enrollment_deadline ? new Date(training.enrollment_deadline).toLocaleDateString() : 'N/A'}</p>
-                        <div className="button-container">
-                            <button onClick={() => openEditModal(training)}>Editează</button>
-                            <button onClick={() => handleDeleteTraining(training.id)}>Șterge</button>
+                        <div>
+                            <button className='button' onClick={() => handleOpenDetails(training.id)}>Detali</button>
+                            <button className='button' onClick={() => openEditModal(training)}>Editează</button>
+                            <button className='button' onClick={() => handleDeleteTraining(training.id)}>Șterge</button>
                         </div>
                     </div>
                 ))}
+                <TrainingDetailsModal
+                    isOpen={isDetailsModalOpen}
+                    onClose={() => setIsDetailsModalOpen(false)}
+                    training_id={selectedTrainingId}
+                />
             </div>
 
             <Modal
@@ -372,9 +440,10 @@ const GestionareTrainingHR = () => {
             <div className="button-container">
                 <button onClick={openAddModal} className="buton">Adaugă curs nou</button>
             </div>
-            <Rapoarte trainings={trainings} />
+            <div>
+                <Rapoarte trainings={trainings} />
 
-
+            </div>
         </div>
     );
 };

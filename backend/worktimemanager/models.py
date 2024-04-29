@@ -89,7 +89,7 @@ class HR(models.Model):
     name = models.CharField(max_length=100, null=True)  
     department = models.CharField(max_length=100)
     position = models.CharField(max_length=100)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='hr', null=True, blank=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='HR', null=True, blank=True)
     is_hr = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.user.email} - {self.position}"

@@ -7,6 +7,7 @@ import Modal from 'react-modal';
 import instance from '../../axiosConfig';
 import 'chart.js/auto';
 import axios from 'axios';
+import DepartmentRaporte from './employee-rapoarte';
 
 import {
   Chart as ChartJS,
@@ -65,7 +66,7 @@ const HrDashboard = () => {
         }
         console.log('Company data:', hrResponse.data.company_id);
 
-        const eventsResponse = await axios.get('/events/', {
+        const eventsResponse = await instance.get('/events/', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         setEvents(eventsResponse.data.map(event => ({
@@ -196,16 +197,6 @@ const HrDashboard = () => {
     setIsAddEventModalOpen(true);
   };
 
-  const chartData = {
-    labels: ['Department 1', 'Department 2', 'Department 3'],
-    datasets: [{
-      label: 'Numărul de angajați pe departament',
-      data: [10, 20, 30],
-      backgroundColor: 'rgba(54, 162, 235, 0.2)',
-      borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1,
-    }],
-  };
 
   return (
     <div className="container-dashboard">
@@ -310,9 +301,10 @@ const HrDashboard = () => {
       </div>
 
       <br />
-      <div className="container-statistici">
-        <h2>Statisticile departamentelor</h2>
-        <Bar data={chartData} options={{ scales: { y: { beginAtZero: true } } }} />
+
+      <div>
+        <DepartmentRaporte />
+
       </div>
     </div>
   );
