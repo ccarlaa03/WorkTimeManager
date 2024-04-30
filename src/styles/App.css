@@ -10,6 +10,10 @@ body {
   min-height: 100vh;
 }
 
+.button-container {
+  display: flex;
+  justify-content: center;
+}
 
 nav {
   background-color: #A087BC;
@@ -139,6 +143,7 @@ p {
   display: flex;
   flex-direction: column;
 }
+
 .form-container {
   max-width: 50%;
   padding: 50px;
@@ -205,11 +210,13 @@ select {
   border: 1px solid #A087BC;
   border-radius: 5px;
 }
+
 .login-button {
   width: 50%;
   padding: 10px;
   margin-top: 0px;
 }
+
 button {
   padding: 10px 20px;
   width: auto;
@@ -348,7 +355,7 @@ button {
   border: 0;
   outline: 0;
   transition: all 0.25s;
- 
+
 }
 
 .content h2 {
@@ -371,11 +378,11 @@ button {
 
 .container-dashboard {
   max-width: 1200px;
-  margin: 0 auto; 
-  padding: 40px; 
-  display: flex; 
-  flex-direction: column; 
-  gap: 50px; 
+  margin: 0 auto;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
 }
 
 
@@ -496,18 +503,45 @@ button {
 
 .modal-content {
   background: #E4E9EF;
-  padding: 20px; /* Adjusted for inner spacing */
+  padding: 5%;
   border-radius: 2px;
   width: auto;
-  max-width: 600px; /* You can set a max-width for better appearance */
+  max-width: 500px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content input[type="text"],
+.modal-content input[type="email"] {
+  width: auto;
+  padding: 6px;
+  margin-top: 3px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.modal-content-hr {
+  background: #E4E9EF;
+  padding: 20px;
+  border-radius: 2px;
+  width: auto;
+  max-width: 600px;
   position: fixed;
   top: 35%;
   left: 50%;
   transform: translate(-50%, -50%);
-  display: flex; /* Ensure that this is set to flex for the children to align properly */
+  display: flex;
   flex-direction: column;
   align-items: stretch;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Optional: for drop shadow */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+
 }
 
 .modal-content form {
@@ -515,6 +549,7 @@ button {
   flex-direction: column;
   gap: 10px;
 }
+
 .update-success-message {
   color: green;
   text-align: center;
@@ -542,7 +577,7 @@ button {
 
 
 .modal-content form button[type="submit"] {
-  margin-top: 20px; 
+  margin-top: 20px;
 }
 
 
@@ -636,7 +671,7 @@ button {
 
 .tabel.column th,
 .tabel.column td {
-  padding:  15px 15px;
+  padding: 15px 15px;
   background-color: #FFFFFF;
   border-bottom: 10px solid #ddd;
   text-align: center;
@@ -661,9 +696,11 @@ button {
   background-color: #A087BC;
   color: white;
   border: none;
-  padding: 6px 12px; /* ajustat pentru a avea un aspect mai echilibrat */
+  padding: 6px 12px;
+  /* ajustat pentru a avea un aspect mai echilibrat */
   border-radius: 2px;
-  margin-right: 10px; /* spațiu la dreapta fiecărui buton */
+  margin-right: 10px;
+  /* spațiu la dreapta fiecărui buton */
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -676,7 +713,7 @@ button {
 .info-table th {
   text-align: left;
   padding: 8px;
-  color:  #A087BC; 
+  color: #A087BC;
 }
 
 .info-table td {
@@ -687,6 +724,7 @@ button {
   display: flex;
   align-items: center;
 }
+
 .detail label {
   font-weight: bold;
   color: #404040;
@@ -695,6 +733,7 @@ button {
 .detail span {
   color: #606060;
 }
+
 .form-row {
   margin-bottom: 10px;
 }
@@ -707,6 +746,7 @@ button {
   box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   margin-top: 20px;
 }
+
 @media only screen and (max-width: 768px) {
   .rapoarte-cursuri {
     margin-top: 10px;
@@ -715,7 +755,8 @@ button {
 }
 
 .employee-profile {
-  background-color: #f5f5f5; /* or your preferred background color */
+  background-color: #f5f5f5;
+  /* or your preferred background color */
   padding: 20px;
 }
 
@@ -738,8 +779,10 @@ button {
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   margin-bottom: 30px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease; /* for hover effect */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  /* for hover effect */
 }
+
 .card-curs:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
@@ -760,39 +803,45 @@ button {
   color: #555;
   margin-bottom: 5px;
 }
+
 @media screen and (max-width: 768px) {
 
   .responsive-table {
     max-width: 100%;
     overflow-x: auto;
-  }}
-  @media (max-width: 768px) {
-    .card {
-      width: calc(100% - 20px);
-    }
   }
-  @media only screen and (max-width: 768px) {
-    .lista-cursuri {
-      justify-content: center; 
-    }
+}
+
+@media (max-width: 768px) {
+  .card {
+    width: calc(100% - 20px);
   }
-  
-  @media (max-width: 480px) {
-    .card {
-      width: calc(100% - 40px); 
-    }
+}
+
+@media only screen and (max-width: 768px) {
+  .lista-cursuri {
+    justify-content: center;
   }
-  
+}
+
+@media (max-width: 480px) {
+  .card {
+    width: calc(100% - 40px);
+  }
+}
+
 .options {
   margin-left: 20px;
 }
+
 .lista-cursuri {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between; 
+  justify-content: space-between;
 }
+
 .card {
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   background-color: #fff;
   width: calc(33.333% - 40px);
   margin: 20px;
@@ -801,13 +850,15 @@ button {
   flex-direction: column;
   justify-content: space-between;
   padding: 20px;
-  border-radius: 10px; 
+  border-radius: 10px;
 }
+
 .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-@media (max-width: 768px) { 
+
+@media (max-width: 768px) {
   .card-curs {
     flex: 0 1 calc(50% - 20px);
   }
@@ -815,34 +866,40 @@ button {
 
 @media (max-width: 480px) {
   .card-curs {
-    flex: 0 1 100%; 
+    flex: 0 1 100%;
   }
 }
+
 .content-container {
-  max-width: 800px; 
-  margin: 0 auto; 
-  padding: 30px; 
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 30px;
 }
+
 .question-actions {
 
   display: flex;
-  flex-direction: column; 
+  flex-direction: column;
   align-items: flex-start;
 }
+
 .question-block {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start; 
+  align-items: flex-start;
   padding: 10px 0;
   border-bottom: 1px solid #eee;
 }
+
 .form-details-header h2 {
-  text-align: center; 
-  margin-bottom: 20px; 
+  text-align: center;
+  margin-bottom: 20px;
 }
+
 .question-block {
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
 }
+
 .option {
   background-color: #f7f7f7;
   padding: 5px 10px;
@@ -850,6 +907,7 @@ button {
   border-radius: 4px;
   display: inline-block;
 }
+
 .card-content {
   margin-bottom: 15px;
 }
@@ -873,23 +931,29 @@ button {
 .item label {
   font-weight: 600;
   color: #333333;
-  display: block; /* Make the label take its own line */
+  display: block;
+  /* Make the label take its own line */
 }
 
 .item input {
   width: 100%;
   border: none;
-  padding: 5px 0; /* Just a little spacing on top and bottom */
-  border-bottom: 1px solid #cccccc; /* Just a simple line below the input */
+  padding: 5px 0;
+  /* Just a little spacing on top and bottom */
+  border-bottom: 1px solid #cccccc;
+  /* Just a simple line below the input */
   margin-top: 5px;
   font-size: 16px;
-  background-color: transparent; /* No background */
+  background-color: transparent;
+  /* No background */
   color: #333333;
 }
 
 .item input[readonly] {
-  pointer-events: none; /* No interaction */
-  color: #666666; /* Lighter text for read-only */
+  pointer-events: none;
+  /* No interaction */
+  color: #666666;
+  /* Lighter text for read-only */
 }
 
 
@@ -962,4 +1026,3 @@ select::-ms-expand {
   }
 
 }
-

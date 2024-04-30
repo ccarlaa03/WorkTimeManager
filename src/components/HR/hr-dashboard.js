@@ -211,7 +211,7 @@ const HrDashboard = () => {
 
       </div>
       {updateSuccess && <div className="update-success-message">Datele au fost actualizate cu succes!</div>}
-      <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content">
+      <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content-hr">
         <form onSubmit={handleProfileUpdate}>
           <label>Nume:</label>
           <input

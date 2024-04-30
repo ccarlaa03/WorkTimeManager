@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import Rapoarte from './training-rapoarte';
 import instance from '../../axiosConfig';
 import axios from 'axios';
 
@@ -60,8 +59,7 @@ const EmployeeTraining = () => {
 
     return (
         <div className="container-dashboard">
-            {/* Restul codului tău existent */}
-            {/* Afiseaza lista de angajati disponibili */}
+
             <div>
                 <h3>Angajați disponibili:</h3>
                 <ul>

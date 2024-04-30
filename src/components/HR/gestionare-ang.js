@@ -358,9 +358,7 @@ const GestionareAngajati = () => {
                                     <td>{employee.hire_date}</td>
                                     <td>
                                         <button className='buton' onClick={() => openEditModal(employee)}>Editează</button>
-
                                         <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
-
                                     </td>
                                 </tr>
                             );

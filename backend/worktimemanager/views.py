@@ -244,10 +244,13 @@ def hr_dashboard(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@is_employee
 def employee_dashboard(request):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Autentificare necesară'}, status=status.HTTP_403_FORBIDDEN)
+    if hasattr(request.user, 'hr'):
+        return Response({'error': 'Nu aveți permisiunea de a accesa această resursă ca HR.'}, status=status.HTTP_403_FORBIDDEN)
     try:
-        employee_profile = Employee.objects.filter(user=request.user, is_hr=False).first()
+        employee_profile = Employee.objects.filter(user=request.user).first()
         if employee_profile:
             company = employee_profile.company
             events = Event.objects.filter(company=company)
@@ -260,13 +263,31 @@ def employee_dashboard(request):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_employee_profile(request, user_id):
+    if not request.user.is_authenticated:
+        return Response({'error': 'Authentication required'}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        employee = get_object_or_404(Employee, user=user_id)  # Adjust here to use user_id
+        serializer = EmployeeSerializer(employee, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_employees(request):
     employees = Employee.objects.all()
     serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
-
 
 
 @api_view(['PUT'])

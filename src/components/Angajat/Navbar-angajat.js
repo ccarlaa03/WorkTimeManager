@@ -14,19 +14,19 @@ const NavbarAngajat = () => {
     <nav className="navbar">
       <ul className="navbar-nav">
         <li>
-          <NavLink to="/user-dashboard" activeClassName="active">Dashboard</NavLink>
+          <NavLink to="/employee-dashboard" activeclassname="active">Dashboard</NavLink>
         </li>
         <li>
-          <NavLink to="/program-lucru" activeClassName="active">Program de lucru</NavLink>
+          <NavLink to="/program-lucru" activeclassname="active">Program de lucru</NavLink>
         </li>
         <li>
-          <NavLink to="/concedii" activeClassName="active"> Concedi</NavLink>
+          <NavLink to="/concedii" activeclassname="active"> Concedi</NavLink>
         </li>
         <li>
-          <NavLink to="/feedback-ang" activeClassName="active">Feedback</NavLink>
+          <NavLink to="/feedback-ang" activeclassname="active">Feedback</NavLink>
         </li>
         <li>
-          <NavLink to="/user-profil" activeClassName="active">Profilul meu</NavLink>
+          <NavLink to="/employee-profil" activeclassname="active">Profilul meu</NavLink>
         </li>
         <li>
           <NavLink to="/logout" onClick={handleLogout}>Log out</NavLink>
