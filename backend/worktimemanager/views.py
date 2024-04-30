@@ -1,8 +1,8 @@
-from django.http import Http404
-from django.db.models import Count
+from django.db.models import Count, Sum, F, ExpressionWrapper, fields
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
+from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training
@@ -157,9 +157,8 @@ def create_employee(request):
         else: 
             return Response(serializer.errors, status=400)
 
-@api_view(['GET'])  # sau metoda HTTP adecvată
+@api_view(['GET'])  
 def check_user_exists(request):
-    # Implementează logica funcției aici
     return Response({"message": "Funcția check_user_exists funcționează corect."})
     
 @api_view(['POST'])
@@ -174,10 +173,8 @@ def logout_view(request):
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAdminUser]) 
-
 def owner_dashboard(request):
     try:
         owner = request.user.owner  
@@ -268,9 +265,8 @@ def employee_dashboard(request):
 def update_employee_profile(request, user_id):
     if not request.user.is_authenticated:
         return Response({'error': 'Authentication required'}, status=status.HTTP_403_FORBIDDEN)
-
     try:
-        employee = get_object_or_404(Employee, user=user_id)  # Adjust here to use user_id
+        employee = get_object_or_404(Employee, user=user_id)  
         serializer = EmployeeSerializer(employee, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
@@ -280,7 +276,73 @@ def update_employee_profile(request, user_id):
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def weekly_statistics(request, user_id):
+    today = now().date()
+    year, week_num, weekday = today.isocalendar()
+    weekly_schedules = WorkSchedule.objects.filter(
+        user_id=user_id,
+        date__year=year,
+        date__week=week_num
+    ).annotate(
+        worked_hours=ExpressionWrapper(
+            F('end_time') - F('start_time'),
+            output_field=fields.DurationField()
+        )
+    )
+    statistics = weekly_schedules.aggregate(
+        total_hours=Sum('worked_hours'),
+        total_overtime=Sum('overtime_hours')
+    )
+    total_hours = statistics['total_hours'].total_seconds() / 3600 if statistics['total_hours'] else 0
 
+    return Response({
+        'total_hours': total_hours,
+        'total_overtime': statistics['total_overtime'] or 0
+    })
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_current_status(request, user_id):
+    today = now().date()
+    try:
+        # Assuming there's a model method or similar to check this
+        current_status = WorkSchedule.objects.filter(user_id=user_id, date=today).exists()
+        status = 'clocked in' if current_status else 'clocked out'
+        return Response({'status': status}, status=200)
+    except WorkSchedule.DoesNotExist:
+        return Response({'error': 'No work schedule found for today'}, status=404)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def clock_in(request, user_id):
+    try:
+        employee = Employee.objects.get(user__id=user_id)
+        if WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=False).exists():
+            return Response({'error': 'Employee already clocked in and out today.'}, status=400)
+        if WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=True).exists():
+            return Response({'error': 'Employee already clocked in today.'}, status=400)
+        WorkSchedule.objects.create(user=employee, start_time=now().time(), date=now().date())
+        return Response({'message': 'Clocked in successfully.'})
+    except Employee.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=404)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def clock_out(request, user_id):
+    try:
+        employee = Employee.objects.get(user__id=user_id)
+        work_schedule = WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=True).last()
+        if work_schedule:
+            work_schedule.end_time = now().time()
+            work_schedule.save()
+            return Response({'message': 'Clocked out successfully.'})
+        else:
+            return Response({'error': 'No clock-in record found for today.'}, status=400)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Employee not found'}, status=404)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

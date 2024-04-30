@@ -71,7 +71,6 @@ const ProfilAngajat = () => {
         return;
       }
 
-
       const url = `/angajat-profil/${user_id}/`;
 
       console.log(`Requesting employee details from URL: http://localhost:8000${url}`);

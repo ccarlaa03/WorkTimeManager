@@ -544,6 +544,27 @@ button {
 
 }
 
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto; 
+}
+
+table, th, td {
+  border: 1px solid #ddd;
+}
+
+th, td {
+  text-align: center;
+  padding: 8px;
+}
+
+th {
+  background-color: #A087BC;
+  color: white;
+}
+
+
 .modal-content form {
   display: flex;
   flex-direction: column;

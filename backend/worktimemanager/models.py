@@ -135,6 +135,13 @@ class WorkSchedule(models.Model):
         department = self.user.department if self.user else "Unknown Department"
         return f"{employee_name} - {department} - {self.date}"
     
+    def clock_in(self):
+        self.start_time = timezone.now().time()
+        self.save()
+
+    def clock_out(self):
+        self.end_time = timezone.now().time()
+        self.save()
 class FeedbackForm(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)

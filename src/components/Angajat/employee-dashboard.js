@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import defaultImage from '../../photos/imagine-profil.jpg';
 import Statistici from './statistici';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -8,12 +8,14 @@ import Modal from 'react-modal';
 import Pontator from './pontator';
 import axios from 'axios';
 import instance from '../../axiosConfig';
+import { AuthContext } from '../../AuthContext';
 
 Modal.setAppElement('#root');
 
 const localizer = momentLocalizer(moment);
 
 const Dashboard = () => {
+  const { user } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [employeeInfo, setEmployeeInfo] = useState({
     name: '',
@@ -25,9 +27,9 @@ const Dashboard = () => {
     email: '',
     address: '',
     telephone_number: '',
+    user: '',
   });
 
-  const [workedHours, setWorkedHours] = useState(40);
   const [freeDays, setFreeDays] = useState(2);
   const [modalEditScheduleIsOpen, setModalEditScheduleIsOpen] = useState(false);
   const [modalEditProfileIsOpen, setModalEditProfileIsOpen] = useState(false);
@@ -43,6 +45,7 @@ const Dashboard = () => {
   });
   const employeeId = 'employee-id';
   const [isLoading, setIsLoading] = useState(true);
+  const [workSchedule, setWorkSchedule] = useState([]);
 
 
   const openEditScheduleModal = () => {
@@ -68,9 +71,6 @@ const Dashboard = () => {
     setModalEditProfileIsOpen(false);
   };
 
-  const workSchedule = [
-
-  ];
 
   const notifications = [
     {},
@@ -104,7 +104,37 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, []);
+
+    const fetchWorkSchedule = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        console.error("No access token found. User must be logged in.");
+        return;
+      }
+      const user = employeeInfo.user;
+      if (!user) {
+        console.error("User ID is undefined or not provided.");
+        return;
+      }
+      try {
+        const response = await axios.get(`http://localhost:8000/angajat-prog/${user}/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        console.log("Work Schedule fetched:", response.data);
+        console.log('Rendering workSchedule:', workSchedule);
+
+        if (response.status === 200) {
+          setWorkSchedule(response.data);
+        } else {
+          throw new Error('Failed to fetch work schedule');
+        }
+      } catch (error) {
+        console.error('Error fetching work schedule:', error);
+      }
+    };
+
+    fetchWorkSchedule();
+  }, [employeeInfo.user]);
 
   //UPDATE
   const updateEmployeeProfile = async (event) => {
@@ -117,21 +147,18 @@ const Dashboard = () => {
       return;
     }
 
-    // Check if employeeInfo.user_id is available
+
     if (!employeeInfo.user) {
       console.error("User ID is undefined. Cannot update profile.");
       return;
     }
-
     try {
-      // Using user_id in the URL
       const response = await axios.put(`http://localhost:8000/update-employee-profile/${employeeInfo.user}/`, profileToEdit, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
       });
-
       if (response.status === 200) {
         console.log('Profile update successful', response.data);
         setEmployeeInfo({ ...employeeInfo, ...response.data });
@@ -143,7 +170,6 @@ const Dashboard = () => {
       console.error('Error updating profile:', error.response ? error.response.data : error.message);
     }
   };
-
 
   if (isLoading) {
     return <div>Se încarcă...</div>;
@@ -181,28 +207,53 @@ const Dashboard = () => {
 
       </div>
       <div className="button-container">
-        <Pontator employeeId={employeeId} />
+        <Pontator user_id={employeeInfo.user} />
       </div>
 
-      <div className="work-schedule-container">
-        <h2>Program de lucru</h2>
-        <ul>
-          {workSchedule.map((day, index) => (
-            <li key={index}>{day.day}: {day.startTime} - {day.endTime}</li>
-          ))}
-        </ul>
-        <button
-          className="buton"
-          onClick={openEditScheduleModal}>
-          Cere modificare program de lucru
-        </button>
+      <div className="content-container">
+        <div className="card-curs">
+          <h2 style={{ textAlign: 'center' }}>Program de lucru</h2>
+          {workSchedule && workSchedule.length > 0 ? (
+            <table>
+              <thead>
+                <tr>
+                  <th >Data</th>
+                  <th>Ora de început</th>
+                  <th>Ora de sfârșit</th>
+                  <th >Ore suplimentare</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workSchedule.map((schedule, index) => (
+                  <tr key={index}>
+                    <td>{schedule.date}</td>
+                    <td>{schedule.start_time}</td>
+                    <td>{schedule.end_time}</td>
+                    <td>{schedule.overtime_hours || '0'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>Încărcarea programului de lucru...</p>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+            <button
+              className="buton"
+              onClick={openEditScheduleModal}>
+              Cere modificare program de lucru
+            </button>
+          </div>
+        </div>
       </div>
+
 
       <div className="flex-container">
-        <Statistici workedHours={workedHours} freeDays={freeDays} />
+        <Statistici user_id={employeeInfo.user} />
+
 
         <div className="notifications-container">
-          <h2>Notifications</h2>
+          <h2>Notificări</h2>
           <ul>
             {notifications.map((notification, index) => (
               <li key={index}>{notification.text}</li>
