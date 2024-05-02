@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bar } from 'react-chartjs-2';
-import 'chart.js/auto';  
+import 'chart.js/auto';
 
 const Statistici = ({ user_id }) => {
   const [statsData, setStatsData] = useState({});
@@ -34,7 +34,7 @@ const Statistici = ({ user_id }) => {
       labels: ['Ore lucrate ', 'Media zilnică de ore', 'Ore suplimentare'],
       datasets: [
         {
-          label: 'Hours',
+          label: 'Ore',
           data: [data.total_hours, data.average_hours, data.total_overtime],
           backgroundColor: ['rgba(160, 135, 188, 0.5)', 'rgba(201, 203, 207, 0.8)', 'rgba(160, 135, 188, 0.5)']
         }
@@ -44,13 +44,15 @@ const Statistici = ({ user_id }) => {
   };
 
   return (
-    <div>
-      <h2>Statistici Săptămânale</h2>
-      {statsData.labels ? (
-        <Bar data={statsData} options={{ responsive: true, scales: { y: { beginAtZero: true } } }} />
-      ) : (
-        <p>Se încarcă statistici...</p>
-      )}
+    <div className="content-container">
+      <div className="card-curs" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <h2>Statistici săptămânale</h2>
+        {statsData.labels ? (
+          <Bar data={statsData} options={{ responsive: true, scales: { y: { beginAtZero: true } } }} />
+        ) : (
+          <p>Se încarcă statistici...</p>
+        )}
+      </div>
     </div>
   );
 };

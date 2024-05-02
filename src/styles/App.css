@@ -559,11 +559,44 @@ th, td {
   padding: 8px;
 }
 
+
+.notification-item {
+  padding: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.notification-item:last-child {
+  border-bottom: none;
+}
+
+.notification-message {
+  margin: 0;
+  font-weight: bold;
+}
+
+.notification-date {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.unread {
+  background-color: #e1f5fe;
+}
+
+.read {
+  background-color: #ffffff;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
 th {
   background-color: #A087BC;
   color: white;
 }
-
 
 .modal-content form {
   display: flex;

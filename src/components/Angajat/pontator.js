@@ -4,93 +4,101 @@ import axios from 'axios';
 const Pontator = ({ user_id }) => {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [message, setMessage] = useState('');
+    const [workSchedule, setWorkSchedule] = useState([]);
 
-    useEffect(() => {
-        const fetchCurrentStatus = async () => {
-            const accessToken = localStorage.getItem('access_token');
-            if (!accessToken) {
-                console.error("Access denied. No token available.");
-                return;
-            }
-            try {
-                const response = await axios.get(`http://localhost:8000/employee/${user_id}/current-status/`, {
-                    headers: { 'Authorization': `Bearer ${accessToken}` }
-                });
-                console.log('Current status:', response.data.status);
-            } catch (error) {
-                console.error('Failed to fetch current status:', error);
-            }
-        };
-        fetchCurrentStatus();
-    }, [user_id]);
-
-    const handleClockIn = async () => {
+    const fetchCurrentStatus = async () => {
         setLoading(true);
-        setError(null);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            setError("Access denied. No token available. User must be logged in.");
+            setMessage("Access denied. No token available.");
             setLoading(false);
-            alert("Access denied. You must be logged in.");
             return;
         }
 
         try {
-            await axios.post(`http://localhost:8000/clock-in/${user_id}/`, {}, {
+            const response = await axios.get(`http://localhost:8000/employee/${user_id}/current-status/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
-            setStatus('intrare');
-            alert('Successfully clocked in.');
+            setStatus(response.data.status);
+            setLoading(false);
+            console.log('Current status:', status);
+            console.log("Current status set to:", response.data.status);
+
         } catch (error) {
+            setMessage('Failed to fetch current status.');
+            console.error('Failed to fetch current status:', error);
+            setLoading(false);
+        }
+    };
+
+
+
+    const handleClockIn = async () => {
+        setLoading(true);
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            setMessage("Access denied. No token available.");
+            setLoading(false);
+            return;
+        }
+
+        try {
+            const response = await axios.post(`http://localhost:8000/clock-in/${user_id}/`, {}, {
+                headers: { Authorization: `Bearer ${accessToken}` }
+            });
+            setStatus('clocked in');
+            setMessage('Te-ai pontat cu succes pentru intrare. Să ai o zi productivă!');
+            setTimeout(fetchCurrentStatus, 1000);
+            setLoading(false);
+        } catch (error) {
+            setMessage('Failed to clock in.');
             console.error('Error clocking in:', error);
-            setError('Failed to clock in. ' + error.message);
-            alert('Failed to clock in.');
-        } finally {
             setLoading(false);
         }
     };
 
     const handleClockOut = async () => {
         setLoading(true);
-        setError(null);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            setError("Access denied. No token available. User must be logged in.");
+            setMessage("Access denied. No token available.");
             setLoading(false);
-            alert("Access denied. You must be logged in.");
             return;
         }
 
         try {
-            await axios.post(`http://localhost:8000/clock-out/${user_id}/`, {}, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
+            const response = await axios.post(`http://localhost:8000/clock-out/${user_id}/`, {}, {
+                headers: { Authorization: `Bearer ${accessToken}` }
             });
-            setStatus('iesire');
-            alert('Successfully clocked out.');
+            setStatus('clocked out');
+            setMessage('Te-ai pontat la ieșire. Ne vedem mâine!');
+            setLoading(false);
         } catch (error) {
+            setMessage('Failed to clock out.');
             console.error('Error clocking out:', error);
-            setError('Failed to clock out. ' + error.message);
-            alert('Failed to clock out.');
-        } finally {
             setLoading(false);
         }
     };
 
     return (
         <div>
-            {status === 'intrare' ? (
+            {loading ? <p>Se încarcă...</p> : null}
+            {message && <p>{message}</p>}
+            {status === 'clocked in' ? (
                 <div>
                     <p>Ești pontat la intrare.</p>
-                    <button onClick={handleClockOut}>Pontare ieșire</button>
+                    <button className="buton" onClick={handleClockOut}>Pontare ieșire</button>
                 </div>
-            ) : status === 'iesire' ? (
-                <p>Ai pontat ieșirea pentru astăzi.</p>
             ) : (
-                <button onClick={handleClockIn}>Pontare intrare</button>
+                <div>
+                    <p>Ai pontat ieșirea pentru astăzi.</p>
+                    <button className="buton" onClick={handleClockIn}>Pontare intrare</button>
+                </div>
             )}
         </div>
     );
+
 };
 
 export default Pontator;

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption, TrainingParticipant
+from .models import User, Company, Employee, Owner, Event, HR, WorkSchedule,  FeedbackForm, FeedbackQuestion, EmployeeFeedback, Leave, Training, FeedbackResponseOption, TrainingParticipant, Notification
 from datetime import timedelta
 
 class UserSerializer(serializers.ModelSerializer):
@@ -21,7 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
 
 class OwnerSerializer(serializers.ModelSerializer):
     user = UserSerializer()
-
     class Meta:
         model = Owner
         fields = '__all__'
@@ -32,7 +31,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
         model = Employee
         fields = '__all__'  
         
-  
 class HRSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(source='company.id')
     class Meta:
@@ -48,6 +46,14 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = '__all__'
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    created_at = serializers.DateTimeField(format="%Y-%m-%dT%H:%M:%S%z")
+
+    class Meta:
+        model = Notification
+        fields = ['id', 'message', 'is_read', 'created_at', 'sender', 'recipient']
 
 class WorkScheduleSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='user.name', read_only=True)

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import defaultImage from '../../photos/imagine-profil.jpg';
 import Statistici from './statistici';
+import Notifications from './notificari';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
@@ -71,7 +72,10 @@ const Dashboard = () => {
     setModalEditProfileIsOpen(false);
   };
 
-
+  const formatTime = (timeString) => {
+    const time = new Date('1970-01-01T' + timeString + 'Z');
+    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
   const notifications = [
     {},
   ];
@@ -112,7 +116,7 @@ const Dashboard = () => {
         return;
       }
       const user = employeeInfo.user;
-      if (!user) {
+      if (!employeeInfo.user) {
         console.error("User ID is undefined or not provided.");
         return;
       }
@@ -148,10 +152,6 @@ const Dashboard = () => {
     }
 
 
-    if (!employeeInfo.user) {
-      console.error("User ID is undefined. Cannot update profile.");
-      return;
-    }
     try {
       const response = await axios.put(`http://localhost:8000/update-employee-profile/${employeeInfo.user}/`, profileToEdit, {
         headers: {
@@ -183,7 +183,7 @@ const Dashboard = () => {
         ) : employeeInfo ? (
           <>
             <h2 style={{ textAlign: 'center' }}><strong>Bine ai venit, {employeeInfo.name}!</strong></h2>
-            <div className="card-curs">
+            <div className="card-curs" style={{ textAlign: 'center' }}>
 
               <p><strong>Post:</strong> {employeeInfo.position}</p>
               <p><strong>Departament:</strong> {employeeInfo.department}</p>
@@ -223,13 +223,13 @@ const Dashboard = () => {
                   <th >Ore suplimentare</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody >
                 {workSchedule.map((schedule, index) => (
                   <tr key={index}>
                     <td>{schedule.date}</td>
-                    <td>{schedule.start_time}</td>
-                    <td>{schedule.end_time}</td>
-                    <td>{schedule.overtime_hours || '0'}</td>
+                    <td>{formatTime(schedule.start_time)}</td>
+                    <td>{schedule.end_time ? formatTime(schedule.end_time) : ''}</td>
+                    <td>{schedule.overtime_hours ? parseFloat(schedule.overtime_hours).toFixed(2) : '0.00'}</td>
                   </tr>
                 ))}
               </tbody>
@@ -249,27 +249,20 @@ const Dashboard = () => {
 
 
       <div className="flex-container">
+        <Notifications user_id={employeeInfo.user} />
         <Statistici user_id={employeeInfo.user} />
 
-
-        <div className="notifications-container">
-          <h2>Notificări</h2>
-          <ul>
-            {notifications.map((notification, index) => (
-              <li key={index}>{notification.text}</li>
-            ))}
-          </ul>
-        </div>
+        <div className="content-container">
+          <div className="card-curs">
+            <Calendar
+              localizer={localizer}
+              events={events}
+              startAccessor="start"
+              endAccessor="end"
+              style={{ height: 500 }}
+            />
+          </div></div>
       </div>
-
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-      />
-
       <Modal
         isOpen={modalEditProfileIsOpen}
         onRequestClose={closeEditModal}

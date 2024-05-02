@@ -5,6 +5,8 @@ import logging
 from django.core.validators import RegexValidator
 from django.db.models import Sum
 from django.utils import timezone
+from django.conf import settings
+from django.utils.timezone import now
 
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
@@ -126,9 +128,9 @@ class Employee(models.Model):
 class WorkSchedule(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')
     start_time = models.TimeField()
-    end_time = models.TimeField()
+    end_time = models.TimeField(null=True, blank=True)  
     date = models.DateField()
-    overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)  
+    overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
 
     def __str__(self):
         employee_name = self.user.name if self.user else "Unknown Employee"
@@ -141,7 +143,30 @@ class WorkSchedule(models.Model):
 
     def clock_out(self):
         self.end_time = timezone.now().time()
+        start_dt = timezone.datetime.combine(self.date, self.start_time)
+        end_dt = timezone.datetime.combine(self.date, self.end_time)
+        worked_duration = end_dt - start_dt
+        worked_hours = worked_duration.total_seconds() / 3600
+        if worked_hours > 8:
+            self.overtime_hours = worked_hours - 8
+        else:
+            self.overtime_hours = 0
         self.save()
+
+class Notification(models.Model):
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_notifications', limit_choices_to={'is_hr': True})
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications')
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.id:  
+            print(f"Saving new notification at {now()}")
+        super().save(*args, **kwargs)
+    def __str__(self):
+        return f'Notification from {self.sender} to {self.recipient}'
+
 class FeedbackForm(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)

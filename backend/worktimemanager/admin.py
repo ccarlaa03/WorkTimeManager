@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Company, Owner, HR, Employee, WorkSchedule, FeedbackForm, EmployeeFeedback, FeedbackQuestion, Leave, Training, Event, FeedbackResponseOption, TrainingParticipant
+from .models import User, Company, Owner, HR, Employee, WorkSchedule, FeedbackForm, EmployeeFeedback, FeedbackQuestion, Leave, Training, Event, FeedbackResponseOption, TrainingParticipant, Notification
 
 admin.site.register(User)
 admin.site.register(Company)
@@ -15,3 +15,4 @@ admin.site.register(Training)
 admin.site.register(Event)
 admin.site.register(FeedbackResponseOption)
 admin.site.register(TrainingParticipant)
+admin.site.register(Notification)

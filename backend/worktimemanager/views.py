@@ -5,10 +5,10 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
-from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer
+from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer, NotificationSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
@@ -259,6 +259,42 @@ def employee_dashboard(request):
             return Response({'error': 'Profilul angajatului nu există sau accesul nu este permis.'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def fetch_notifications(request, user_id=None):
+    user = get_object_or_404(User, pk=user_id)
+    notifications = Notification.objects.all().order_by('-created_at')
+    notifications.update(is_read=True)
+    return Response({'notifications': [{'id': n.id, 'message': n.message, 'created_at': n.created_at.isoformat()} for n in notifications]})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_notification(request):
+    data = request.data
+    message = data.get('message', '')
+    user_id = data.get('user_id', None)
+
+    if user_id:
+        user = get_object_or_404(User, user_id=user_id)
+        Notification.objects.create(recipient=user, message=message, sender=request.user)
+    else:
+        users = User.objects.filter(is_employee=True)
+        notifications = [Notification(recipient=user, message=message, sender=request.user) for user in users]
+        Notification.objects.bulk_create(notifications)
+    
+    return Response({"message": "Notifications sent successfully"}, status=status.HTTP_200_OK)
+   
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def mark_notification_as_read(request, notification_id):
+    notification = get_object_or_404(Notification, pk=notification_id, recipient=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save(update_fields=['is_read'])
+        return Response({'status': 'success', 'message': 'Notification marked as read.'})
+    return Response({'status': 'error', 'message': 'Notification already marked as read.'}, status=400)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -308,7 +344,6 @@ def weekly_statistics(request, user_id):
 def get_current_status(request, user_id):
     today = now().date()
     try:
-        # Assuming there's a model method or similar to check this
         current_status = WorkSchedule.objects.filter(user_id=user_id, date=today).exists()
         status = 'clocked in' if current_status else 'clocked out'
         return Response({'status': status}, status=200)
@@ -318,31 +353,28 @@ def get_current_status(request, user_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def clock_in(request, user_id):
-    try:
-        employee = Employee.objects.get(user__id=user_id)
-        if WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=False).exists():
-            return Response({'error': 'Employee already clocked in and out today.'}, status=400)
-        if WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=True).exists():
-            return Response({'error': 'Employee already clocked in today.'}, status=400)
-        WorkSchedule.objects.create(user=employee, start_time=now().time(), date=now().date())
-        return Response({'message': 'Clocked in successfully.'})
-    except Employee.DoesNotExist:
-        return Response({'error': 'Employee not found'}, status=404)
+    user = get_object_or_404(Employee, user_id=user_id)
+    today = timezone.now().date()
+    work_schedule, created = WorkSchedule.objects.get_or_create(
+        user=user,
+        date=today,
+        defaults={'start_time': timezone.now().time()}
+    )
+    if not created:
+        return Response({'error': 'Already clocked in today'}, status=400)
+    return Response({'status': 'Clocked in at', 'time': work_schedule.start_time.isoformat()})
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def clock_out(request, user_id):
-    try:
-        employee = Employee.objects.get(user__id=user_id)
-        work_schedule = WorkSchedule.objects.filter(user=employee, date=now().date(), end_time__isnull=True).last()
-        if work_schedule:
-            work_schedule.end_time = now().time()
-            work_schedule.save()
-            return Response({'message': 'Clocked out successfully.'})
-        else:
-            return Response({'error': 'No clock-in record found for today.'}, status=400)
-    except Employee.DoesNotExist:
-        return Response({'error': 'Employee not found'}, status=404)
+    user = get_object_or_404(Employee, user_id=user_id)
+    today = timezone.now().date()
+    work_schedule = WorkSchedule.objects.filter(user=user, date=today).first()
+    if not work_schedule or work_schedule.end_time is not None:
+        return Response({'error': 'No clock-in record found or already clocked out'}, status=404)
+    work_schedule.end_time = timezone.now().time()
+    work_schedule.save()
+    return Response({'status': 'Clocked out at', 'time': work_schedule.end_time.isoformat()})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
