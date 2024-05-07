@@ -212,7 +212,7 @@ const Dashboard = () => {
 
       <div className="content-container">
         <div className="card-curs">
-          <h2 style={{ textAlign: 'center' }}>Program de lucru</h2>
+          <h2 style={{ textAlign: 'center' }}>Pontaj</h2>
           {workSchedule && workSchedule.length > 0 ? (
             <table>
               <thead>
@@ -237,13 +237,7 @@ const Dashboard = () => {
           ) : (
             <p>Încărcarea programului de lucru...</p>
           )}
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-            <button
-              className="buton"
-              onClick={openEditScheduleModal}>
-              Cere modificare program de lucru
-            </button>
-          </div>
+
         </div>
       </div>
 
@@ -269,7 +263,7 @@ const Dashboard = () => {
         contentLabel="Editează Profil"
         className="modal-content"
       >
-        <h2>Editează Profil</h2>
+        <h2>Editează profil</h2>
         <form onSubmit={updateEmployeeProfile}>
           <label>
             Nume:
@@ -347,38 +341,7 @@ const Dashboard = () => {
 
       </Modal>
 
-      <Modal
-        isOpen={modalEditScheduleIsOpen}
-        onRequestClose={closeEditScheduleModal}
-        contentLabel="Edit Work Schedule"
-        className="modal-content"
-      >
-        <h2>Cere modificări programului de lucru</h2>
-        <form onSubmit={handleSaveEditSchedule}>
-          <div>
-            <label>Ziua:</label>
-            <select>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-            </select>
-          </div>
-          <div>
-            <label>Ora de început:</label>
-            <input type="time" />
-          </div>
-          <div>
-            <label>Ora de sfărșit:</label>
-            <input type="time" />
-          </div>
-          <div className="button-container">
-            <button className='buton' type="submit">Trimite</button>
-            <button className='buton' type="button" onClick={closeEditScheduleModal}>Închide</button>
-          </div>
-        </form>
-      </Modal>
+
     </div >
   );
 };

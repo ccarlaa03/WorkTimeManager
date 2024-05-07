@@ -3,6 +3,7 @@ import axios from 'axios';
 
 const Notifications = ({ user_id }) => {
     const [notifications, setNotifications] = useState([]);
+    const [events, setEvents] = useState([]);
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -32,15 +33,58 @@ const Notifications = ({ user_id }) => {
 
     const markAsRead = async (id) => {
         const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.error("Access denied. No token available.");
+            return;
+        }
         try {
-            await axios.post(`http://localhost:8000/notifications/mark-read/${id}/`, {}, {
+            const response = await axios.post(`http://localhost:8000/notifications/mark-read/${id}/`, {}, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
-            setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+            if (response.status === 200) {
+                setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+            } else {
+                console.error('Error marking notification as read:', response.data.message);
+            }
         } catch (error) {
             console.error('Error marking notification as read:', error);
         }
     };
+    
+   useEffect(() => {
+        const fetchEvents = async () => {
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken) {
+                console.log("Access denied. No token available.");
+                return;
+            }
+
+            try {
+                const response = await axios.get(`http://localhost:8000/events/`, {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                if (response.status === 200) {
+                    console.log(response.data);
+                    setEvents(response.data.map(event => ({
+                        title: event.title,
+                        start: new Date(event.start),
+                        end: new Date(event.end)
+                    })));
+                } else {
+                    console.error('Failed to fetch events', response.data);
+                }
+            } catch (error) {
+                console.error('Error fetching events:', error);
+            }
+        };
+
+        fetchEvents();
+        const interval = setInterval(fetchEvents, 50000);
+
+        return () => clearInterval(interval);
+    }, [user_id]);
+    
+
     return (
         <div className="content-container">
             <div className="card-curs" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>

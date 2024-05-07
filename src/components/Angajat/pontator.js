@@ -32,6 +32,15 @@ const Pontator = ({ user_id }) => {
         }
     };
 
+    useEffect(() => {
+        fetchCurrentStatus();
+    }, []);
+
+    useEffect(() => {
+        if (status === 'clocked out') {
+            setMessage("Ți-ai pontat deja ieșirea");
+        }
+    }, [status]);
 
 
     const handleClockIn = async () => {

@@ -288,12 +288,15 @@ def send_notification(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_notification_as_read(request, notification_id):
-    notification = get_object_or_404(Notification, pk=notification_id, recipient=request.user)
-    if not notification.is_read:
-        notification.is_read = True
-        notification.save(update_fields=['is_read'])
-        return Response({'status': 'success', 'message': 'Notification marked as read.'})
-    return Response({'status': 'error', 'message': 'Notification already marked as read.'}, status=400)
+    try:
+        if not Notification.is_read:
+            Notification.is_read = True
+            Notification.save()
+            return Response({'status': 'success', 'message': 'Notification marked as read.'})
+        return Response({'status': 'error', 'message': 'Notification already marked as read.'})
+    except Exception as e:
+        logger.error(f"Failed to mark notification as read: {e}", exc_info=True)
+        return Response({'status': 'error', 'message': str(e)}, status=500)
 
 
 @api_view(['PUT'])
@@ -342,13 +345,14 @@ def weekly_statistics(request, user_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_current_status(request, user_id):
-    today = now().date()
+    today = timezone.now().date()
     try:
-        current_status = WorkSchedule.objects.filter(user_id=user_id, date=today).exists()
-        status = 'clocked in' if current_status else 'clocked out'
+        work_schedule = WorkSchedule.objects.get(user_id=user_id, date=today)
+        status = 'clocked out' if work_schedule.end_time else 'clocked in'
         return Response({'status': status}, status=200)
     except WorkSchedule.DoesNotExist:
-        return Response({'error': 'No work schedule found for today'}, status=404)
+        return Response({'status': 'clocked out'}, status=200)
+
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -408,19 +412,19 @@ def events_view(request):
     user = request.user
     company = None
 
-    if hasattr(user, 'owner'):
-        company = user.owner.company
-    elif hasattr(user, 'HR'):
-        company = user.hr.company
-    elif hasattr(user, 'employee'):
+    if hasattr(user, 'employee'):
         company = user.employee.company
+    elif hasattr(user, 'hr'):
+        company = user.hr.company
+    elif hasattr(user, 'owner'):
+        company = user.owner.company
 
     if company:
         events = Event.objects.filter(company=company)
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
     else:
-        return Response({'error': 'No company found for events.'}, status=status.HTTP_404_NOT_FOUND)
+        return Response({'error': 'No company associated with the user for retrieving events.'}, status=status.HTTP_404_NOT_FOUND)
 
     
 class EmployeeViewSet(viewsets.ModelViewSet):
