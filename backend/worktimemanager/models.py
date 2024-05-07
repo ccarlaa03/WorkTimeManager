@@ -131,6 +131,8 @@ class WorkSchedule(models.Model):
     end_time = models.TimeField(null=True, blank=True)  
     date = models.DateField()
     overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
+    public_holidays = models.BooleanField(default=False, verbose_name="Public Holiday")  
+    work_history_details = models.JSONField(default=dict, verbose_name="Work history details")  
 
     def __str__(self):
         employee_name = self.user.name if self.user else "Unknown Employee"

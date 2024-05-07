@@ -11,7 +11,7 @@ import instance from '../../axiosConfig';
 import Cookies from 'js-cookie';
 
 const GestionareProgramLucru = () => {
-
+  const [schedules, setSchedules] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -60,7 +60,7 @@ const GestionareProgramLucru = () => {
     return config;
   });
 
-  // Așigură-te că această funcție este definită în afara lui useEffect, la nivelul componentei
+
   const fetchWorkSchedules = async (hrCompanyId) => {
     const accessToken = getAccessToken();
     try {
@@ -75,7 +75,7 @@ const GestionareProgramLucru = () => {
       console.error('Error fetching work schedules:', error.response ? error.response.data : error);
     }
   };
-  // Folosește useEffect pentru a apela această funcție
+
   useEffect(() => {
     if (hrCompanyId) {
       fetchWorkSchedules(hrCompanyId);

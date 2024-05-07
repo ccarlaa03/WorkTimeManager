@@ -1,4 +1,5 @@
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
+from dateutil.relativedelta import relativedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
@@ -12,7 +13,9 @@ from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
+from datetime import datetime, timedelta
 import logging
+from django.utils.dateparse import parse_date
 from .decorators import is_hr, is_employee, is_owner;
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -479,6 +482,46 @@ def employee_workschedule_list(request, user_id):
     serializer = WorkScheduleSerializer(schedules, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_work_schedule(request, user_id):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    if not start_date or not end_date:
+        return Response({"error": "start_date and end_date parameters are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    start_date = parse_date(start_date)
+    end_date = parse_date(end_date)
+
+    schedules = WorkSchedule.objects.filter(user_id=user_id, date__range=(start_date, end_date))
+    serializer = WorkScheduleSerializer(schedules, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_work_schedule_by_month(request, user_id):
+    month = request.query_params.get('month')  
+    try:
+        start_date = datetime.strptime(month, "%Y-%m").date()
+        end_date = (start_date + relativedelta(months=1)) - relativedelta(days=1)
+        schedules = WorkSchedule.objects.filter(user_id=user_id, date__range=[start_date, end_date])
+        serializer = WorkScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+    except ValueError:
+        return Response({"error": "Invalid month format"}, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['GET'])
+def get_work_schedule_by_week(request, user_id):
+    start_date_str = request.query_params.get('start_date')
+    try:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = start_date + timedelta(days=6)
+        schedules = WorkSchedule.objects.filter(user_id=user_id, date__range=[start_date, end_date])
+        serializer = WorkScheduleSerializer(schedules, many=True)
+        return Response(serializer.data)
+    except ValueError:
+        return Response({"error": "Invalid date format"}, status=status.HTTP_400_BAD_REQUEST)   
+    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def workschedule_create(request):

@@ -1,61 +1,121 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import Modal from 'react-modal';
+import axios from 'axios';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
+
 
 Modal.setAppElement('#root');
 
-
-
-const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
+const ProgramLucru = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [schedules, setSchedules] = useState([]);
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [lunaCurenta, setLunaCurenta] = useState(new Date());
-  const [programLucru, setProgramLucru] = useState(programLucruInitial || []);
-  const [zileLibere, setZileLibere] = useState(zileLibereInitial || []);
-  const [istoricProgram, setIstoricProgram] = useState([]);
-  const [esteDeschisModalModificare, setEsteDeschisModalModificare] = useState(false);
-  const [zi, setZi] = useState('');
-  const [oraInceput, setOraInceput] = useState('');
-  const [oraSfarsit, setOraSfarsit] = useState('');
+  const [date, setDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [workHistoryDetails, setWorkHistoryDetails] = useState([]);
+  const [employeeInfo, setEmployeeInfo] = useState({
+    name: '',
+    user: '',
+  });
+  const [viewMode, setViewMode] = useState('month');
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    const time = new Date('1970-01-01T' + timeString + 'Z');
+    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handlePrev = () => {
+    if (viewMode === 'month') {
+      setCurrentDate(subMonths(currentDate, 1));
+    } else {
+      setCurrentDate(subWeeks(currentDate, 1));
+    }
+  };
+
+  const handleNext = () => {
+    if (viewMode === 'month') {
+      setCurrentDate(addMonths(currentDate, 1));
+    } else {
+      setCurrentDate(addWeeks(currentDate, 1));
+    }
+  };
 
   useEffect(() => {
-    // Aici poți face o cerere la server pentru a încărca programul de lucru și zilele libere
-
-    async function incarcaDate() {
-      try {
-        const programLucruDeLaServer = await fetchProgramLucru(lunaCurenta);
-        const zileLibereDeLaServer = await fetchZileLibere(lunaCurenta);
-        const istoricDeLaServer = await fetchIstoricProgram(lunaCurenta);
-
-        setProgramLucru(programLucruDeLaServer);
-        setZileLibere(zileLibereDeLaServer);
-        setIstoricProgram(istoricDeLaServer);
-      } catch (error) {
-        console.error('Eroare la încărcarea datelor', error);
-        // Aici poți de asemenea actualiza starea aplicației pentru a indica o eroare la încărcare
+    const fetchData = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        console.error("Access denied. No token available. User must be logged in to access this.");
+        return;
       }
-    }
+      try {
+        const response = await axios.get('http://localhost:8000/employee-dashboard/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        console.log(response.data);
+        setEmployeeInfo(response.data.employee_info);
+      } catch (error) {
+        console.error("Error retrieving profile data:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
-    incarcaDate();
-  }, [lunaCurenta]);
+  useEffect(() => {
+    const fetchSchedules = async () => {
+      if (!employeeInfo.user) {
+        console.error("User ID is undefined or not provided.");
+        return;
+      }
+      setLoading(true);
+      setError('');
 
-  // Funcția pentru a merge la luna precedentă
-  const handleLunaPrecedenta = () => {
-    setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() - 1));
-  };
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        setError("Access denied. No token available.");
+        setLoading(false);
+        return;
+      }
 
-  // Funcția pentru a merge la luna următoare
-  const handleLunaUrmatoare = () => {
-    setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() + 1));
-  };
+      const dateParams = viewMode === 'month'
+        ? {
+          start_date: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
+          end_date: format(endOfMonth(currentDate), 'yyyy-MM-dd')
+        }
+        : {
+          start_date: format(startOfWeek(currentDate), 'yyyy-MM-dd'),
+          end_date: format(endOfWeek(currentDate), 'yyyy-MM-dd')
+        };
 
-  // Simularea unei cereri asincrone către un server pentru a obține programul de lucru
-  const fetchProgramLucru = async (lunaCurenta) => {
-    // Aici ar fi codul pentru a face un apel HTTP către server
-    // În loc, vom returna un răspuns mock (simulat)
-    return Promise.resolve([
-      { zi: '01/01/2024', oraInceput: '09:00', oraSfarsit: '17:00' },
-      // ... alte zile
-    ]);
-  };
+      try {
+        const response = await axios.get(`http://localhost:8000/employee/${employeeInfo.user}/work-schedule/`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: dateParams
+        });
+
+        if (response.status === 200) {
+          setSchedules(response.data);
+        } else {
+          setError('Failed to fetch schedules');
+        }
+      } catch (error) {
+        setError(`Error fetching schedules: ${error.response?.data?.error || error.message || 'Unknown error'}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSchedules();
+  }, [employeeInfo.user, currentDate, viewMode]);
+
+
+
 
   // Simularea unei cereri asincrone către un server pentru a obține zilele libere
   const fetchZileLibere = async (lunaCurenta) => {
@@ -67,93 +127,95 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
     ]);
   };
 
-  // Simularea unei cereri asincrone către un server pentru a obține istoricul programului de lucru
-  const fetchIstoricProgram = async (lunaCurenta) => {
-    // Aici ar fi codul pentru a face un apel HTTP către server
-    // În loc, vom returna un răspuns mock (simulat)
-    return Promise.resolve([
-      { data: '01/12/2023', oraInceput: '09:00', oraSfarsit: '17:00' },
-      // ... istoricul programului de lucru
-    ]);
-  };
+
 
   const handleSubmitModificare = (e) => {
     e.preventDefault();
-    // Logica de trimitere a cererii de modificare
-    console.log('Cerere de modificare trimisă:', { zi, oraInceput, oraSfarsit });
-    setEsteDeschisModalModificare(false); // Închide modalul după trimitere
+    console.log('Cerere de modificare trimisă:', { date, startTime, endTime });
+    setIsModalOpen(false);
   };
 
   return (
     <div>
       <div className='container-dashboard'>
-        <h1>Programul meu de lucru</h1>
-        <div class="button-container">
-          <button className="buton" onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() - 1))}>
-            Luna Precedentă
-          </button>
-          <button className="buton" onClick={() => setLunaCurenta(new Date(lunaCurenta.getFullYear(), lunaCurenta.getMonth() + 1))}>
-            Luna Următoare
-          </button>
-        </div>
 
-        <section>
-          <div className="container-program-lucru">
+
+        <div className="content-container">
+          <div className="card-curs">
+            <h1>Programul de lucru pentru luna {month}</h1>
+            <div className="navigation-container">
+              <button className="buton" onClick={handlePrev} style={{ width: '100px' }}>Înapoi</button>
+              <input
+                type="month"
+                value={month}
+                onChange={e => setMonth(e.target.value)}
+                className="month-selector"
+              />
+              <button className="buton" onClick={handleNext} style={{ width: '100px' }}>Înainte</button>
+            </div>
+
+            <div className='button-container'>
+              <button className='buton' onClick={() => setViewMode('week')}>Săptămânal</button>
+              <button className='buton' onClick={() => setViewMode('month')}>Lunar</button>
+            </div>
+            {loading ? (
+              <p>Se încarcă...</p>
+            ) : error ? (
+              <p>{error}</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Data</th>
+                    <th>Ora de început</th>
+                    <th>Ora de sfârșit</th>
+                    <th>Ore suplimentare</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedules.map((schedule, index) => (
+                    <tr key={index}>
+                      <td>{schedule.date}</td>
+                      <td>{formatTime(schedule.start_time)}</td>
+                      <td>{formatTime(schedule.end_time)}</td>
+                      <td>{schedule.overtime_hours}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
+          </div>
+
+          <div className="button-container">
+            <button
+              className="buton"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Cere modificare program
+            </button>
+          </div>
+        </div>
+        <div className="content-container">
+          <div className="card-curs">
             <h2>Istoric program de lucru</h2>
-            {istoricProgram.length > 0 ? (
-              istoricProgram.map((istoric, index) => (
+            {workHistoryDetails.length > 0 ? (
+              workHistoryDetails.map((schedule, index) => (
                 <div key={index}>
-                  <p>{istoric.data}: {istoric.oraInceput} - {istoric.oraSfarsit}</p>
+                  <p>{schedule.date}: {schedule.startTime} - {schedule.endTime}</p>
                 </div>
               ))
             ) : (
               <p>Nu există un istoric disponibil pentru această lună.</p>
             )}
           </div>
-        </section>
-
-        <section>
-          <div className="container-program-lucru">
-            <h2>Programul curent</h2>
-            {programLucru.length > 0 ? (
-              <ul>
-                {programLucru.map((zi, index) => (
-                  <li key={index}>{zi.data}: {zi.oraInceput} - {zi.oraSfarsit}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>Nu există un program de lucru definit pentru această lună.</p>
-            )}
-          </div>
-        </section>
-
-        <section>
-          <div className="container-program-lucru">
-            <h2>Zile libere curente</h2>
-            {zileLibere.length > 0 ? (
-              <ul>
-                {zileLibere.map((zi, index) => (
-                  <li key={index}>{zi.data} - Motiv: {zi.motiv}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>Nu există zile libere în această lună.</p>
-            )}
-          </div>
-        </section>
-        <div class="button-container">
-          <button
-            className="buton"
-            onClick={() => setEsteDeschisModalModificare(true)}
-          >
-            Cere modificare program
-          </button>
         </div>
-
       </div>
+
+
       <Modal
-        isOpen={esteDeschisModalModificare}
-        onRequestClose={() => setEsteDeschisModalModificare(false)}
+        isOpen={isModalOpen}
+        onRequestClose={() => isModalOpen(false)}
         contentLabel="Modificare Program de Lucru"
         className="modal-content"
       >
@@ -163,29 +225,29 @@ const ProgramLucru = ({ programLucruInitial, zileLibereInitial }) => {
             <label>Ziua:</label>
             <input
               type="date"
-              value={zi}
-              onChange={(e) => setZi(e.target.value)}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
             />
           </div>
           <div>
             <label>Ora de început:</label>
             <input
               type="time"
-              value={oraInceput}
-              onChange={(e) => setOraInceput(e.target.value)}
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
             />
           </div>
           <div>
             <label>Ora de sfârșit:</label>
             <input
               type="time"
-              value={oraSfarsit}
-              onChange={(e) => setOraSfarsit(e.target.value)}
+              value={endTime}
+              onChange={(e) => setEndTime(e.target.value)}
             />
           </div>
           <div className="button-container">
             <button className='buton' type="submit">Trimite cererea</button>
-            <button className='buton' type="button" onClick={() => setEsteDeschisModalModificare(false)}>Închide</button>
+            <button className='buton' type="button" onClick={() => setIsModalOpen(false)}>Închide</button>
           </div>
         </form>
       </Modal>
