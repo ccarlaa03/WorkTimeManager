@@ -521,6 +521,15 @@ def get_work_schedule_by_week(request, user_id):
         return Response(serializer.data)
     except ValueError:
         return Response({"error": "Invalid date format"}, status=status.HTTP_400_BAD_REQUEST)   
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_work_history_by_month(request, user_id, year, month):
+    start_date = timezone.datetime(year, month, 1)
+    end_date = start_date + relativedelta(months=1) - relativedelta(days=1)
+    schedules = WorkSchedule.objects.filter(user_id=user_id, date__range=[start_date, end_date])
+    serializer = WorkScheduleSerializer(schedules, many=True)
+    return Response(serializer.data)
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

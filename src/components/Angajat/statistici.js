@@ -5,10 +5,11 @@ import 'chart.js/auto';
 
 const Statistici = ({ user_id }) => {
   const [statsData, setStatsData] = useState({});
+  const accessToken = localStorage.getItem('access_token');
 
   useEffect(() => {
     const fetchStats = async () => {
-      const accessToken = localStorage.getItem('access_token');
+
       if (!accessToken) {
         console.log("Access denied. No token available.");
         return;
@@ -25,6 +26,7 @@ const Statistici = ({ user_id }) => {
         console.error("Error loading weekly statistics:", error);
       }
     };
+
 
     fetchStats();
   }, [user_id]);
@@ -45,13 +47,14 @@ const Statistici = ({ user_id }) => {
 
   return (
     <div className="content-container">
-      <div className="card-curs" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="card-curs" style={{ alignItems: 'center' }}>
         <h2>Statistici săptămânale</h2>
         {statsData.labels ? (
           <Bar data={statsData} options={{ responsive: true, scales: { y: { beginAtZero: true } } }} />
         ) : (
           <p>Se încarcă statistici...</p>
         )}
+
       </div>
     </div>
   );

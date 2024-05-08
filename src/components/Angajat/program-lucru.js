@@ -3,7 +3,7 @@ import moment from 'moment';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
-
+import WorkHistory from './raport';
 
 Modal.setAppElement('#root');
 
@@ -13,11 +13,10 @@ const ProgramLucru = () => {
   const [schedules, setSchedules] = useState([]);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [lunaCurenta, setLunaCurenta] = useState(new Date());
   const [date, setDate] = useState('');
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
-  const [workHistoryDetails, setWorkHistoryDetails] = useState([]);
+  const [workHistory, setWorkHistory] = useState([]);
   const [employeeInfo, setEmployeeInfo] = useState({
     name: '',
     user: '',
@@ -30,6 +29,7 @@ const ProgramLucru = () => {
     const time = new Date('1970-01-01T' + timeString + 'Z');
     return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
+  const accessToken = localStorage.getItem('access_token');
 
   const handlePrev = () => {
     if (viewMode === 'month') {
@@ -111,10 +111,35 @@ const ProgramLucru = () => {
       }
     };
 
+    const fetchWorkHistory = async () => {
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth();
+
+      if (!accessToken || !employeeInfo.user) {
+        console.error("Access denied or missing user ID.");
+        return;
+      }
+
+      try {
+        const url = `http://localhost:8000/employee/${employeeInfo.user}/work-history/${currentYear}/${currentMonth}/`;
+        const response = await axios.get(url, {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+
+        if (response.status === 200) {
+          setWorkHistory(response.data);
+        } else {
+          console.error('Failed to fetch work history');
+        }
+      } catch (error) {
+        console.error('Error fetching work history:', error);
+      }
+    };
+
+
+    fetchWorkHistory();
     fetchSchedules();
   }, [employeeInfo.user, currentDate, viewMode]);
-
-
 
 
   // Simularea unei cereri asincrone către un server pentru a obține zilele libere
@@ -138,8 +163,6 @@ const ProgramLucru = () => {
   return (
     <div>
       <div className='container-dashboard'>
-
-
         <div className="content-container">
           <div className="card-curs">
             <h1>Programul de lucru pentru luna {month}</h1>
@@ -198,20 +221,32 @@ const ProgramLucru = () => {
         </div>
         <div className="content-container">
           <div className="card-curs">
-            <h2>Istoric program de lucru</h2>
-            {workHistoryDetails.length > 0 ? (
-              workHistoryDetails.map((schedule, index) => (
-                <div key={index}>
-                  <p>{schedule.date}: {schedule.startTime} - {schedule.endTime}</p>
-                </div>
-              ))
-            ) : (
-              <p>Nu există un istoric disponibil pentru această lună.</p>
-            )}
+            <h2> Istoric program de lucru {currentDate.getFullYear()}</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Ora de început</th>
+                  <th>Ora de sfârșit</th>
+                  <th>Ore suplimentare</th>
+                </tr>
+              </thead>
+              <tbody>
+                {workHistory.map((schedule, index) => (
+                  <tr key={index}>
+                    <td>{schedule.date}</td>
+                    <td>{formatTime(schedule.start_time)}</td>
+                    <td>{formatTime(schedule.end_time)}</td>
+                    <td>{typeof schedule.overtime_hours === 'number' ? schedule.overtime_hours.toFixed(2) : '0'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
+     {employeeInfo.user && <WorkHistory user_id={employeeInfo.user} />}
 
       <Modal
         isOpen={isModalOpen}

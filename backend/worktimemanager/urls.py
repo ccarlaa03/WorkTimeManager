@@ -47,6 +47,7 @@ urlpatterns = [
     path('gestionare-prog/', views.workschedule_list, name='employee-workschedules'),
     path('angajat-prog/<int:user_id>/', views.employee_workschedule_list, name='angajat-prog'),
     path('employee/<int:user_id>/work-schedule/', views.get_work_schedule, name='work-schedule-by-month'),
+    path('employee/<int:user_id>/work-history/<int:year>/<int:month>/', views.get_work_history_by_month, name='work-history-by-month'),
     path('workschedule-create/', views.workschedule_create, name='workschedule-create'),
     path('workschedules/<int:id>/', views.workschedule_retrieve, name='workschedule-retrieve'),
     path('workschedule_update/<int:id>/', views.workschedule_update, name='workschedule_update'),
