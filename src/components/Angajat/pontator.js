@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Modal from 'react-modal';
 
 const Pontator = ({ user_id }) => {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
     const [workSchedule, setWorkSchedule] = useState([]);
+    const [showMessageModal, setShowMessageModal] = useState(false);
 
     const fetchCurrentStatus = async () => {
         setLoading(true);
@@ -42,6 +44,9 @@ const Pontator = ({ user_id }) => {
         }
     }, [status]);
 
+    const handleModalClose = () => {
+        setShowMessageModal(false);
+    };
 
     const handleClockIn = async () => {
         setLoading(true);
@@ -93,7 +98,6 @@ const Pontator = ({ user_id }) => {
     return (
         <div>
             {loading ? <p>Se încarcă...</p> : null}
-            {message && <p>{message}</p>}
             {status === 'clocked in' ? (
                 <div>
                     <p>Ești pontat la intrare.</p>
@@ -105,9 +109,15 @@ const Pontator = ({ user_id }) => {
                     <button className="buton" onClick={handleClockIn}>Pontare intrare</button>
                 </div>
             )}
+
+
+            <Modal isOpen={showMessageModal} onRequestClose={handleModalClose} contentLabel="Message Modal">
+                <h2>Mesaj</h2>
+                <p>{message}</p>
+                <button className="buton" onClick={handleModalClose}>Închide</button>
+            </Modal>
         </div>
     );
-
 };
 
 export default Pontator;

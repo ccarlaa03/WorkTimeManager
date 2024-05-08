@@ -23,7 +23,7 @@ const ProgramLucru = () => {
   });
   const [viewMode, setViewMode] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
-
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const formatTime = (timeString) => {
     if (!timeString) return '';
     const time = new Date('1970-01-01T' + timeString + 'Z');
@@ -158,6 +158,7 @@ const ProgramLucru = () => {
     e.preventDefault();
     console.log('Cerere de modificare trimisă:', { date, startTime, endTime });
     setIsModalOpen(false);
+    setShowSuccessMessage(true); // Setează showSuccessMessage pe true
   };
 
   return (
@@ -221,7 +222,17 @@ const ProgramLucru = () => {
         </div>
         <div className="content-container">
           <div className="card-curs">
-            <h2> Istoric program de lucru {currentDate.getFullYear()}</h2>
+            <h2 style={{ textAlign: 'center' }}> Istoric program de lucru {currentDate.getFullYear()}</h2>
+            {viewMode === 'week' && (
+              <div className="button-container">
+                <button className="filter-button" onClick={() => setViewMode('month')}>Lunar</button>
+              </div>
+            )}
+            {viewMode === 'month' && (
+              <div className="button-container">
+                <button className="filter-button" onClick={() => setViewMode('week')}>Săptămânal</button>
+              </div>
+            )}
             <table>
               <thead>
                 <tr>
@@ -244,48 +255,54 @@ const ProgramLucru = () => {
             </table>
           </div>
         </div>
+
       </div>
 
-     {employeeInfo.user && <WorkHistory user_id={employeeInfo.user} />}
+      {employeeInfo.user && <WorkHistory user_id={employeeInfo.user} />}
 
       <Modal
         isOpen={isModalOpen}
-        onRequestClose={() => isModalOpen(false)}
+        onRequestClose={() => setIsModalOpen(false)}
         contentLabel="Modificare Program de Lucru"
         className="modal-content"
       >
-        <h2>Modificare program de lucru</h2>
+        <h2 style={{ textAlign: 'center' }}>Modificare program de lucru</h2>
         <form onSubmit={handleSubmitModificare}>
-          <div>
-            <label>Ziua:</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Ora de început:</label>
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-            />
-          </div>
-          <div>
-            <label>Ora de sfârșit:</label>
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-            />
-          </div>
-          <div className="button-container">
-            <button className='buton' type="submit">Trimite cererea</button>
-            <button className='buton' type="button" onClick={() => setIsModalOpen(false)}>Închide</button>
-          </div>
+          <label>Ziua:</label>
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+
+          <label>Ora de început:</label>
+          <input
+            type="time"
+            value={startTime}
+            onChange={(e) => setStartTime(e.target.value)}
+          />
+
+          <label>Ora de sfârșit:</label>
+          <input
+            type="time"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
+          />
+
+          <button className='buton' type="submit">Trimite cererea</button>
+          <button className='buton' type="button" onClick={() => setIsModalOpen(false)}>Închide</button>
         </form>
       </Modal>
+
+      {showSuccessMessage && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Cererea de modificare a fost trimisă cu succes!</h2>
+            <button onClick={() => setShowSuccessMessage(false)}>Închide</button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

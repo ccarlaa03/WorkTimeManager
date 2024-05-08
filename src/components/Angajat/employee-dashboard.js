@@ -49,20 +49,6 @@ const Dashboard = () => {
   const [workSchedule, setWorkSchedule] = useState([]);
 
 
-  const openEditScheduleModal = () => {
-    setModalEditScheduleIsOpen(true);
-  };
-
-  const closeEditScheduleModal = () => {
-    setModalEditScheduleIsOpen(false);
-  };
-
-  const handleSaveEditSchedule = (e) => {
-    e.preventDefault();
-    console.log("Request for schedule modification sent.");
-    closeEditScheduleModal();
-  };
-
   const openEditModal = () => {
     setProfileToEdit({ ...employeeInfo });
     setModalEditProfileIsOpen(true);
@@ -126,9 +112,19 @@ const Dashboard = () => {
         });
         console.log("Work Schedule fetched:", response.data);
         console.log('Rendering workSchedule:', workSchedule);
-
         if (response.status === 200) {
-          setWorkSchedule(response.data);
+          // Filtrăm programul de lucru doar pentru luna curentă
+          const currentDate = new Date();
+          const currentMonth = currentDate.getMonth() + 1; // indexul lunii începe de la 0
+
+          const filteredSchedule = response.data.filter(schedule => {
+            const scheduleDate = new Date(schedule.date);
+            const scheduleMonth = scheduleDate.getMonth() + 1; // indexul lunii începe de la 0
+
+            return scheduleMonth === currentMonth;
+          });
+
+          setWorkSchedule(filteredSchedule);
         } else {
           throw new Error('Failed to fetch work schedule');
         }
@@ -139,6 +135,7 @@ const Dashboard = () => {
 
     fetchWorkSchedule();
   }, [employeeInfo.user]);
+
 
   //UPDATE
   const updateEmployeeProfile = async (event) => {
