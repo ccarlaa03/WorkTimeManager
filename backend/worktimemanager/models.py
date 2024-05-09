@@ -269,11 +269,18 @@ class Leave(models.Model):
     leave_description = models.TextField(null=True, blank=True, verbose_name=_('Leave Description'))
     is_approved = models.BooleanField(default=False, verbose_name=_('Leave Approved'))
     status = models.CharField(max_length=2, choices=LeaveStatus.choices, default=LeaveStatus.PENDING, verbose_name=_('Leave Status'))
+    leaves_history_details = models.JSONField(default=dict, verbose_name="Leaves history details")
+    duration = models.DecimalField(max_digits=4, decimal_places=2, default=1.0, verbose_name=_('Duration in Days'))
+
+    def save(self, *args, **kwargs):
+        if self.start_date and self.end_date:
+            self.duration = (self.end_date - self.start_date).days + 1 
+        super(Leave, self).save(*args, **kwargs)
 
     def __str__(self):
         employee_name = self.user.name if self.user else "Unknown Employee"
         department = self.user.department if self.user else "Unknown Department"
-        return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()}"
+        return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()} - Duration: {self.duration} days"
     
 class Training(models.Model):
     participants = models.ManyToManyField(

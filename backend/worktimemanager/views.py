@@ -1,4 +1,6 @@
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
+from collections import defaultdict
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -14,6 +16,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework.authtoken.models import Token
 from datetime import datetime, timedelta
+from django.utils.timezone import make_aware
 import logging
 from django.utils.dateparse import parse_date
 from .decorators import is_hr, is_employee, is_owner;
@@ -484,6 +487,13 @@ def employee_workschedule_list(request, user_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def employee_leaves_list(request, user_id):
+    leaves = Leave.objects.filter(user_id=user_id)
+    serializer = LeaveSerializer(leaves, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_work_schedule(request, user_id):
     start_date = request.GET.get('start_date')
     end_date = request.GET.get('end_date')
@@ -606,7 +616,7 @@ def leave_list_create(request):
             end_date=end_date,
             leave_type=leave_type,
             leave_description=reason,
-            # alte câmpuri după caz
+
         )
         created_leaves.append(leave_instance)
 
@@ -1004,10 +1014,69 @@ def department_report(request):
         department = hr['department_lower']
         combined_counts[department] = combined_counts.get(department, 0) + hr['employee_count']
 
-    # Convert the combined_counts dictionary to a list of dictionaries
     data = [
         {'department': dept.capitalize(), 'employee_count': count}
         for dept, count in combined_counts.items()
     ]
     
     return Response(data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leaves_by_year(request, user_id, year):
+    start_date = make_aware(datetime(year=int(year), month=1, day=1))
+    end_date = start_date + relativedelta(years=1) - relativedelta(days=1)
+    leaves = Leave.objects.filter(user_id=user_id, start_date__range=[start_date, end_date])
+    serializer = LeaveSerializer(leaves, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leaves_by_month(request, user_id):
+    month = request.query_params.get('month')
+    try:
+        start_date = datetime.strptime(month, "%Y-%m").date()
+        end_date = (start_date + relativedelta(months=1)) - relativedelta(days=1)
+        leaves = Leave.objects.filter(user_id=user_id, start_date__range=[start_date, end_date])
+        serializer = LeaveSerializer(leaves, many=True)
+        return Response(serializer.data)
+    except ValueError:
+        return Response({"error": "Invalid month format"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leave_history_by_year(request, user_id, year):
+    try:
+        start_date = timezone.datetime(year=int(year), month=1, day=1)
+        end_date = start_date + relativedelta(years=1) - relativedelta(days=1)
+        leaves = Leave.objects.filter(user_id=user_id, start_date__range=(start_date, end_date))
+        serializer = LeaveSerializer(leaves, many=True)
+        return Response(serializer.data)
+    except ValueError:
+        return Response({"error": "Invalid year format"}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_leave_statistics(request, user_id):
+    current_year = now().year
+    leaves = Leave.objects.filter(user_id=user_id, start_date__year=current_year)
+
+    total_allowed = 22  
+    taken_by_type = defaultdict(lambda: Decimal('0.0'))
+    for leave in leaves:
+        if leave.status == 'AC': 
+            taken_by_type[leave.leave_type] += Decimal(leave.duration)
+
+    taken = sum(taken_by_type.values())
+    remaining = total_allowed - taken
+
+    return Response({
+        "total_allowed": total_allowed,
+        "taken": taken,
+        "remaining": remaining,
+        "taken_by_type": dict(taken_by_type)  
+    })

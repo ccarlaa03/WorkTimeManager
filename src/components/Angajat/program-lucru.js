@@ -158,7 +158,7 @@ const ProgramLucru = () => {
     e.preventDefault();
     console.log('Cerere de modificare trimisă:', { date, startTime, endTime });
     setIsModalOpen(false);
-    setShowSuccessMessage(true); // Setează showSuccessMessage pe true
+    setShowSuccessMessage(true); 
   };
 
   return (
