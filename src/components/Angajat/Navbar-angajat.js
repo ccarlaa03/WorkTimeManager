@@ -25,7 +25,9 @@ const NavbarAngajat = () => {
         <li>
           <NavLink to="/feedback-ang" activeclassname="active">Feedback</NavLink>
         </li>
-
+        <li>
+          <NavLink to="/cursuri-training" activeclassname="active">Cursuri</NavLink>
+        </li>
         <li>
           <NavLink to="/logout" onClick={handleLogout}>Log out</NavLink>
         </li>

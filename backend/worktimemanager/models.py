@@ -7,6 +7,8 @@ from django.db.models import Sum
 from django.utils import timezone
 from django.conf import settings
 from django.utils.timezone import now
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
@@ -189,6 +191,7 @@ class FeedbackForm(models.Model):
         return self.title
     def get_hr_review_status(self):
         return dict(FeedbackForm.HR_REVIEW_STATUS_CHOICES)[self.hr_review_status]
+    
 class FeedbackQuestion(models.Model):
     form = models.ForeignKey(FeedbackForm, related_name='questions', on_delete=models.CASCADE)
     text = models.TextField()
@@ -216,14 +219,21 @@ class EmployeeFeedback(models.Model):
     total_score = models.IntegerField(default=0, help_text="Scorul total pentru acest feedback")
 
     def calculate_total_score(self):
-        total = self.feedback_responses.aggregate(score_sum=Sum('score')).get('score_sum') or 0
+        total = self.responses.aggregate(score_sum=Sum('score')).get('score_sum') or 0
         self.total_score = total
         self.save()
+
     @property
     def employee_department(self):
         return self.employee.department
     def __str__(self):
         return f"Feedback from {self.employee.name} for form {self.form.title}"
+@receiver(post_save, sender=EmployeeFeedback)
+def update_total_score(sender, instance, created, **kwargs):
+    if created:
+        instance.calculate_total_score()
+
+
 class FeedbackResponseOption(models.Model):
     question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
@@ -236,7 +246,6 @@ class FeedbackResponseOption(models.Model):
         return f"{self.text} ({self.score} puncte)"
 
 
-
 class FeedbackResponse(models.Model):
     feedback = models.ForeignKey(EmployeeFeedback, on_delete=models.CASCADE, related_name='responses')
     question = models.ForeignKey(FeedbackQuestion, on_delete=models.CASCADE)
@@ -246,7 +255,6 @@ class FeedbackResponse(models.Model):
 
     def __str__(self):
         return f"Response to {self.question.text} by {self.feedback.employee.name}"
-
 
 class LeaveType(models.TextChoices):
     ANNUAL = 'AN', _('Concediu Anual')

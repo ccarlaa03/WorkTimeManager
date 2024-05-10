@@ -1,6 +1,7 @@
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
 from collections import defaultdict
 from decimal import Decimal
+from django.db.models import Q
 from dateutil.relativedelta import relativedelta
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -695,14 +696,36 @@ def edit_employee(request, user_id):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated]) 
 def list_feedback_forms(request):
-    forms = FeedbackForm.objects.all().order_by('-created_at')  
+    forms = FeedbackForm.objects.all()
+    logger.debug(f"Fetching forms: {forms}")
     serializer = FeedbackFormSerializer(forms, many=True)
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def feedback_history(request):
+    employee = get_object_or_404(Employee, user=request.user)
+    feedbacks = EmployeeFeedback.objects.filter(employee=employee).order_by('-date_completed')
+    serializer = EmployeeFeedbackSerializer(feedbacks, many=True)
+    return Response(serializer.data)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_feedback_forms(request):
+    current_month_start = timezone.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    current_month_end = current_month_start + timedelta(days=31)
+    current_month_end = current_month_end.replace(day=1) - timedelta(seconds=1)
+    
+    forms = FeedbackForm.objects.filter(
+        created_at__gte=current_month_start,
+        created_at__lte=current_month_end,
+        is_active=True
+    ).order_by('-created_at')
+    
+    serializer = FeedbackFormSerializer(forms, many=True)
+    return Response(serializer.data)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -783,18 +806,19 @@ def submit_employee_feedback(request, form_id):
 
     questions = request.data.get('questions', {})
 
-    for question_id, response in questions.items():
-        try:
-            feedback_question = FeedbackQuestion.objects.get(id=question_id, form=feedback_form)
-        except FeedbackQuestion.DoesNotExist:
-            continue  
+    with transaction.atomic():
+        for question_id, response in questions.items():
+            try:
+                feedback_question = FeedbackQuestion.objects.get(id=question_id, form=feedback_form)
+                EmployeeFeedback.objects.create(
+                    employee=request.user.employee,  
+                    form=feedback_form,
+                    question=feedback_question,
+                    response=response
+                )
+            except FeedbackQuestion.DoesNotExist:
+                continue  
 
-        EmployeeFeedback.objects.create(
-            employee=request.user,
-            form=feedback_form,
-            question=feedback_question,
-            response=response
-        )
     return Response({'message': 'Feedback-ul a fost trimis cu succes!'}, status=status.HTTP_201_CREATED)
 
 
