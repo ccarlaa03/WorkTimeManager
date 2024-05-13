@@ -9,7 +9,7 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackResponse, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
 from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer, NotificationSerializer
@@ -696,6 +696,8 @@ def edit_employee(request, user_id):
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_feedback_forms(request):
     forms = FeedbackForm.objects.all()
     logger.debug(f"Fetching forms: {forms}")
@@ -799,34 +801,50 @@ def add_feedback_question(request, form_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def submit_employee_feedback(request, form_id):
-    try:
-        feedback_form = FeedbackForm.objects.get(id=form_id, is_active=True)
-    except FeedbackForm.DoesNotExist:
-        return Response({'error': 'Formularul de feedback nu este activ sau nu există.'}, status=status.HTTP_404_NOT_FOUND)
+    # Verifică dacă utilizatorul a completat deja formularul
+    if EmployeeFeedback.objects.filter(employee=request.user.employee, form_id=form_id).exists():
+        return Response({'error': 'Ai completat deja acest formular. Nu poți să îl completezi din nou.'}, status=status.HTTP_403_FORBIDDEN)
 
-    questions = request.data.get('questions', {})
+    # Prelucrarea datelor de feedback
+    feedback_data = request.data.get('responses')
+    feedback_instance = EmployeeFeedback.objects.create(employee=request.user.employee, form_id=form_id)
 
-    with transaction.atomic():
-        for question_id, response in questions.items():
-            try:
-                feedback_question = FeedbackQuestion.objects.get(id=question_id, form=feedback_form)
-                EmployeeFeedback.objects.create(
-                    employee=request.user.employee,  
-                    form=feedback_form,
-                    question=feedback_question,
-                    response=response
-                )
-            except FeedbackQuestion.DoesNotExist:
-                continue  
+    for item in feedback_data:
+        question_id = item.get('question_id')
+        response_data = item.get('response')
+        if 'selected_option' in response_data:
+            # Creați un răspuns pentru întrebările de tip multiple choice
+            FeedbackResponse.objects.create(
+                feedback=feedback_instance,
+                question_id=question_id,
+                selected_option_id=response_data['selected_option']
+            )
+        elif 'score' in response_data:
+            # Creați un răspuns pentru întrebările de tip rating
+            FeedbackResponse.objects.create(
+                feedback=feedback_instance,
+                question_id=question_id,
+                score=response_data['score']
+            )
+        elif 'text' in response_data:
+            # Creați un răspuns pentru întrebările de tip text
+            FeedbackResponse.objects.create(
+                feedback=feedback_instance,
+                question_id=question_id,
+                response=response_data['text']
+            )
 
-    return Response({'message': 'Feedback-ul a fost trimis cu succes!'}, status=status.HTTP_201_CREATED)
+    return Response({'status': 'success'}, status=status.HTTP_201_CREATED)
 
-
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def check_if_submitted(request, form_id):
+    submitted = EmployeeFeedback.objects.filter(employee=request.user.employee, form_id=form_id).exists()
+    return Response({'submitted': submitted})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def feedback_statistics(request):
-    # Generați statistici, de exemplu, numărul de răspunsuri per formular
     stats = EmployeeFeedback.objects.values('form__title').annotate(response_count=Count('id')).order_by('-response_count')
     return Response({'statistics': stats})
 

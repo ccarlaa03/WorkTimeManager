@@ -9,7 +9,8 @@ from django.conf import settings
 from django.utils.timezone import now
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.db.models.signals import post_save, post_delete
+from django.core.exceptions import ValidationError
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -178,20 +179,15 @@ class FeedbackForm(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_feedback_forms')
     HR_REVIEW_STATUS_CHOICES = [
-    ('pending', 'În așteptare'),
-    ('reviewed', 'Revizuit'),
-    ('action_required', 'Acțiune necesară'),]
-    hr_review_status = models.CharField(
-        max_length=50,
-        choices=HR_REVIEW_STATUS_CHOICES,
-        default='pending',
-        verbose_name='Status revizuire HR'
-    )
+        ('pending', 'În așteptare'),
+        ('reviewed', 'Revizuit'),
+        ('action_required', 'Acțiune necesară'),
+    ]
+    hr_review_status = models.CharField(max_length=50, choices=HR_REVIEW_STATUS_CHOICES, default='pending', verbose_name='Status revizuire HR')
+
     def __str__(self):
         return self.title
-    def get_hr_review_status(self):
-        return dict(FeedbackForm.HR_REVIEW_STATUS_CHOICES)[self.hr_review_status]
-    
+
 class FeedbackQuestion(models.Model):
     form = models.ForeignKey(FeedbackForm, related_name='questions', on_delete=models.CASCADE)
     text = models.TextField()
@@ -201,50 +197,51 @@ class FeedbackQuestion(models.Model):
         ('multiple_choice', 'Multiple Choice'),
     ]
     order = models.IntegerField(help_text="Ordinea de afișare a întrebărilor")
-    response_type = models.CharField(
-    max_length=50,
-    choices=RESPONSE_TYPE_CHOICES,
-    default='text' 
-)
-    importance = models.IntegerField(default=1, help_text="Importanț")
+    response_type = models.CharField(max_length=50, choices=RESPONSE_TYPE_CHOICES, default='text')
+    importance = models.IntegerField(default=1, help_text="Importanță")
     rating_scale = models.IntegerField(null=True, blank=True, help_text="Scara de rating, de exemplu, 1-5")
-    def __str__(self):
-        return f"Question {self.order}: {self.text}"
-    
-class EmployeeFeedback(models.Model):
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='feedbacks')
-    form = models.ForeignKey(FeedbackForm, on_delete=models.CASCADE, related_name='feedback_responses')
-    date_completed = models.DateTimeField(auto_now_add=True,blank=True, null=True)
-    additional_comments = models.TextField(blank=True, null=True)
-    total_score = models.IntegerField(default=0, help_text="Scorul total pentru acest feedback")
 
-    def calculate_total_score(self):
-        total = self.responses.aggregate(score_sum=Sum('score')).get('score_sum') or 0
-        self.total_score = total
-        self.save()
+    def clean(self):
+        if self.response_type == 'rating':
+            if not isinstance(self.rating_scale, int) or self.rating_scale < 1:
+                raise ValidationError({'rating_scale': _('Rating scale must be a positive integer for rating questions.')})
+        else:
+            self.rating_scale = None  
 
-    @property
-    def employee_department(self):
-        return self.employee.department
-    def __str__(self):
-        return f"Feedback from {self.employee.name} for form {self.form.title}"
-@receiver(post_save, sender=EmployeeFeedback)
-def update_total_score(sender, instance, created, **kwargs):
-    if created:
-        instance.calculate_total_score()
 
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
 
 class FeedbackResponseOption(models.Model):
     question = models.ForeignKey(FeedbackQuestion, related_name='options', on_delete=models.CASCADE)
     text = models.CharField(max_length=255)
-    score = models.IntegerField() 
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    score = models.IntegerField(default=0) 
 
     def __str__(self):
         return f"{self.text} ({self.score} puncte)"
 
+
+
+class EmployeeFeedback(models.Model):
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='feedbacks')
+    form = models.ForeignKey(FeedbackForm, on_delete=models.CASCADE, related_name='feedback_responses')
+    date_completed = models.DateTimeField(auto_now_add=True, blank=True, null=True)
+    additional_comments = models.TextField(blank=True, null=True)
+    total_score = models.IntegerField(null=True, default=0, help_text="Scorul total pentru acest feedback")
+
+
+    def calculate_total_score(self):
+        # Acesta va calcula scorul total bazat pe răspunsurile asociate
+        self.total_score = self.responses.aggregate(score_sum=Sum('score')).get('score_sum', 0)
+        self.save(update_fields=['total_score'])
+
+    @property
+    def employee_department(self):
+        return self.employee.department
+
+    def __str__(self):
+        return f"Feedback from {self.employee.name} for form {self.form.title}"
 
 class FeedbackResponse(models.Model):
     feedback = models.ForeignKey(EmployeeFeedback, on_delete=models.CASCADE, related_name='responses')
@@ -253,8 +250,19 @@ class FeedbackResponse(models.Model):
     response = models.TextField(blank=True, null=True)
     score = models.IntegerField(default=0)
 
-    def __str__(self):
-        return f"Response to {self.question.text} by {self.feedback.employee.name}"
+    def save(self, *args, **kwargs):
+        if self.selected_option:
+            self.score = self.selected_option.score * self.question.importance
+        super(FeedbackResponse, self).save(*args, **kwargs)
+        if self.feedback:
+            self.feedback.calculate_total_score()
+            
+@receiver(post_save, sender=FeedbackResponse)
+@receiver(post_delete, sender=FeedbackResponse)
+def update_feedback_score(sender, instance, **kwargs):
+    if instance.feedback:
+        instance.feedback.calculate_total_score()
+        print(f"Updated total score for feedback {instance.feedback.id}: {instance.feedback.total_score}")
 
 class LeaveType(models.TextChoices):
     ANNUAL = 'AN', _('Concediu Anual')

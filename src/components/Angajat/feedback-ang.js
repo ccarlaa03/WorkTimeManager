@@ -7,6 +7,7 @@ const FeedbackForm = () => {
   const [currentForm, setCurrentForm] = useState(null);
   const [responses, setResponses] = useState({});
   const currentDate = new Date();
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [month, setMonth] = useState(currentDate.getMonth());
   const [year, setYear] = useState(currentDate.getFullYear());
   const [loading, setLoading] = useState(false);
@@ -15,6 +16,7 @@ const FeedbackForm = () => {
   const accessToken = localStorage.getItem('access_token');
   const [employeeInfo, setEmployeeInfo] = useState({ name: '', user: '' });
   const months = ["Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"];
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -92,38 +94,93 @@ const FeedbackForm = () => {
     fetchHistory();
   }, [accessToken]);
 
-  const handleSubmit = async (currentForm, responses) => {
+  useEffect(() => {
+    const checkIfSubmitted = async () => {
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken) {
+        console.error("Access denied. No token available. User must be logged in to access this.");
+        return;
+      }
+
+      if (currentForm) {
+        try {
+          const response = await axios.get(`http://localhost:8000/feedback/check-submitted/${currentForm.id}/`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          if (response.data.submitted) {
+            setFormSubmitted(true);
+
+            setTimeout(() => {
+              window.location.href = '/feedback-ang';
+            }, 1000);
+          }
+        } catch (error) {
+          console.error("Error checking form submission:", error);
+        }
+      }
+    };
+
+    checkIfSubmitted();
+  }, [currentForm]);
+
+
+  if (formSubmitted) {
+    return <p>Ai completat deja acest formular. Mulțumim!</p>;
+  }
+
+  const handleSelectForm = (form) => {
+    setCurrentForm(form);
+    setIsModalOpen(true);
+    setResponses({});
+  };
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleSubmit = async () => {
     if (!accessToken) {
       setError("No access token available. Please log in.");
       return;
     }
 
     setLoading(true);
+
     const payload = {
-      form_id: currentForm.id,
-      responses: Object.keys(responses).map(key => ({
-        question_id: key,
-        response: responses[key]
-      }))
+      responses: currentForm.questions.map(question => {
+        let responseValue = responses[question.id];
+        if (question.response_type === 'multiple_choice') {
+          responseValue = { selected_option: responseValue };
+        } else if (question.response_type === 'rating') {
+          responseValue = { score: parseInt(responseValue, 10) };
+        } else {
+          responseValue = { text: responseValue };
+        }
+        return {
+          question_id: question.id,
+          response: responseValue
+        };
+      })
     };
 
+    console.log("Sending feedback data:", payload);
+
     try {
-      await axios.post('http://localhost:8000/feedback-responses/', payload, {
+      const response = await axios.post(`http://localhost:8000/feedback/submit/${currentForm.id}/`, payload, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
+      console.log("Feedback submission response:", response.data);
       alert('Feedback submitted successfully');
+      window.location.reload();
     } catch (err) {
-      console.error("Error submitting feedback:", err);
-      setError('Failed to submit feedback');
-    } finally {
-      setLoading(false);
+      if (err.response && err.response.status === 403) {
+        alert(err.response.data.error);
+      } else {
+        console.error("Error submitting feedback:", err);
+        setError('Failed to submit feedback');
+      }
     }
   };
 
-  const handleSelectForm = (form) => {
-    setCurrentForm(form);
-    setResponses({});
-  };
 
   const handleResponseChange = (questionId, response) => {
     setResponses({ ...responses, [questionId]: response });

@@ -189,10 +189,9 @@ const FeedbackDetails = () => {
         setNewQuestion((prevQuestion) => ({
             ...prevQuestion,
             responseType: selectedResponseType,
-            options: selectedResponseType === 'multiple_choice' ? [{ text: '', score: 0 }] : prevQuestion.options,
+            ratingScale: selectedResponseType === 'rating' ? 1 : null,  // Set default rating scale
         }));
     };
-
 
     const handleNewOptionTextChange = (index, newText) => {
         setNewQuestion(prevQuestion => {
@@ -201,7 +200,15 @@ const FeedbackDetails = () => {
             return { ...prevQuestion, options: newOptions };
         });
     };
-
+    const handleRatingScaleChange = (e) => {
+        const newScale = parseInt(e.target.value, 10);
+        if (newScale > 0) {
+            setNewQuestion(prevQuestion => ({
+                ...prevQuestion,
+                ratingScale: newScale
+            }));
+        }
+    };
     const handleNewOptionScoreChange = (index, newScore) => {
         setNewQuestion(prevQuestion => {
             const newOptions = [...prevQuestion.options];
@@ -435,11 +442,13 @@ const FeedbackDetails = () => {
                             <input
                                 id="newQuestionRatingScale"
                                 type="number"
-                                value={newQuestionRatingScale}
-                                onChange={(e) => setNewQuestionRatingScale(e.target.value)}
+                                value={newQuestion.ratingScale || 1}
+                                min="1"
+                                onChange={handleRatingScaleChange}
                             />
                         </div>
                     )}
+
 
                     <button type="submit">Adaugă</button>
                     <button onClick={closeAddModal}>Anulează</button>
