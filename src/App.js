@@ -23,7 +23,7 @@ import OwnerDashboard from './components/Owner/owner-dashboard';
 import LogoutComponent from './components/Logare/logout';
 import { AuthProvider } from './AuthContext';
 import FeedbackDetails from './components/HR/feedback-details';
-
+import TrainingEmployee from './components/Angajat/training';
 
 const App = () => {
 
@@ -49,7 +49,7 @@ const App = () => {
           <Route path="/angajat-profil/:user_id" element={<ProfilAngajat />} />
           <Route path="/gestionare-ang" element={<GestionareAngajati />} />
           <Route path="/gestionare-concedii" element={<GestionareConcedii />} />
-        
+          <Route path="/training" element={<TrainingEmployee />} />
           <Route path="/gestionare-training" element={<GestionareTraining />} />
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
           <Route path="/formulare-feeedback" element={<FeedbackForm />} />

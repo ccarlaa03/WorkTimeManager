@@ -61,7 +61,7 @@ const EmployeeTraining = () => {
         <div className="container-dashboard">
 
             <div>
-                <h3>Angajați disponibili:</h3>
+                <h3 style={{ textAlign: 'center' }}>Angajați disponibili:</h3>
                 <ul>
                     {availableEmployees.map(employee => (
                         <li key={employee.id}>
@@ -71,7 +71,6 @@ const EmployeeTraining = () => {
                     ))}
                 </ul>
             </div>
-            {/* Afiseaza lista de angajati asociati cursului selectat */}
             {selectedTraining && (
                 <div>
                     <h3>Angajați la cursul {selectedTraining.title}:</h3>

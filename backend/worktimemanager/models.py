@@ -222,7 +222,6 @@ class FeedbackResponseOption(models.Model):
         return f"{self.text} ({self.score} puncte)"
 
 
-
 class EmployeeFeedback(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='feedbacks')
     form = models.ForeignKey(FeedbackForm, on_delete=models.CASCADE, related_name='feedback_responses')
@@ -232,7 +231,6 @@ class EmployeeFeedback(models.Model):
 
 
     def calculate_total_score(self):
-        # Acesta va calcula scorul total bazat pe răspunsurile asociate
         self.total_score = self.responses.aggregate(score_sum=Sum('score')).get('score_sum', 0)
         self.save(update_fields=['total_score'])
 
@@ -325,13 +323,17 @@ class Training(models.Model):
     def __str__(self):
         return self.title
 
-    def get_participant_count(self):
-        return self.training_participants.count() 
-
+    @property
+    def participant_count(self):
+        return self.training_participants.count()
 
     def has_space(self):
         return self.employees.count() < self.capacity
     
+    @property
+    def available_seats(self):
+        return max(0, self.capacity - self.participant_count)
+
 class Event(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()

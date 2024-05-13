@@ -974,7 +974,7 @@ def training_report(request):
         {
             'title': training.title,
             'date': training.date,
-            'participant_count': training.get_participant_count()
+            'participant_count': training.participant_count 
         } for training in trainings
     ]
     return Response(report, status=status.HTTP_200_OK)

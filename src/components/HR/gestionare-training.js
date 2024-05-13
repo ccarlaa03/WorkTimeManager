@@ -31,7 +31,20 @@ const GestionareTrainingHR = () => {
     const [selectedTrainingId, setSelectedTrainingId] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [training, setTraining] = useState({ participants: [] });
-
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case 'planned':
+                return 'Planificat';
+            case 'in_progress':
+                return 'În progres';
+            case 'completed':
+                return 'Completat';
+            case 'canceled':
+                return 'Anulat';
+            default:
+                return status;
+        }
+    };
 
     useEffect(() => {
         const fetchTraining = async () => {
@@ -268,14 +281,14 @@ const GestionareTrainingHR = () => {
     };
     return (
         <div className="container-dashboard">
-            <h1>Training</h1>
+            <h1 style={{ textAlign: 'center' }}>Training</h1>
             <div className="lista-cursuri">
                 {trainings.map(training => (
                     <div key={training.id} className="card">
                         <h3>{training.title}</h3>
                         <p>{training.description}</p>
                         <p>Data: {new Date(training.date).toLocaleDateString()}</p>
-                        <p>Status: {training.status}</p>
+                        <p>Status: {getStatusLabel(training.status)}</p>
                         <p>Durata: {training.duration_days} zile</p>
                         <p>Capacitate: {training.capacity} persoane</p>
                         <p>Înregistrare până la: {training.enrollment_deadline ? new Date(training.enrollment_deadline).toLocaleDateString() : 'N/A'}</p>
@@ -334,11 +347,12 @@ const GestionareTrainingHR = () => {
                             value={editingTraining.status}
                             onChange={handleChange}
                         >
-                            <option value="planned">Planificat</option>
-                            <option value="in_progress">În progres</option>
-                            <option value="completed">Completat</option>
-                            <option value="canceled">Anulat</option>
+                            <option value="planned">{getStatusLabel('planned')}</option>
+                            <option value="in_progress">{getStatusLabel('in_progress')}</option>
+                            <option value="completed">{getStatusLabel('completed')}</option>
+                            <option value="canceled">{getStatusLabel('canceled')}</option>
                         </select>
+
                         <label htmlFor="duration">Durata (zile):</label>
                         <input
                             id="duration"

@@ -165,9 +165,16 @@ class LeaveSerializer(serializers.ModelSerializer):
 
 class TrainingSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
+    available_seats = serializers.IntegerField(read_only=True)
     class Meta:
         model = Training
         fields = '__all__'
+
+    def get_participant_count(self, obj):
+        return obj.participant_count 
+
+    def get_available_seats(self, obj):
+        return obj.available_seats
         
     def validate_duration_days(self, value):
         if not isinstance(value, int) or value < 1:
