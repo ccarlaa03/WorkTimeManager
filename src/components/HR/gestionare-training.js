@@ -8,6 +8,7 @@ Modal.setAppElement('#root');
 
 const GestionareTrainingHR = () => {
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [employees, setEmployees] = useState([]);
     const [hrCompanyId, setHrCompany] = useState(null);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -71,9 +72,16 @@ const GestionareTrainingHR = () => {
 
                     console.log("Employees data:", employees);
 
-                    const trainingResponse = await axios.get(`/trainings/?company_id=${hrCompanyId}`, {
+                    const trainingResponse = await axios.get(`http://localhost:8000/trainings/${hrCompanyId}/`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` },
                     });
+
+                    if (trainingResponse.data) {
+                        setTrainings(trainingResponse.data);
+                        console.log('Trainings data:', trainingResponse.data);
+                    } else {
+                        setError("No training data found.");
+                    }
                     console.log('Trainings data:', trainingResponse.data);
                     setTrainings(trainingResponse.data);
                     setIsLoading(false);
@@ -292,13 +300,14 @@ const GestionareTrainingHR = () => {
                         <p>Durata: {training.duration_days} zile</p>
                         <p>Capacitate: {training.capacity} persoane</p>
                         <p>Înregistrare până la: {training.enrollment_deadline ? new Date(training.enrollment_deadline).toLocaleDateString() : 'N/A'}</p>
-                        <div>
-                            <button className='button' onClick={() => handleOpenDetails(training.id)}>Detali</button>
-                            <button className='button' onClick={() => openEditModal(training)}>Editează</button>
-                            <button className='button' onClick={() => handleDeleteTraining(training.id)}>Șterge</button>
+                        <div className="button-container">
+                            <button className='buton' onClick={() => handleOpenDetails(training.id)}>Detali</button>
+                            <button className='buton' onClick={() => openEditModal(training)}>Editează</button>
+                            <button className='buton' onClick={() => handleDeleteTraining(training.id)}>Șterge</button>
                         </div>
                     </div>
                 ))}
+
                 <TrainingDetailsModal
                     isOpen={isDetailsModalOpen}
                     onClose={() => setIsDetailsModalOpen(false)}

@@ -326,7 +326,10 @@ class Training(models.Model):
     @property
     def participant_count(self):
         return self.training_participants.count()
-
+    
+    def is_employee_registered(self, employee):
+        return self.training_participants.filter(employee=employee).exists()
+    
     def has_space(self):
         return self.employees.count() < self.capacity
     

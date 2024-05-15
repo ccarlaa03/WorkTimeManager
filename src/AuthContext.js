@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 export const AuthContext = createContext();
 export const useAuth = () => {
-  
+
   return useContext(AuthContext);
 };
 
@@ -48,8 +48,10 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...authState, login, logout }}>
+    <AuthContext.Provider value={{ ...authState, login, logout, user: authState.user }}>
       {children}
     </AuthContext.Provider>
+
+
   );
 };

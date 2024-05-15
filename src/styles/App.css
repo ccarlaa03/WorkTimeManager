@@ -837,7 +837,19 @@ th {
   gap: 20px;
   width: 100%;
 }
+.card.registered {
+  border-color: green; 
+  background-color: #f0fff0; 
+}
 
+.registration-confirmation {
+  color: green; 
+  font-weight: bold;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #f4f4f4;
+  border-radius: 5px;
+}
 .card-curs {
   background-color: #ffffff;
   padding: 20px;

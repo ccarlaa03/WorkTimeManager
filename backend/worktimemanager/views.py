@@ -1,4 +1,5 @@
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
+from django.db.models import Exists, OuterRef
 from collections import defaultdict
 from decimal import Decimal
 from django.db.models import Q
@@ -9,7 +10,7 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, FeedbackResponse, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackResponse, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification, TrainingParticipant
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
 from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer, NotificationSerializer
@@ -908,8 +909,9 @@ def create_feedback_form(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_trainings(request):
-    trainings = Training.objects.all().order_by('-date')
+def list_trainings_for_company(request, company_id):
+    employees = Employee.objects.filter(company_id=company_id)
+    trainings = Training.objects.filter(training_participants__employee__in=employees).distinct()
     serializer = TrainingSerializer(trainings, many=True)
     return Response(serializer.data)
 
@@ -985,7 +987,10 @@ def register_to_training(request, training_id):
     try:
         training = Training.objects.get(id=training_id)
         employee = request.user.employee 
-        training.employee.add(employee)
+        if employee in training.participants.all():
+            return Response({'error': 'Already registered'}, status=status.HTTP_409_CONFLICT)
+        
+        training.participants.add(employee)
         training.save()
         return Response({'message': 'Registered successfully'}, status=status.HTTP_200_OK)
     except Training.DoesNotExist:
@@ -1122,3 +1127,21 @@ def get_leave_statistics(request, user_id):
         "remaining": remaining,
         "taken_by_type": dict(taken_by_type)  
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_list_trainings(request, user_id):
+    employee = get_object_or_404(Employee, user_id=user_id)
+    
+    # Annotate each training with whether the current employee is a participant
+    trainings = Training.objects.annotate(
+        is_registered=Exists(
+            TrainingParticipant.objects.filter(
+                employee=employee,
+                training=OuterRef('pk')
+            )
+        )
+    ).order_by('-date')
+    
+    serializer = TrainingSerializer(trainings, many=True, context={'request': request})
+    return Response(serializer.data)

@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import instance from '../../axiosConfig';
 import axios from 'axios';
+import { AuthContext } from '../../AuthContext';
 
 const TrainingEmployee = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [trainings, setTrainings] = useState([]);
+  const [error, setError] = useState('');
+  const [employeeInfo, setEmployeeInfo] = useState({
+    name: '',
+    user: '',
+  });
+  const { user } = useContext(AuthContext);
   const getStatusLabel = (status) => {
     switch (status) {
       case 'planned':
@@ -19,28 +26,70 @@ const TrainingEmployee = () => {
         return status;
     }
   };
-
   useEffect(() => {
-    const fetchTrainings = async () => {
+    const fetchData = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("Nu s-a găsit token de acces. Utilizatorul trebuie să fie autentificat.");
+        console.error("Access denied. No token available. User must be logged in to access this.");
         return;
       }
       try {
-        const response = await instance.get(`/trainings/`, {
-          headers: { 'Authorization': `Bearer ${accessToken}` },
+        const response = await axios.get('http://localhost:8000/employee-dashboard/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
-        setTrainings(response.data);
-        setIsLoading(false);
+        if (response.data.employee_info && response.data.employee_info.user) {
+          console.log("Fetched Employee Info:", response.data.employee_info);
+          setEmployeeInfo(response.data.employee_info);
+        } else {
+          console.error("User data is incomplete:", response.data);
+        }
       } catch (error) {
-        console.error('Eroare la preluarea cursurilor:', error);
-        setIsLoading(false);
+        console.error("Error retrieving profile data:", error);
       }
     };
 
-    fetchTrainings();
+    fetchData();
   }, []);
+
+  useEffect(() => {
+    const fetchTrainings = async () => {
+
+      const accessToken = localStorage.getItem('access_token');
+      if (!accessToken || !employeeInfo.user) {
+        console.error("Access denied or missing user ID.");
+        return;
+      }
+      try {
+        const response = await instance.get(`/training/${employeeInfo.user}/`, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+
+        console.log("Răspuns trainings:", response.data);
+        const today = new Date();
+        const updatedTrainings = response.data.map(training => ({
+          ...training,
+          isRegistered: training.participants.map(p => p.employee_id).includes(user),
+          registrationClosed: new Date(training.enrollment_deadline) < today,
+          noSeatsLeft: training.available_seats <= 0
+        }));
+        if (response.data) {
+          console.log("Training Response Data:", response.data);
+          setTrainings(response.data);
+        }
+
+        console.log("Updated trainings:", updatedTrainings);
+        setTrainings(updatedTrainings);
+      } catch (error) {
+        console.error('Eroare la preluarea cursurilor:', error);
+      }
+      setIsLoading(false);
+    };
+    
+    fetchTrainings()
+  }, [employeeInfo.user]);
+
+
+
 
   const registerForTraining = async (trainingId) => {
     try {
@@ -57,30 +106,36 @@ const TrainingEmployee = () => {
 
   if (isLoading) {
     return <div>Se încarcă...</div>;
+  } else if (trainings.length === 0) {
+    return <div>No training sessions available.</div>;
   }
 
   return (
     <div className="container-dashboard">
-      <h1 style={{ textAlign: 'center' }} >Cursuri disponibile</h1>
-      <div className="lista-cursuri">
-        {trainings.map(training => (
-          <div key={training.id} className="card">
-            <h3>{training.title}</h3>
-            <p>{training.description}</p>
-            <p>Data: {new Date(training.date).toLocaleDateString('ro-RO')}</p>
-            <p>Status: {getStatusLabel(training.status)}</p>
-            <p>Durata: {training.duration_days} zile</p>
-            <p>Capacitate: {training.capacity} persoane</p>
-            <p>Locuri disponibile: {training.available_seats}</p>
-            <p>Înregistrare până la: {training.enrollment_deadline && new Date(training.enrollment_deadline).toLocaleDateString()}</p>
-            <button disabled={new Date() > new Date(training.enrollment_deadline) || training.available_seats <= 0}>
-              Înscrie-te
-            </button>
-          </div>
-        ))}
-      </div>
+        <h1 style={{ textAlign: 'center' }}>Cursuri disponibile</h1>
+        <div className="lista-cursuri">
+            {trainings.map(training => (
+                <div key={training.id} className="card">
+                    <h3>{training.title}</h3>
+                    <p>{training.description}</p>
+                    <p>Data: {new Date(training.date).toLocaleDateString('ro-RO')}</p>
+                    <p>Status: {getStatusLabel(training.status)}</p>
+                    <p>Durata: {training.duration_days} zile</p>
+                    <p>Capacitate: {training.capacity} persoane</p>
+                    <p>Locuri disponibile: {training.available_seats}</p>
+                    <p>Înregistrare până la: {training.enrollment_deadline && new Date(training.enrollment_deadline).toLocaleDateString()}</p>
+                    {training.is_registered ? (
+                        <div className="registration-confirmation">Te-ai înscris la acest curs. Ne vedem când începe!</div>
+                    ) : (
+                        <button onClick={() => registerForTraining(training.id)}>Înscrie-te</button>
+                    )}
+                </div>
+            ))}
+        </div>
     </div>
-  );
+);
+
+
 };
 
 export default TrainingEmployee;

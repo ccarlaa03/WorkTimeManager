@@ -166,6 +166,7 @@ class LeaveSerializer(serializers.ModelSerializer):
 class TrainingSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     available_seats = serializers.IntegerField(read_only=True)
+    is_registered = serializers.BooleanField(read_only=True)
     class Meta:
         model = Training
         fields = '__all__'
@@ -180,7 +181,10 @@ class TrainingSerializer(serializers.ModelSerializer):
         if not isinstance(value, int) or value < 1:
             raise serializers.ValidationError("Duration must be a positive integer.")
         return value
-
+    
+    def get_is_registered(self, obj):
+        employee = self.context.get('employee')
+        return obj.is_employee_registered(employee)
 
     def validate_capacity(self, value):
         if value < 0:
@@ -204,7 +208,7 @@ class TrainingParticipantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TrainingParticipant
-        fields = ('employee_name', 'employee_department')
+        fields = ('employee_name', 'employee_department', 'employee_id',)
     
 
 class TrainingDetailSerializer(serializers.ModelSerializer):

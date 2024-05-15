@@ -88,7 +88,9 @@ urlpatterns = [
     path('feedback/add-question/<int:form_id>/', views.add_feedback_question, name='add_feedback_question'),
     path('feedback/update-form/<int:form_id>/', views.update_feedback_form, name='update_feedback_form'),
     path('feedback/add-form/', views.create_feedback_form, name='create_feedback_form'),
-    path('trainings/', views.list_trainings, name='list-trainings'),
+    path('trainings/<int:company_id>/', views.list_trainings_for_company, name='list-trainings-for-company'),
+    path('training/<int:user_id>/', views.employee_list_trainings, name='employee_list-trainings'),
+
     path('trainings/create/', views.create_training, name='create-training'),
     path('trainings/update/<int:training_id>/', views.update_training, name='update-training'),
     path('trainings/delete/<int:training_id>/', views.delete_training, name='delete-training'),
@@ -96,6 +98,7 @@ urlpatterns = [
     path('training-rapoarte/', views.training_report, name='training-report'),
     path('trainings/<int:training_id>/add-participant/', views.add_participant, name='add-participant'),
     path('trainings/<int:training_id>/details/', views.training_details, name='training-details'),
+    path('trainings/register/<int:training_id>/', views.register_to_training, name='register_to_training'),
     path('department-rapoarte/', views.department_report, name='department-rapoarte'),
 
 
