@@ -1,7 +1,7 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.models import Group
-from .models import User, Visitor
+from .models import User, Visitor, Leave, WorkSchedule,Training,Notification, Fe
 
 @receiver(post_save, sender=User)
 def assign_user_to_group(sender, instance, created, **kwargs):
@@ -18,3 +18,4 @@ def assign_user_to_group(sender, instance, created, **kwargs):
         elif instance.role == 'visitor': 
 
             pass  
+

@@ -17,6 +17,7 @@ const localizer = momentLocalizer(moment);
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
+  const [employees, setEmployees] = useState([]);
   const [profile, setProfile] = useState(null);
   const [employeeInfo, setEmployeeInfo] = useState({
     name: '',
@@ -84,6 +85,7 @@ const Dashboard = () => {
         setProfile(response.data);
         setEmployeeInfo(response.data.employee_info)
         setIsLoading(false);
+        setEmployees(response.data.employees);
       } catch (error) {
         if (error.response) {
           console.error("Error retrieving profile data:", error.response.data);
@@ -240,7 +242,10 @@ const Dashboard = () => {
 
 
       <div className="flex-container">
+
         <Notifications user_id={employeeInfo.user} />
+
+
         <Statistici user_id={employeeInfo.user} />
 
         <div className="content-container">

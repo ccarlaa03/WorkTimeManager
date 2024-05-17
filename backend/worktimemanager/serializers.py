@@ -53,7 +53,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Notification
-        fields = ['id', 'message', 'is_read', 'created_at', 'sender', 'recipient']
+        fields = ['id', 'message', 'is_read', 'created_at', 'sender', 'recipient', 'notification_type']
 
 class WorkScheduleSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='user.name', read_only=True)

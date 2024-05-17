@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const Notifications = ({}) => {
+const Notifications = ({ }) => {
     const [notifications, setNotifications] = useState([]);
     const [userOption, setUserOption] = useState('all');
+    const [loggedInUserId, setloggedInUserId] = useState('');
     const [selectedUser, setSelectedUser] = useState('');
     const [recipientId, setRecipientId] = useState('');
     const [message, setMessage] = useState('');
@@ -12,17 +13,17 @@ const Notifications = ({}) => {
     const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
-        fetchNotifications(selectedUser);
-    }, [selectedUser]);
+        const fetchNotifications = async () => {
+            try {
+                const response = await axios.get(`/notifications/${getCurrentUserId()}/`);
+                setNotifications(response.data.notifications);
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+            }
+        };
 
-    const fetchNotifications = async (user_id) => {
-        try {
-            const response = await axios.get(`/notifications/${user_id || ''}/`);
-            setNotifications(response.data.notifications);
-        } catch (error) {
-            console.error('Error fetching notifications:', error);
-        }
-    };
+        fetchNotifications();
+    }, []);
 
     const handleSendNotification = async () => {
         setLoading(true);
@@ -43,7 +44,7 @@ const Notifications = ({}) => {
 
     return (
         <div>
-            <h2>Send Notification</h2>
+            <h2>Trimite un mesaj</h2>
             {error && <p style={{ color: 'red' }}>{error}</p>}
             {successMessage && <p style={{ color: 'green' }}>{successMessage}</p>}
             <input

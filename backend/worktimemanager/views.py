@@ -272,9 +272,18 @@ def employee_dashboard(request):
 @permission_classes([IsAuthenticated])
 def fetch_notifications(request, user_id=None):
     user = get_object_or_404(User, pk=user_id)
-    notifications = Notification.objects.all().order_by('-created_at')
-    notifications.update(is_read=True)
-    return Response({'notifications': [{'id': n.id, 'message': n.message, 'created_at': n.created_at.isoformat()} for n in notifications]})
+    if request.user.id == user.id:  
+        notifications = Notification.objects.filter(recipient=user).order_by('-created_at')
+        notifications_data = [{
+            "id": n.id,
+            "message": n.message,
+            "created_at": n.created_at.isoformat(),
+            "is_read": n.is_read
+        } for n in notifications]
+        return Response({'notifications': notifications_data})
+    else:
+        return Response({"error": "Unauthorized access"}, status=403)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -282,6 +291,7 @@ def send_notification(request):
     data = request.data
     message = data.get('message', '')
     user_id = data.get('user_id', None)
+    notification_type = data.get('type', 'custom')
 
     if user_id:
         user = get_object_or_404(User, user_id=user_id)
@@ -291,7 +301,7 @@ def send_notification(request):
         notifications = [Notification(recipient=user, message=message, sender=request.user) for user in users]
         Notification.objects.bulk_create(notifications)
     
-    return Response({"message": "Notifications sent successfully"}, status=status.HTTP_200_OK)
+    return Response({"message": "Notificările au fost trimise cu succes"}, status=status.HTTP_200_OK)
    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -300,8 +310,8 @@ def mark_notification_as_read(request, notification_id):
         if not Notification.is_read:
             Notification.is_read = True
             Notification.save()
-            return Response({'status': 'success', 'message': 'Notification marked as read.'})
-        return Response({'status': 'error', 'message': 'Notification already marked as read.'})
+            return Response({'status': 'success', 'message': 'Notificarea a fost marcată ca citită.'})
+        return Response({'status': 'error', 'message': 'Notificarea este deja marcată ca citită.'}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         logger.error(f"Failed to mark notification as read: {e}", exc_info=True)
         return Response({'status': 'error', 'message': str(e)}, status=500)
@@ -355,7 +365,7 @@ def weekly_statistics(request, user_id):
 def get_current_status(request, user_id):
     today = timezone.now().date()
     try:
-        work_schedule = WorkSchedule.objects.get(user_id=user_id, date=today)
+        work_schedule = WorkSchedule.objects.filter(user_id=user_id, date=today).first()
         status = 'clocked out' if work_schedule.end_time else 'clocked in'
         return Response({'status': status}, status=200)
     except WorkSchedule.DoesNotExist:
@@ -1145,3 +1155,4 @@ def employee_list_trainings(request, user_id):
     
     serializer = TrainingSerializer(trainings, many=True, context={'request': request})
     return Response(serializer.data)
+

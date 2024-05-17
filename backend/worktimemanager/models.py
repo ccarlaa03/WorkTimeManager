@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models import Model, ForeignKey, BooleanField, DateTimeField, TextField, CharField, DecimalField
+from django.db import transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
 import logging
@@ -11,6 +13,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -63,7 +66,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_owner = models.BooleanField(default=False)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-
     objects = CustomUserManager()
 
     def __str__(self):
@@ -159,15 +161,31 @@ class WorkSchedule(models.Model):
         self.save()
 
 class Notification(models.Model):
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_notifications', limit_choices_to={'is_hr': True})
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications')
+    NOTIFICATION_TYPES = (
+        ('leave', 'Leave Type'),
+        ('work_schedule', 'Work Schedule Type'),
+        ('private', 'Private Type'),
+        ('feedback', 'Feedback Type'),
+        ('training', 'Training Type'),
+    )
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_notifications', db_index=True)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sent_notifications', limit_choices_to={'is_hr': True}, db_index=True)
+    notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES, db_index=True)
     message = models.TextField()
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()
+
+    def mark_as_unread(self):
+        self.is_read = False
+        self.save()
 
     def save(self, *args, **kwargs):
         if not self.id:  
-            print(f"Saving new notification at {now()}")
+            print(f"S-a salvat notificarea {now()}")
         super().save(*args, **kwargs)
     def __str__(self):
         return f'Notification from {self.sender} to {self.recipient}'
@@ -177,7 +195,8 @@ class FeedbackForm(models.Model):
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_feedback_forms')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_feedback_forms')
+    notifications_sent = models.BooleanField(default=False)
     HR_REVIEW_STATUS_CHOICES = [
         ('pending', 'În așteptare'),
         ('reviewed', 'Revizuit'),
@@ -281,20 +300,25 @@ class Leave(models.Model):
     is_leave = models.BooleanField(default=False, verbose_name=_('Is on Leave'))
     leave_type = models.CharField(max_length=2, choices=LeaveType.choices, null=True, blank=True, verbose_name=_('Type of Leave'))
     leave_description = models.TextField(null=True, blank=True, verbose_name=_('Leave Description'))
-    is_approved = models.BooleanField(default=False, verbose_name=_('Leave Approved'))
+    is_approved = models.BooleanField(default=False)
+    last_approved_status = models.BooleanField(default=False)
     status = models.CharField(max_length=2, choices=LeaveStatus.choices, default=LeaveStatus.PENDING, verbose_name=_('Leave Status'))
     leaves_history_details = models.JSONField(default=dict, verbose_name="Leaves history details")
     duration = models.DecimalField(max_digits=4, decimal_places=2, default=1.0, verbose_name=_('Duration in Days'))
 
     def save(self, *args, **kwargs):
-        if self.start_date and self.end_date:
-            self.duration = (self.end_date - self.start_date).days + 1 
+        if self.pk:
+            original = Leave.objects.get(pk=self.pk)
+            self.last_approved_status = original.is_approved
         super(Leave, self).save(*args, **kwargs)
 
     def __str__(self):
         employee_name = self.user.name if self.user else "Unknown Employee"
         department = self.user.department if self.user else "Unknown Department"
         return f"{employee_name} - {department} - Leave from {self.start_date} to {self.end_date} - Status: {self.get_status_display()} - Duration: {self.duration} days"
+
+    def is_approved_changed(self):
+        return self.is_approved != self.last_approved_status
     
 class Training(models.Model):
     participants = models.ManyToManyField(
@@ -319,7 +343,8 @@ class Training(models.Model):
     duration_days = models.PositiveIntegerField(default=1) 
     capacity = models.PositiveIntegerField(default=0)
     enrollment_deadline = models.DateField(null=True, blank=True)
-
+    notifications_sent = models.BooleanField(default=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_training')
     def __str__(self):
         return self.title
 
@@ -353,3 +378,140 @@ class TrainingParticipant(models.Model):
 
     def __str__(self):
         return f"{self.employee.name} - {self.training.title}"
+
+class PrivateEvent(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    description = models.TextField()
+    date = models.DateTimeField()
+
+    def __str__(self):
+        return f"Mesaj privat din data {self.date} pentru {self.user.name}"
+    
+@receiver(post_save, sender=Leave)
+def leave_update_notification(sender, instance, **kwargs):
+    if instance.is_approved_changed:
+        hr_user = instance.user.company.HR.first().user if instance.user.company.HR.exists() else None
+        if hr_user:
+            message = f"Concediul pentru {instance.start_date.strftime('%Y-%m-%d')} - {instance.end_date.strftime('%Y-%m-%d')} a fost {'aprobat' if instance.is_approved else 'respins'}."
+            Notification.objects.create(
+                sender=hr_user,
+                recipient=instance.user.user,
+                message=message,
+                notification_type='leave',
+                created_at=now()
+            )
+            print("Notification sent:", message)
+        else:
+            print("No HR user found.")
+    else:
+        print("No change in approved status.")
+
+
+@receiver(post_save, sender=Training)
+def training_creation_notification(sender, instance, created, **kwargs):
+    if created:
+        if instance.created_by:
+            logger.info(f"Training created by {instance.created_by.email}")
+        else:
+            logger.info("Training created without a creator specified.")
+
+        lock_id = f"lock_training_{instance.id}"
+        if cache.add(lock_id, "true", timeout=30):
+            try:
+                if not instance.notifications_sent:
+                    send_training_notifications(instance)
+            finally:
+                cache.delete(lock_id)
+        else:
+            logger.info("Notification process is currently locked by another process.")
+
+def send_training_notifications(instance):
+
+    with transaction.atomic():
+        logger.info(f"Sending notifications for new training form created by {instance.created_by}")
+        employees = Employee.objects.all()
+        if not employees.exists():
+            logger.info("No employees found in the company to notify.")
+            return
+
+        message_base = f"Un nou curs, '{instance.title}', a fost programat pentru {instance.date}."
+        for employee in employees:
+            notification, created = Notification.objects.update_or_create(
+                sender=instance.created_by,
+                recipient=employee.user,
+                notification_type='training',
+                defaults={'message': message_base + f" {employee.name}"}
+            )
+            if created:
+                logger.info(f"Notification created for {employee.name}")
+
+        instance.notifications_sent = True
+        instance.save(update_fields=['notifications_sent'])
+        logger.info("All training notifications have been sent and marked as complete.")
+
+
+
+
+@receiver(post_save, sender=WorkSchedule)
+def work_schedule_notification(sender, instance, created, **kwargs):
+    hr_user = instance.user.company.HR.first().user if instance.user.company.HR.exists() else None
+    if hr_user:
+        if created:
+            message = f"Un nou program de lucru pentru {instance.date} a fost creat."
+        else:
+            message = f"Programul de lucru pentru {instance.date} a fost actualizat."
+        
+            Notification.objects.create(
+                sender=hr_user,
+                recipient=instance.user.user,
+                message=message,
+                notification_type='work_schedule', 
+                created_at=now()
+)
+
+@receiver(post_save, sender=FeedbackForm)
+def feedback_form_creation_notification(sender, instance, created, **kwargs):
+    if created:
+        lock_id = f"lock_feedbackform_{instance.id}"
+        if cache.add(lock_id, "true", timeout=30): 
+            try:
+                if not instance.notifications_sent:
+                    send_feedback_notifications(instance)
+            finally:
+                cache.delete(lock_id)
+        else:
+            logger.info("Notification process is currently locked by another process.")
+
+def send_feedback_notifications(instance):
+    with transaction.atomic():
+        logger.info(f"Sending notifications for new feedback form created by {instance.created_by.email}")
+        employees = Employee.objects.all()
+        message_base = f"S-a creat un nou formular de feedback, '{instance.title}', vă rugăm să-l completați."
+        
+        for employee in employees:
+            notification, created = Notification.objects.update_or_create(
+                sender=instance.created_by,
+                recipient=employee.user,
+                notification_type='feedback',
+                defaults={'message': message_base + f" {employee.name}"}
+            )
+            if created:
+                logger.info(f"Notification created for {employee.name}")
+        
+        instance.notifications_sent = True
+        instance.save(update_fields=['notifications_sent'])
+        logger.info("All notifications have been sent and marked as complete.")
+
+
+@receiver(post_save, sender=PrivateEvent)
+def private_event_notification(sender, instance, created, **kwargs):
+    hr_user = instance.user.company.HR.first().user if instance.user.company.HR.exists() else None
+    if hr_user:
+        message = f"Eveniment privat actualizat: {instance.description}"
+        Notification.objects.create(
+            sender=hr_user,
+            recipient=instance.user,
+            message=message,
+            notification_type='private',
+            created_at=now()
+        )
