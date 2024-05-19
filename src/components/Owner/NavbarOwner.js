@@ -34,6 +34,11 @@ const NavbarOwner = () => {
           </NavLink>
           </li>
           <li>
+          <NavLink to="/owner-rapoarte" className={({ isActive }) => isActive ? 'active' : ''}>
+            Rapoarte cursuri
+          </NavLink>
+          </li>
+          <li>
           <NavLink to="/logout" onClick={handleLogout}>
             Log out
           </NavLink>

@@ -182,18 +182,34 @@ def logout_view(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser]) 
+@permission_classes([IsAuthenticated])
 def owner_dashboard(request):
-    try:
-        owner = request.user.owner  
-        company = owner.company
-        events = company.events.all()
-        company_data = CompanySerializer(company).data
-        events_data = EventSerializer(events, many=True).data
-        return Response({'company': company_data, 'events': events_data})
-    except Exception as e:
-        logger.error(f'Eroare la procesarea request-ului: {str(e)}')
-        return Response({'error': 'A avut loc o eroare.'}, status=500)
+    owner = Owner.objects.get(user=request.user)
+    company = owner.company
+    events = Event.objects.filter(company=company)
+
+    return Response({
+        "owner": {
+            "name": owner.name,
+            "email": request.user.email,
+            "company_id" : owner.company_id
+        },
+        "company": {
+            "name": company.name,
+            "address": company.address,
+            "phone_number": company.phone_number,
+            "email": company.email,
+            "industry": company.industry,
+            "number_of_employees": company.number_of_employees,
+            "founded_date": company.founded_date
+        },
+        "events": [{
+            "title": event.title,
+            "start": event.start,
+            "end": event.end
+        } for event in events]
+    })
+
 
    
 @api_view(['GET'])
@@ -206,8 +222,42 @@ def company_details_view(request):
         return Response(serializer.data)
     except Owner.DoesNotExist:
         return Response({'error': 'Acest utilizator nu este un owner.'}, status=404)
+    
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_company(request, company_id):
+    try:
+        company = Company.objects.get(id=company_id)
+    except Company.DoesNotExist:
+        return Response({"error": "Company not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    if request.user.role != 'owner':
+        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
+    serializer = CompanySerializer(company, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    else:
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def add_event_owner(request):
+    try:
+        company = request.user.owner.company
+        event_data = request.data
+        event_data['company'] = company.id
+        serializer = EventSerializer(data=event_data)
+        if serializer.is_valid():
+            event = serializer.save()
+            return Response({"message": "Event created successfully.", "event": EventSerializer(event).data}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except AttributeError:
+        return Response({"error": "User is not associated with any company."}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+       
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def add_event(request):
@@ -291,16 +341,26 @@ def send_notification(request):
     data = request.data
     message = data.get('message', '')
     user_id = data.get('user_id', None)
+    email = request.data.get('email', None)
     notification_type = data.get('type', 'custom')
 
+    if not email:
+        return Response({"error": "Email address is required."}, status=status.HTTP_400_BAD_REQUEST)
+    user = User.objects.filter(email=email).first()
+    if not user:
+        return Response({"error": "No user found with the provided email address."}, status=status.HTTP_404_NOT_FOUND)
     if user_id:
         user = get_object_or_404(User, user_id=user_id)
         Notification.objects.create(recipient=user, message=message, sender=request.user)
     else:
         users = User.objects.filter(is_employee=True)
         notifications = [Notification(recipient=user, message=message, sender=request.user) for user in users]
-        Notification.objects.bulk_create(notifications)
-    
+        Notification.objects.create(
+        recipient=user, 
+        message=message, 
+        sender=request.user, 
+        notification_type=notification_type)
+
     return Response({"message": "Notificările au fost trimise cu succes"}, status=status.HTTP_200_OK)
    
 @api_view(['POST'])

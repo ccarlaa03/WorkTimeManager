@@ -90,7 +90,6 @@ urlpatterns = [
     path('feedback/add-form/', views.create_feedback_form, name='create_feedback_form'),
     path('trainings/<int:company_id>/', views.list_trainings_for_company, name='list-trainings-for-company'),
     path('training/<int:user_id>/', views.employee_list_trainings, name='employee_list-trainings'),
-
     path('trainings/create/', views.create_training, name='create-training'),
     path('trainings/update/<int:training_id>/', views.update_training, name='update-training'),
     path('trainings/delete/<int:training_id>/', views.delete_training, name='delete-training'),
@@ -100,8 +99,8 @@ urlpatterns = [
     path('trainings/<int:training_id>/details/', views.training_details, name='training-details'),
     path('trainings/register/<int:training_id>/', views.register_to_training, name='register_to_training'),
     path('department-rapoarte/', views.department_report, name='department-rapoarte'),
-
-
+    path('update-company/<int:company_id>/', views.update_company, name='update-company'),
+    path('add-event-owner/', views.add_event_owner, name='add-event-owner'),
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

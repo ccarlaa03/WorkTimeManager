@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
-import { Bar } from 'react-chartjs-2';
 import Modal from 'react-modal';
 import instance from '../../axiosConfig';
 import 'chart.js/auto';
@@ -33,11 +32,21 @@ const localizer = momentLocalizer(moment);
 const HrDashboard = () => {
   const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '', company_id: '' });
   const [events, setEvents] = useState([]);
+  const [recipientId, setRecipientId] = useState('');
   const [profileEdit, setEditProfile] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', start: moment().toDate(), end: moment().toDate() });
   const getAccessToken = () => localStorage.getItem('access_token');
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+
+  const openModal = () => {
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+  }
 
 
   useEffect(() => {
@@ -80,6 +89,7 @@ const HrDashboard = () => {
     };
     fetchData();
   }, []);
+
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
@@ -200,9 +210,7 @@ const HrDashboard = () => {
 
   return (
     <div className="container-dashboard">
-      <h1>Dashboard HR</h1>
-      <h2>Bine ai venit, {HR.name}</h2>
-
+      <h1>Bine ai venit, {HR.name}</h1>
       <div className="container-profil">
         <h2>{HR.name || 'Nume Implicit'}</h2>
         <p>Post: {HR.position || 'Poziție Implicită'}</p>
@@ -299,8 +307,6 @@ const HrDashboard = () => {
           Adaugă eveniment nou
         </button>
       </div>
-
-      <br />
 
       <div>
         <DepartmentRaporte />
