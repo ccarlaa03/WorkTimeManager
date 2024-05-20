@@ -841,6 +841,28 @@ th {
   border-color: green; 
   background-color: #f0fff0; 
 }
+.pagination {
+  display: flex;
+  list-style: none;
+  justify-content: center;
+}
+
+.pagination a {
+  margin: 0 5px;
+  padding: 5px 10px;
+  cursor: pointer;
+  background-color: #A087BC;
+}
+
+.pagination a:hover {
+  background-color: #f0fff0;
+}
+
+.pagination .active a {
+  background-color: #A087BC;
+  color: #f0fff0;
+
+}
 
 .registration-confirmation {
   color: green; 

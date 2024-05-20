@@ -24,6 +24,7 @@ import LogoutComponent from './components/Logare/logout';
 import { AuthProvider } from './AuthContext';
 import FeedbackDetails from './components/HR/feedback-details';
 import TrainingEmployee from './components/Angajat/training';
+import EmployeeManagement from './components/Owner/gestionare-angajati';
 
 const App = () => {
 
@@ -54,7 +55,7 @@ const App = () => {
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
           <Route path="/formulare-feeedback" element={<FeedbackForm />} />
           <Route path="/feedback-details/:form_id" element={<FeedbackDetails />} />
-
+          <Route path="/gestionare-angajati" element={<EmployeeManagement />} />
 
         </Routes>
         <Footer />

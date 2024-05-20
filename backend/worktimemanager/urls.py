@@ -101,6 +101,11 @@ urlpatterns = [
     path('department-rapoarte/', views.department_report, name='department-rapoarte'),
     path('update-company/<int:company_id>/', views.update_company, name='update-company'),
     path('add-event-owner/', views.add_event_owner, name='add-event-owner'),
+    path('companies/<int:company_id>/employees/', views.list_employees_owner, name='list-employees'),
+    path('employees/', views.create_employee_view, name='create-employee'),
+    path('create-hr/', views.create_hr_user, name='create-hr-user'),
+    path('employees/<int:user_id>/delete/', views.delete_employee, name='delete-employee'),
+     path('hr/<int:user_id>/delete/', views.delete_hr, name='delete-hr'),
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

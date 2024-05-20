@@ -19,7 +19,7 @@ const NavbarOwner = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/owner-statistici" className={({ isActive }) => isActive ? 'active' : ''}>
+          <NavLink to="/gestionare-angajati" className={({ isActive }) => isActive ? 'active' : ''}>
            Angajati
           </NavLink>
         </li>

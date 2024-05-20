@@ -104,10 +104,10 @@ const OwnerDashboard = () => {
         const response = await axios.get('http://localhost:8000/owner-dashboard/', config);
         if (response.data.owner) {
           setOwner(response.data.owner);
-          console.log('Owner data:', response.data.owner); // Verifică datele owner-ului
+          console.log('Owner data:', response.data.owner); 
           if (response.data.company) {
             setCompany(response.data.company);
-            console.log('Company data:', response.data.company); // Verifică datele companiei
+            console.log('Company data:', response.data.company); 
           }
         } else {
           console.error("Owner data is not available or company ID is undefined.");
@@ -238,7 +238,7 @@ const OwnerDashboard = () => {
           <p><b>Număr de angajați:</b> {company.number_of_employees}</p>
           <p><b>Data înființării: </b>{new Date(company.founded_date).toLocaleDateString()}</p>
           <div className="button-container">
-            <button onClick={openEditCompanyModal} className="button">Editează detaliile companiei</button>
+            <button onClick={openEditCompanyModal} className="buton">Editează detaliile companiei</button>
           </div>
         </div>
       ) : (
@@ -253,6 +253,11 @@ const OwnerDashboard = () => {
           endAccessor="end"
           style={{ height: 500 }}
         />
+       
+        <button onClick={openAddEventModal} className="buton">
+          Adaugă eveniment nou
+        </button>
+    
       </div>
       <Modal isOpen={isAddEventModalOpen} onRequestClose={closeAddEventModal} contentLabel="Adaugă Eveniment" className="modal-content">
         <form onSubmit={handleAddEvent}>
@@ -293,11 +298,7 @@ const OwnerDashboard = () => {
           <button className="button" type="submit">Adaugă eveniment</button>
         </form>
       </Modal>
-      <div className="button-container">
-        <button onClick={openAddEventModal} className="button">
-          Adaugă eveniment nou
-        </button>
-      </div>
+    
       <Modal
         isOpen={isEditCompanyModalOpen}
         onRequestClose={closeEditCompanyModal}

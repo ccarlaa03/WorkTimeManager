@@ -98,8 +98,27 @@ class HR(models.Model):
     position = models.CharField(max_length=100)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='HR', null=True, blank=True)
     is_hr = models.BooleanField(default=True)
+    hire_date = models.DateField(null=True, blank=True)  # Data angajării
+    email = models.EmailField(max_length=100, unique=True, db_index=True, null=True)
+    address = models.CharField(max_length=100, null=True)
+    telephone_number = models.CharField(max_length=100, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=True)
+
     def __str__(self):
         return f"{self.user.email} - {self.position}"
+
+    def clean(self):
+        if not self.user:
+            raise ValidationError('User field cannot be empty.')
+        if not self.email:
+            raise ValidationError('Email field cannot be empty.')
+
+    def save(self, *args, **kwargs):
+        self.full_clean() 
+        super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['user']    
+    
 class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     name = models.CharField(max_length=100)
@@ -129,6 +148,9 @@ class Employee(models.Model):
     
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+    class Meta:
+        ordering = ['user']    
+        
 
 class WorkSchedule(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')

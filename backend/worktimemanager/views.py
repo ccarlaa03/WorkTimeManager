@@ -32,10 +32,15 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models.functions import Lower
-
+from rest_framework.pagination import PageNumberPagination
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
+class EmployeePagination(PageNumberPagination):
+    page_size = 3
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+    
 @receiver(post_save, sender=Response)
 def update_total_score(sender, instance, created, **kwargs):
     if instance.feedback:
@@ -121,34 +126,96 @@ def acasa_view(request):
             'message': 'Bine ați venit la WorkTimeManager!',
         }
         return Response(data)
-
-
-
-@api_view(['POST'])
+@api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def create_employee_view(request):
-
+def list_employees_owner(request, company_id=None):
     if request.user.role == 'owner':
-        user_data = {
-            'email': request.data.get('email'),
-            'password': request.data.get('password'),
-            'role': request.data.get('role'), 
+        employees = Employee.objects.filter(company_id=company_id)
+        hr_members = HR.objects.filter(company_id=company_id)
+
+        paginator = EmployeePagination()
+        paginated_employees = paginator.paginate_queryset(employees, request)
+        employees_serializer = EmployeeSerializer(paginated_employees, many=True)
+
+        paginated_hr_members = paginator.paginate_queryset(hr_members, request)
+        hr_serializer = HRSerializer(paginated_hr_members, many=True)
+        
+        combined_data = {
+            'employees': employees_serializer.data,
+            'hr_members': hr_serializer.data,
+            'count': len(employees) + len(hr_members)
         }
-        user = User.objects.create_user(**user_data)
-        is_hr = user_data['role'] == 'hr'
-        employee = Employee.objects.create(user=user, is_hr=is_hr, **request.data)
-        return Response(EmployeeSerializer(employee).data, status=status.HTTP_201_CREATED)
+
+        return paginator.get_paginated_response(combined_data)
     else:
-        return Response({'error': 'Doar proprietarul poate adăuga angajați sau HR.'}, status=status.HTTP_403_FORBIDDEN)
+        return Response({'error': 'Doar proprietarul poate vizualiza angajații și membrii HR.'}, status=status.HTTP_403_FORBIDDEN)
 
 @api_view(['POST'])
-@permission_classes([IsAdminUser]) 
+@permission_classes([IsAdminUser])
 def create_hr_user(request):
     serializer = HRSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_employee_view(request):
+    if request.user.role == 'owner':
+        user_data = {
+            'email': request.data.get('email'),
+            'password': request.data.get('password'),
+            'role': request.data.get('role', 'employee'),  # Default role is 'employee'
+        }
+        user = User.objects.create_user(**user_data)
+        employee_data = {
+            'user': user.id,
+            'name': request.data.get('name'),
+            'position': request.data.get('position'),
+            'department': request.data.get('department'),
+            'hire_date': request.data.get('hire_date'),
+            'working_hours': request.data.get('working_hours'),
+            'free_days': request.data.get('free_days'),
+            'company': request.data.get('company'),
+            'email': request.data.get('email'),
+            'address': request.data.get('address'),
+            'telephone_number': request.data.get('telephone_number'),
+        }
+        serializer = EmployeeSerializer(data=employee_data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({'error': 'Doar proprietarul poate adăuga angajați.'}, status=status.HTTP_403_FORBIDDEN)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_hr(request, user_id):
+    try:
+        hr = HR.objects.get(user=user_id)
+        if request.user.role == 'owner' and hr.company.owner == request.user.owner:
+            hr.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'error': 'Doar proprietarul poate șterge angajați HR.'}, status=status.HTTP_403_FORBIDDEN)
+    except HR.DoesNotExist:
+        return Response({'error': 'Angajatul HR nu a fost găsit.'}, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_employee(request, user_id):
+    try:
+        employee = Employee.objects.get(user=user_id)
+        if request.user.role == 'owner' and employee.company.owner == request.user.owner:
+            employee.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'error': 'Doar proprietarul poate șterge angajați.'}, status=status.HTTP_403_FORBIDDEN)
+    except Employee.DoesNotExist:
+        return Response({'error': 'Angajatul nu a fost găsit.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -161,9 +228,10 @@ def create_employee(request):
         serializer = EmployeeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=201)
+            return Response(serializer.data, status=200)
         else: 
             return Response(serializer.errors, status=400)
+
 
 @api_view(['GET'])  
 def check_user_exists(request):
@@ -524,16 +592,6 @@ def update_profile(request, user_id):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
 
-    
-@api_view(['DELETE'])
-@permission_classes([IsAuthenticated])
-def delete_hr(request, pk):
-    try:
-        hr = HR.objects.get(pk=pk)
-        hr.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-    except HR.DoesNotExist:
-        return Response({'detail': 'Not found.'}, status=status.HTTP_404_NOT_FOUND)
   
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
