@@ -71,7 +71,10 @@ const EmployeeManagement = () => {
 
             setModalMessage(`Utilizator creat cu succes! ID Utilizator: ${response.data.user_id}`);
             setIsInfoModalOpen(true);
-            setIsAddModalOpen(false);
+            setTimeout(() => {
+                setIsInfoModalOpen(false);
+                setIsAddModalOpen(false);
+            }, 1000);
         } catch (error) {
             setModalMessage(`Crearea utilizatorului a eșuat: ${error.response.data.error}`);
             setIsInfoModalOpen(true);
@@ -339,6 +342,7 @@ const EmployeeManagement = () => {
             <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <input
                     type="text"
+                    name="name"
                     placeholder="Caută după nume..."
                     value={filter.name}
                     onChange={handleFilterChange}

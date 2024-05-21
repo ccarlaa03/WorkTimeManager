@@ -35,7 +35,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 class EmployeePagination(PageNumberPagination):
-    page_size = 8
+    page_size = 6
     page_size_query_param = 'page_size'
     max_page_size = 100
 
@@ -130,6 +130,11 @@ def acasa_view(request):
 @permission_classes([IsAuthenticated])
 def list_employees_owner(request, company_id=None):
     if request.user.role == 'owner':
+        name = request.GET.get('name', '')
+        function = request.GET.get('function', '')
+        department = request.GET.get('department', '')
+        print(f"Received params - Name: {name}, Function: {function}, Department: {department}")
+
         employees = get_filtered_employees(request, company_id)
         hr_members = get_filtered_hr_members(request, company_id)
 
@@ -143,7 +148,7 @@ def list_employees_owner(request, company_id=None):
         combined_data = {
             'employees': employees_serializer.data,
             'hr_members': hr_serializer.data,
-            'count': employees.count() + hr_members.count()  # Use count() method for accurate count
+            'count': len(employees) + len(hr_members)
         }
 
         return paginator.get_paginated_response(combined_data)
@@ -163,6 +168,7 @@ def get_filtered_employees(request, company_id):
     if department:
         filters &= Q(department__icontains=department)
 
+    print(f"Employee Filters: {filters}")
     return Employee.objects.filter(filters)
 
 def get_filtered_hr_members(request, company_id):
@@ -178,6 +184,7 @@ def get_filtered_hr_members(request, company_id):
     if department:
         filters &= Q(department__icontains=department)
 
+    print(f"HR Filters: {filters}")
     return HR.objects.filter(filters)
    
 
