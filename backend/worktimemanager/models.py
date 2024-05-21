@@ -1,5 +1,4 @@
 from django.db import models
-from django.db.models import Model, ForeignKey, BooleanField, DateTimeField, TextField, CharField, DecimalField
 from django.db import transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
@@ -18,8 +17,12 @@ logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
-            raise ValueError(_('The Email must be set'))
+            raise ValueError('The Email must be set')
         email = self.normalize_email(email)
+
+        if self.model is None:
+            raise Exception("Model is unexpectedly None")
+
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -33,23 +36,16 @@ class CustomUserManager(BaseUserManager):
 
     def create_hr_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_hr', True)
-        # Asigură-te că 'company' este furnizat în extra_fields
-        if 'company' not in extra_fields:
-            raise ValueError(_('Company must be set for HR user'))
-        user = self.create_user(email, password, **extra_fields)
-        # Când creezi HR, asociază-l cu compania specificată
-        HR.objects.create(user=user, company=extra_fields['company'])
-        return user
+        extra_fields.setdefault('is_staff', False)
+        return self.create_user(email, password, **extra_fields)
 
     def create_employee_user(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_employee', True)
-        # Similar cu HR, asigură-te că 'company' este furnizat
-        if 'company' not in extra_fields:
-            raise ValueError(_('Company must be set for Employee user'))
-        user = self.create_user(email, password, **extra_fields)
-        # Asociază angajatul cu compania
-        Employee.objects.create(user=user, company=extra_fields['company'])
-        return user
+        extra_fields.setdefault('is_staff', False)
+        return self.create_user(email, password, **extra_fields)
+
+
+
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     is_staff = models.BooleanField(default=False)
@@ -64,6 +60,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_hr = models.BooleanField(default=False)
     is_employee = models.BooleanField(default=False)
     is_owner = models.BooleanField(default=False)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = CustomUserManager()
@@ -92,19 +89,24 @@ class Owner(models.Model):
         return self.name
 
 class HR(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100, null=True)  
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='hr_details')
+    name = models.CharField(max_length=100, null=True)
+    birth_date = models.DateField(null=True, blank=True)
     department = models.CharField(max_length=100)
     position = models.CharField(max_length=100)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='HR', null=True, blank=True)
     is_hr = models.BooleanField(default=True)
-    hire_date = models.DateField(null=True, blank=True)  # Data angajării
+    hire_date = models.DateField(null=True, blank=True)
     email = models.EmailField(max_length=100, unique=True, db_index=True, null=True)
     address = models.CharField(max_length=100, null=True)
     telephone_number = models.CharField(max_length=100, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=True)
 
     def __str__(self):
         return f"{self.user.email} - {self.position}"
+
+    @property
+    def email(self):
+        return self.user.email
 
     def clean(self):
         if not self.user:
@@ -113,15 +115,16 @@ class HR(models.Model):
             raise ValidationError('Email field cannot be empty.')
 
     def save(self, *args, **kwargs):
-        self.full_clean() 
+        self.full_clean()
         super().save(*args, **kwargs)
 
     class Meta:
-        ordering = ['user']    
-    
+        ordering = ['user']
+
 class Employee(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='employee_details')
     name = models.CharField(max_length=100)
+    birth_date = models.DateField(null=True, blank=True) 
     position = models.CharField(max_length=100)
     department = models.CharField(max_length=100)
     hire_date = models.DateField()
@@ -150,7 +153,6 @@ class Employee(models.Model):
         super().save(*args, **kwargs)
     class Meta:
         ordering = ['user']    
-        
 
 class WorkSchedule(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')

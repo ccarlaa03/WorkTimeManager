@@ -33,6 +33,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
         
 class HRSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(source='company.id')
+    email = serializers.EmailField(source='user.email', read_only=True)
     class Meta:
         model = HR
         fields = '__all__'

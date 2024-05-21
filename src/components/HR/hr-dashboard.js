@@ -32,7 +32,6 @@ const localizer = momentLocalizer(moment);
 const HrDashboard = () => {
   const [HR, setHR] = useState({ id: '', name: '', position: '', department: '', company: '', company_id: '' });
   const [events, setEvents] = useState([]);
-  const [recipientId, setRecipientId] = useState('');
   const [profileEdit, setEditProfile] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', start: moment().toDate(), end: moment().toDate() });
@@ -51,44 +50,44 @@ const HrDashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        console.log("No access token found. User is not logged in.");
-        return;
-      }
-
-      try {
-        const hrResponse = await instance.get('/hr-dashboard/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-
-        if (hrResponse.data) {
-          setHR({
-            id: hrResponse.data.id || '',
-            name: hrResponse.data.name || '',
-            position: hrResponse.data.position || '',
-            department: hrResponse.data.department || '',
-            company: hrResponse.data.company || '',
-            company_id: hrResponse.data.company_id || '',
-            user_id: hrResponse.data.user_id || '',
-          });
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.log("No access token found. User is not logged in.");
+            return;
         }
-        console.log('Company data:', hrResponse.data.company_id);
 
-        const eventsResponse = await instance.get('/events/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        setEvents(eventsResponse.data.map(event => ({
-          ...event,
-          start: new Date(event.start),
-          end: new Date(event.end),
-        })));
-      } catch (error) {
-        console.error("Error fetching data:", error.response ? error.response.data : error.message);
-      }
+        try {
+            const hrResponse = await instance.get('/hr-dashboard/', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+
+            if (hrResponse.data) {
+                setHR({
+                    id: hrResponse.data.id || '',
+                    name: hrResponse.data.name || '',
+                    position: hrResponse.data.position || '',
+                    department: hrResponse.data.department || '',
+                    company: hrResponse.data.company || '',
+                    company_id: hrResponse.data.company_id || '',
+                });
+            }
+            console.log('Company data:', hrResponse.data.company_id);
+
+            const eventsResponse = await instance.get('/events/', {
+                headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            setEvents(eventsResponse.data.map(event => ({
+                ...event,
+                start: new Date(event.start),
+                end: new Date(event.end),
+            })));
+        } catch (error) {
+            console.error("Error fetching data:", error.response ? error.response.data : error.message);
+        }
     };
     fetchData();
-  }, []);
+}, []);
+
 
 
   const handleProfileChange = (e) => {

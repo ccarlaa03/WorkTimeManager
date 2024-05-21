@@ -31,7 +31,7 @@ const SignUp = () => {
 
     try {
       // Asigură-te că adresa URL este corectă și corespunde cu endpoint-ul tău din backend
-      await axios.post('http://localhost:8000/api/signup/', {
+      await axios.post('http://localhost:8000/signup/', {
         email,
         password,
         company_name: companyName,

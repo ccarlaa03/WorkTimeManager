@@ -6,28 +6,27 @@ import { Link } from 'react-router-dom';
 
 const EmployeeManagement = () => {
     const [employees, setEmployees] = useState([]);
+    const [userType, setUserType] = useState('');
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        name: '',
+        department: '',
+        position: '',
+        hireDate: '',
+        address: '',
+        telephoneNumber: '',
+        workingHours: 0,
+        freeDays: 0
+    });
     const [hrMembers, setHrMembers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState('');
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const [filter, setFilter] = useState({
-        name: '',
-        function: '',
-        department: '',
-        hireDate: '',
-    });
-    const [newEmployee, setNewEmployee] = useState({
-        name: '',
-        position: '',
-        department: '',
-        hire_date: '',
-        working_hours: 0,
-        free_days: 0,
-        email: '',
-        address: '',
-        telephone_number: ''
-    });
+    const [filter, setFilter] = useState({ name: '', function: '', department: '' });
     const [owner, setOwner] = useState(null);
     const [company, setCompany] = useState({
         id: '',
@@ -41,8 +40,96 @@ const EmployeeManagement = () => {
     });
     const [modalAddOpen, setModalAddOpen] = useState(false);
     const [error, setError] = useState(null);
-    const handleSearch = () => {
-        // Logica de căutare aici
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const baseApiUrl = 'http://localhost:8000';
+        const endpoint = userType === 'hr' ? '/create-hr/' : '/create-employee/';
+
+        const requestData = {
+            email: formData.email,
+            password: formData.password,
+            name: formData.name,
+            department: formData.department,
+            position: formData.position,
+            hire_date: formData.hireDate,
+            address: formData.address,
+            telephone_number: formData.telephoneNumber,
+            company: owner.company_id,
+        };
+
+        console.log("Request Data:", requestData);
+
+        try {
+            const response = await axios.post(`${baseApiUrl}${endpoint}`, requestData, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            setModalMessage(`Utilizator creat cu succes! ID Utilizator: ${response.data.user_id}`);
+            setIsInfoModalOpen(true);
+            setIsAddModalOpen(false);
+        } catch (error) {
+            setModalMessage(`Crearea utilizatorului a eșuat: ${error.response.data.error}`);
+            setIsInfoModalOpen(true);
+        }
+    };
+
+
+
+    const handleSearch = async () => {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.error("No access token provided.");
+            return;
+        }
+
+        if (!owner || !owner.company_id) {
+            console.error("Owner or company_id is not defined.");
+            return;
+        }
+
+        const companyId = owner.company_id;
+        const params = new URLSearchParams({
+            name: filter.name,
+            function: filter.function,
+            department: filter.department
+        }).toString();
+
+
+        try {
+            const response = await axios.get(`http://localhost:8000/companies/${companyId}/employees/?${params}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('Filtered response:', response.data);
+
+            if (response.data && response.data.results) {
+                setEmployees(response.data.results || []);
+                setTotalPages(Math.ceil(response.data.count / 4) || 1);
+
+                setCurrentPage(1);
+            } else {
+                console.error('Unexpected response structure:', response.data);
+                setError('Unexpected response structure');
+            }
+        } catch (err) {
+            console.error('Error fetching filtered employees:', err);
+            setError(err.response ? err.response.data : 'Error fetching filtered employees');
+        }
+    };
+
+    const handleFilterChange = ({ target: { name, value } }) => {
+        setFilter(prevFilter => ({
+            ...prevFilter,
+            [name]: value
+        }));
     };
 
 
@@ -50,11 +137,39 @@ const EmployeeManagement = () => {
     const closeAddModal = () => setModalAddOpen(false);
 
     const handleInputChange = (e) => {
-        setNewEmployee({
-            ...newEmployee,
-            [e.target.name]: e.target.value
+        const { name, value } = e.target;
+        setFormData(prevFormData => {
+            const updatedFormData = {
+                ...prevFormData,
+                [name]: value
+            };
+
+            if (name === 'name' || name === 'birthDate') {
+                generateEmailAndPassword(updatedFormData);
+            }
+
+            return updatedFormData;
         });
     };
+
+    const generateEmailAndPassword = (formData) => {
+        const { name, birthDate } = formData;
+        if (name && birthDate) {
+            const [firstName, lastName] = name.split(' ');
+            if (firstName && lastName) {
+                const formattedDate = new Date(birthDate).toISOString().split('T')[0];
+                const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
+                const password = `${firstName.toLowerCase()}${lastName.toLowerCase()}${formattedDate.replace(/-/g, '')}`;
+                setFormData(prevFormData => ({
+                    ...prevFormData,
+                    email,
+                    password
+                }));
+            }
+        }
+    };
+
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -107,7 +222,9 @@ const EmployeeManagement = () => {
                 console.log('Employee and HR data:', response.data);
                 setEmployees(response.data.results.employees || []);
                 setHrMembers(response.data.results.hr_members || []);
-                setTotalPages(Math.ceil(response.data.count / 3) || 1);
+                setTotalPages(Math.ceil(response.data.count / 4));
+
+
             } catch (err) {
                 setError(err.response ? err.response.data : 'Error fetching employees');
             }
@@ -116,7 +233,7 @@ const EmployeeManagement = () => {
         if (owner && owner.company_id) {
             fetchEmployees(currentPage);
         }
-    }, [owner, currentPage]);
+    }, [currentPage, filter, owner]);
 
 
 
@@ -124,18 +241,6 @@ const EmployeeManagement = () => {
         setCurrentPage(selected + 1);
     };
 
-
-
-
-    const handleAddEmployee = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await axios.post('/employees/', newEmployee);
-            setEmployees([...employees, response.data]);
-        } catch (err) {
-            setError(err.response.data);
-        }
-    };
 
     const handleDeleteHr = async (hrId) => {
         const accessToken = localStorage.getItem('access_token');
@@ -154,12 +259,10 @@ const EmployeeManagement = () => {
             setModalMessage('Membrul HR a fost șters cu succes.');
             setIsModalOpen(true);
 
-            // Închide modalitatea după 2 secunde
             setTimeout(() => {
                 setIsModalOpen(false);
             }, 2000);
 
-            // Dă refresh la pagină după 3 secunde
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
@@ -169,12 +272,10 @@ const EmployeeManagement = () => {
             setModalMessage('A apărut o eroare la ștergerea membrului HR.');
             setIsModalOpen(true);
 
-            // Închide modalitatea după 2 secunde
             setTimeout(() => {
                 setIsModalOpen(false);
             }, 2000);
 
-            // Dă refresh la pagină după 3 secunde
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
@@ -198,12 +299,10 @@ const EmployeeManagement = () => {
             setModalMessage('Angajatul a fost șters cu succes.');
             setIsModalOpen(true);
 
-            // Închide modalitatea după 2 secunde
             setTimeout(() => {
                 setIsModalOpen(false);
             }, 2000);
 
-            // Dă refresh la pagină după 3 secunde
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
@@ -213,12 +312,10 @@ const EmployeeManagement = () => {
             setModalMessage('A apărut o eroare la ștergerea angajatului.');
             setIsModalOpen(true);
 
-            // Închide modalitatea după 2 secunde
             setTimeout(() => {
                 setIsModalOpen(false);
             }, 2000);
 
-            // Dă refresh la pagină după 3 secunde
             setTimeout(() => {
                 window.location.reload();
             }, 3000);
@@ -230,52 +327,38 @@ const EmployeeManagement = () => {
     return (
         <div className="container-dashboard">
             <h1>Gestionare angajați</h1>
-            <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+            <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <input
                     type="text"
                     placeholder="Caută după nume..."
                     value={filter.name}
-                    onChange={(e) => setFilter({ ...filter, name: e.target.value })}
-                    style={{ flexBasis: '100%' }}
+                    onChange={handleFilterChange}
+                    style={{ flexBasis: 'auto' }}
                 />
-                <br />
-                <div style={{ display: 'flex', width: '100%', gap: '10px' }}>
+
+                <div style={{ display: 'flex', width: '83%', gap: '10px' }}>
                     <select
-                        name="functie"
+                        name="function"
                         value={filter.function}
-                        onChange={handleSearch}
-                        className="select-style"
+                        onChange={handleFilterChange}
                     >
-                        <option value="">Toate funcțiile</option>
-                        <option value="Developer">Developer</option>
+                        <option value="">Selectează funcția</option>
+                        <option value="Programator">Programator</option>
                         <option value="Manager">Manager</option>
                     </select>
-
                     <select
-                        name="departament"
+                        name="department"
                         value={filter.department}
-                        onChange={handleSearch}
-                        className="select-style"
+                        onChange={handleFilterChange}
                     >
-                        <option value="">Toate departamentele</option>
+                        <option value="">Selectează departamentul</option>
                         <option value="IT">IT</option>
                         <option value="HR">HR</option>
                     </select>
-
-                    <input
-                        type="date"
-                        name="dataAngajarii"
-                        placeholder="Caută după data angajării..."
-                        value={filter.hireDate}
-                        onChange={handleSearch}
-                        style={{ flex: 1 }}
-                    />
-                    <button onClick={handleSearch} className="buton">
-                        Caută
-                    </button>
+                    <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
             </div>
-            <br />
+
             <table className="tabel">
                 <thead>
                     <tr>
@@ -318,7 +401,7 @@ const EmployeeManagement = () => {
                             <td>{hr.user}</td>
                             <td>{hr.name}</td>
                             <td>{hr.telephone_number}</td>
-                            <td>{hr.email}</td>
+                            <td>{hr.email}</td> 
                             <td>{hr.department}</td>
                             <td>{hr.position}</td>
                             <td>{hr.address}</td>
@@ -346,14 +429,11 @@ const EmployeeManagement = () => {
                 nextLabel={'Următorul'}
                 breakLabel={'...'}
                 pageCount={totalPages}
-                marginPagesDisplayed={2}
-                pageRangeDisplayed={5}
                 onPageChange={handlePageChange}
                 containerClassName={'pagination'}
                 activeClassName={'active'}
                 forcePage={currentPage - 1}
             />
-
 
             <Modal
                 isOpen={modalAddOpen}
@@ -361,19 +441,29 @@ const EmployeeManagement = () => {
                 contentLabel="Adaugă angajat nou"
                 className="modal-content"
             >
-                <h2>Adaugă angajat nou</h2>
-                <form onSubmit={handleAddEmployee}>
-                    <label>Nume:<input type="text" name="name" value={newEmployee.name} onChange={handleInputChange} required /></label>
-                    <label>Număr de telefon:<input type="text" name="telephone_number" value={newEmployee.telephone_number} onChange={handleInputChange} required /></label>
-                    <label>Adresă de email:<input type="email" name="email" value={newEmployee.email} onChange={handleInputChange} required /></label>
-                    <label>Departament:<input type="text" name="department" value={newEmployee.department} onChange={handleInputChange} required /></label>
-                    <label>Funcție:<input type="text" name="position" value={newEmployee.position} onChange={handleInputChange} required /></label>
-                    <label>Adresă:<input type="text" name="address" value={newEmployee.address} onChange={handleInputChange} required /></label>
-                    <label>Data angajării:<input type="date" name="hire_date" value={newEmployee.hire_date} onChange={handleInputChange} required /></label>
-                    <button type="submit">Adaugă</button>
-                    <button type="button" onClick={closeAddModal}>Închide</button>
-                </form>
+                <h2>Adaugă {userType || "User"}</h2>
+                <select value={userType} onChange={e => setUserType(e.target.value)}>
+                    <option value="">Selectează tipul de utilizator</option>
+                    <option value="hr">HR</option>
+                    <option value="employee">Angajat</option>
+                </select>
+
+                {userType && (
+                    <form onSubmit={handleSubmit}>
+                        <input type="email" name="email" value={formData.email} onChange={handleInputChange} placeholder="Email" required />
+                        <input type="password" name="password" value={formData.password} onChange={handleInputChange} placeholder="Parolă" required />
+                        <input type="text" name="name" value={formData.name} onChange={handleInputChange} placeholder="Nume" required />
+                        <input type="text" name="department" value={formData.department} onChange={handleInputChange} placeholder="Departament" required />
+                        <input type="text" name="position" value={formData.position} onChange={handleInputChange} placeholder="Funcție" required />
+                        <input type="date" name="hireDate" value={formData.hireDate} onChange={handleInputChange} placeholder="Data angajării" required />
+                        <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Adresa" required />
+                        <input type="text" name="telephoneNumber" value={formData.telephoneNumber} onChange={handleInputChange} placeholder="Numărul de telefon" required />
+                        <button type="submit">Adaugă</button>
+                        <button type="button" onClick={closeAddModal}>Close</button>
+                    </form>
+                )}
             </Modal>
+
             <Modal
                 isOpen={isModalOpen}
                 onRequestClose={() => setIsModalOpen(false)}
@@ -383,6 +473,16 @@ const EmployeeManagement = () => {
                 <h2>Informare</h2>
                 <p>{modalMessage}</p>
                 <button onClick={() => setIsModalOpen(false)}>Închide</button>
+            </Modal>
+            <Modal
+                isOpen={isInfoModalOpen}
+                onRequestClose={() => setIsInfoModalOpen(false)}
+                contentLabel="Informare"
+                className="modal-content"
+            >
+                <h2>Informare</h2>
+                <p>{modalMessage}</p>
+                <button onClick={() => setIsInfoModalOpen(false)}>Închide</button>
             </Modal>
         </div>
     );

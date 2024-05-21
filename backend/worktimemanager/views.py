@@ -1,16 +1,15 @@
 from django.db.models import Count, Sum, F, ExpressionWrapper, fields
 from django.db.models import Exists, OuterRef
 from collections import defaultdict
+from django.db import IntegrityError
 from decimal import Decimal
 from django.db.models import Q
 from dateutil.relativedelta import relativedelta
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
 from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from django.utils.timezone import now
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
-from .models import User, Company, Employee, Owner, Event, HR, FeedbackResponse, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification, TrainingParticipant
+from .models import User, Company, Employee, Owner, Event, HR, FeedbackResponse, FeedbackForm, FeedbackQuestion, EmployeeFeedback, WorkSchedule, Leave, Training, Notification, TrainingParticipant, CustomUserManager
 from django.contrib.auth import authenticate, login, logout
 from rest_framework import status
 from .serializers import UserSerializer, CompanySerializer, EmployeeSerializer, CompanySerializer, EventSerializer, HRSerializer,  FeedbackFormSerializer, FeedbackQuestionSerializer, EmployeeFeedbackSerializer, WorkScheduleSerializer, LeaveSerializer, FeedbackResponseOptionSerializer, TrainingSerializer, TrainingDetailSerializer, NotificationSerializer
@@ -25,7 +24,6 @@ from .decorators import is_hr, is_employee, is_owner;
 from rest_framework import viewsets
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
-from rest_framework.authentication import TokenAuthentication
 from django.shortcuts import get_object_or_404
 from datetime import datetime
 from django.db.models.signals import post_save
@@ -37,9 +35,10 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 class EmployeePagination(PageNumberPagination):
-    page_size = 3
+    page_size = 4
     page_size_query_param = 'page_size'
     max_page_size = 100
+
     
 @receiver(post_save, sender=Response)
 def update_total_score(sender, instance, created, **kwargs):
@@ -126,12 +125,13 @@ def acasa_view(request):
             'message': 'Bine ați venit la WorkTimeManager!',
         }
         return Response(data)
+    
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_employees_owner(request, company_id=None):
     if request.user.role == 'owner':
-        employees = Employee.objects.filter(company_id=company_id)
-        hr_members = HR.objects.filter(company_id=company_id)
+        employees = get_filtered_employees(request, company_id)
+        hr_members = get_filtered_hr_members(request, company_id)
 
         paginator = EmployeePagination()
         paginated_employees = paginator.paginate_queryset(employees, request)
@@ -139,7 +139,7 @@ def list_employees_owner(request, company_id=None):
 
         paginated_hr_members = paginator.paginate_queryset(hr_members, request)
         hr_serializer = HRSerializer(paginated_hr_members, many=True)
-        
+
         combined_data = {
             'employees': employees_serializer.data,
             'hr_members': hr_serializer.data,
@@ -150,15 +150,121 @@ def list_employees_owner(request, company_id=None):
     else:
         return Response({'error': 'Doar proprietarul poate vizualiza angajații și membrii HR.'}, status=status.HTTP_403_FORBIDDEN)
 
-@api_view(['POST'])
-@permission_classes([IsAdminUser])
-def create_hr_user(request):
-    serializer = HRSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+def get_filtered_employees(request, company_id):
+    name = request.GET.get('name', '')
+    function = request.GET.get('function', '')
+    department = request.GET.get('department', '')
 
+    filters = Q(company_id=company_id)
+    if name:
+        filters &= Q(name__icontains=name)
+    if function:
+        filters &= Q(position__icontains=function)
+    if department:
+        filters &= Q(department__icontains=department)
+
+    return Employee.objects.filter(filters)
+
+def get_filtered_hr_members(request, company_id):
+    name = request.GET.get('name', '')
+    function = request.GET.get('function', '')
+    department = request.GET.get('department', '')
+
+    filters = Q(company_id=company_id)
+    if name:
+        filters &= Q(name__icontains=name)
+    if function:
+        filters &= Q(position__icontains=function)
+    if department:
+        filters &= Q(department__icontains=department)
+
+    return HR.objects.filter(filters)
+    return employees
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_hr_user(request):
+    data = request.data
+    logger.debug(f"Received data for creating HR: {data}")  # Adaugă log pentru a verifica datele primite
+    
+    try:
+        company_id = data.get('company')
+        if not company_id:
+            return Response({'error': 'Company ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        company = Company.objects.get(id=company_id)
+        
+        logger.debug(f"Company found: {company}")
+        
+        # Creează utilizatorul HR
+        user = User.objects.create_hr_user(
+            email=data['email'],
+            password=data['password'],
+        )
+        
+        # Verifică dacă utilizatorul a fost creat corect
+        logger.debug(f"Created User: {user.email}")
+        
+        # Creează obiectul HR asociat
+        hr = HR.objects.create(
+            user=user,
+            company=company,
+            name=data.get('name', ''),
+            department=data.get('department', ''),
+            position=data.get('position', ''),
+            hire_date=data.get('hire_date'),
+            address=data.get('address', ''),
+            telephone_number=data.get('telephone_number', ''),
+        )
+        
+        logger.debug(f"Created HR: {hr}")
+        return Response({'message': 'HR user created successfully', 'user_id': user.id}, status=status.HTTP_201_CREATED)
+    except Company.DoesNotExist:
+        logger.error("Company not found")
+        return Response({'error': 'Company not found'}, status=status.HTTP_400_BAD_REQUEST)
+    except IntegrityError as e:
+        logger.error(f"Integrity error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_employee_user(request):
+    data = request.data
+    try:
+        company_id = data.get('company')
+        company = Company.objects.get(id=company_id)
+        # Creează utilizatorul angajat
+        user = User.objects.create_employee_user(
+            email=data['email'],
+            password=data['password'],
+        )
+        # Creează obiectul Employee asociat
+        Employee.objects.create(
+            user=user,
+            company=company,
+            name=data.get('name', ''),
+            department=data.get('department', ''),
+            position=data.get('position', ''),
+            hire_date=data.get('hire_date'),
+            address=data.get('address', ''),
+            telephone_number=data.get('telephone_number', ''),
+            working_hours=data.get('working_hours', 0),
+            free_days=data.get('free_days', 0)
+        )
+        return Response({'message': 'Employee created successfully', 'user_id': user.id}, status=status.HTTP_201_CREATED)
+    except IntegrityError as e:
+        logger.error(f"Integrity error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+        
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_employee_view(request):
@@ -166,7 +272,7 @@ def create_employee_view(request):
         user_data = {
             'email': request.data.get('email'),
             'password': request.data.get('password'),
-            'role': request.data.get('role', 'employee'),  # Default role is 'employee'
+            'role': request.data.get('role', 'employee'),  
         }
         user = User.objects.create_user(**user_data)
         employee_data = {
@@ -217,22 +323,6 @@ def delete_employee(request, user_id):
         return Response({'error': 'Angajatul nu a fost găsit.'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_employee(request):
-    if request.method == 'POST':
-        hr_company_id = request.data.get('company_id') 
-        employee_user_id = request.data.get('user_id') 
-        request.data['user_id'] = employee_user_id
-        request.data['company_id'] = hr_company_id
-        serializer = EmployeeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=200)
-        else: 
-            return Response(serializer.errors, status=400)
-
-
 @api_view(['GET'])  
 def check_user_exists(request):
     return Response({"message": "Funcția check_user_exists funcționează corect."})
@@ -278,7 +368,20 @@ def owner_dashboard(request):
         } for event in events]
     })
 
-
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_employee(request):
+    if request.method == 'POST':
+        hr_company_id = request.data.get('company_id') 
+        employee_user_id = request.data.get('user_id') 
+        request.data['user_id'] = employee_user_id
+        request.data['company_id'] = hr_company_id
+        serializer = EmployeeSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=200)
+        else: 
+            return Response(serializer.errors, status=400)
    
 @api_view(['GET'])
 @permission_classes([IsAdminUser]) 
@@ -346,11 +449,11 @@ def hr_dashboard(request):
     if not request.user.is_authenticated:
         return Response({'error': 'Authentication required'}, status=403)
 
-    if not hasattr(request.user, 'hr'):
+    if not hasattr(request.user, 'hr_details'):
         return Response({'error': 'Nu aveți permisiunea de a accesa această resursă.'}, status=403)
 
     try:
-        hr = request.user.hr
+        hr = request.user.hr_details
         company_name = hr.company.name if hr.company else None  
         return Response({
             'id': hr.user.id,
@@ -358,12 +461,13 @@ def hr_dashboard(request):
             'department': hr.department,
             'position': hr.position,
             'company': company_name,  
-            'company_id': hr.company_id,
+            'company_id': hr.company.id,
         })
     except HR.DoesNotExist:
         return Response({'error': 'HR profile not found'}, status=404)
     except Exception as e:
         return Response({'error': 'An unexpected error occurred'}, status=500)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
