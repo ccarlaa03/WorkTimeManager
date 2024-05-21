@@ -35,7 +35,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 class EmployeePagination(PageNumberPagination):
-    page_size = 4
+    page_size = 8
     page_size_query_param = 'page_size'
     max_page_size = 100
 
@@ -143,7 +143,7 @@ def list_employees_owner(request, company_id=None):
         combined_data = {
             'employees': employees_serializer.data,
             'hr_members': hr_serializer.data,
-            'count': len(employees) + len(hr_members)
+            'count': employees.count() + hr_members.count()  # Use count() method for accurate count
         }
 
         return paginator.get_paginated_response(combined_data)
@@ -179,7 +179,7 @@ def get_filtered_hr_members(request, company_id):
         filters &= Q(department__icontains=department)
 
     return HR.objects.filter(filters)
-    return employees
+   
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

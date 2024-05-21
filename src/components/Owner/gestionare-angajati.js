@@ -79,7 +79,6 @@ const EmployeeManagement = () => {
     };
 
 
-
     const handleSearch = async () => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -99,7 +98,6 @@ const EmployeeManagement = () => {
             department: filter.department
         }).toString();
 
-
         try {
             const response = await axios.get(`http://localhost:8000/companies/${companyId}/employees/?${params}`, {
                 headers: {
@@ -110,10 +108,11 @@ const EmployeeManagement = () => {
 
             console.log('Filtered response:', response.data);
 
-            if (response.data && response.data.results) {
-                setEmployees(response.data.results || []);
-                setTotalPages(Math.ceil(response.data.count / 4) || 1);
-
+            if (response.data) {
+                const { employees, hr_members, count } = response.data.results;
+                setEmployees(employees || []);
+                setHrMembers(hr_members || []);
+                setTotalPages(Math.ceil(count / 4));
                 setCurrentPage(1);
             } else {
                 console.error('Unexpected response structure:', response.data);
@@ -124,6 +123,7 @@ const EmployeeManagement = () => {
             setError(err.response ? err.response.data : 'Error fetching filtered employees');
         }
     };
+
 
     const handleFilterChange = ({ target: { name, value } }) => {
         setFilter(prevFilter => ({
@@ -169,8 +169,6 @@ const EmployeeManagement = () => {
         }
     };
 
-
-
     useEffect(() => {
         const fetchData = async () => {
             const accessToken = localStorage.getItem('access_token');
@@ -211,9 +209,21 @@ const EmployeeManagement = () => {
                 return;
             }
 
+            if (!owner || !owner.company_id) {
+                console.error("Owner or company_id is not defined.");
+                return;
+            }
+
             const companyId = owner.company_id;
+            const params = new URLSearchParams({
+                page,
+                name: filter.name,
+                function: filter.function,
+                department: filter.department
+            }).toString();
+
             try {
-                const response = await axios.get(`http://localhost:8000/companies/${companyId}/employees/?page=${page}`, {
+                const response = await axios.get(`http://localhost:8000/companies/${companyId}/employees/?${params}`, {
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
                         'Content-Type': 'application/json',
@@ -223,8 +233,6 @@ const EmployeeManagement = () => {
                 setEmployees(response.data.results.employees || []);
                 setHrMembers(response.data.results.hr_members || []);
                 setTotalPages(Math.ceil(response.data.count / 4));
-
-
             } catch (err) {
                 setError(err.response ? err.response.data : 'Error fetching employees');
             }
@@ -234,6 +242,7 @@ const EmployeeManagement = () => {
             fetchEmployees(currentPage);
         }
     }, [currentPage, filter, owner]);
+
 
 
 
@@ -353,7 +362,7 @@ const EmployeeManagement = () => {
                     >
                         <option value="">Selectează departamentul</option>
                         <option value="IT">IT</option>
-                        <option value="HR">HR</option>
+                        <option value="Resurse Umane">Resurse Umane</option>
                     </select>
                     <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
@@ -374,49 +383,53 @@ const EmployeeManagement = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {employees.length > 0 && employees.map((employee) => (
-                        <tr key={employee.user}>
-                            <td>{employee.user}</td>
-                            <td>
-                                <Link
-                                    to={`/angajat-profil/${employee.user}`}
-                                    style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                                >
-                                    {employee.name}
-                                </Link>
-                            </td>
-                            <td>{employee.telephone_number}</td>
-                            <td>{employee.email}</td>
-                            <td>{employee.department}</td>
-                            <td>{employee.position}</td>
-                            <td>{employee.address}</td>
-                            <td>{employee.hire_date}</td>
-                            <td>
-                                <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
-                            </td>
-                        </tr>
-                    ))}
-                    {hrMembers.length > 0 && hrMembers.map((hr) => (
-                        <tr key={hr.user}>
-                            <td>{hr.user}</td>
-                            <td>{hr.name}</td>
-                            <td>{hr.telephone_number}</td>
-                            <td>{hr.email}</td> 
-                            <td>{hr.department}</td>
-                            <td>{hr.position}</td>
-                            <td>{hr.address}</td>
-                            <td>{hr.hire_date}</td>
-                            <td>
-                                <button className='buton' onClick={() => handleDeleteHr(hr.user)}>Șterge</button>
-                            </td>
-                        </tr>
-                    ))}
-                    {(!employees.length || !hrMembers.length) && (
+                    {(employees.length > 0 || hrMembers.length > 0) ? (
+                        <>
+                            {employees.map((employee) => (
+                                <tr key={employee.user}>
+                                    <td>{employee.user}</td>
+                                    <td>
+                                        <Link
+                                            to={`/angajat-profil/${employee.user}`}
+                                            style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                                        >
+                                            {employee.name}
+                                        </Link>
+                                    </td>
+                                    <td>{employee.telephone_number}</td>
+                                    <td>{employee.email}</td>
+                                    <td>{employee.department}</td>
+                                    <td>{employee.position}</td>
+                                    <td>{employee.address}</td>
+                                    <td>{employee.hire_date}</td>
+                                    <td>
+                                        <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {hrMembers.map((hr) => (
+                                <tr key={hr.user}>
+                                    <td>{hr.user}</td>
+                                    <td>{hr.name}</td>
+                                    <td>{hr.telephone_number}</td>
+                                    <td>{hr.email}</td>
+                                    <td>{hr.department}</td>
+                                    <td>{hr.position}</td>
+                                    <td>{hr.address}</td>
+                                    <td>{hr.hire_date}</td>
+                                    <td>
+                                        <button className='buton' onClick={() => handleDeleteHr(hr.user)}>Șterge</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </>
+                    ) : (
                         <tr>
                             <td colSpan="9">Nu există angajați</td>
                         </tr>
                     )}
                 </tbody>
+
             </table>
 
 
