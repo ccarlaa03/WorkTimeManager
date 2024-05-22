@@ -1,8 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Modal from 'react-modal';
-import { Bar } from 'react-chartjs-2';
-import Chart from 'chart.js/auto';
 import axios from 'axios';
 import instance from '../../axiosConfig';
 
@@ -19,7 +16,6 @@ const GestionareFeedback = () => {
   const [hrCompanyId, setHrCompany] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [feedbackForms, setFeedbackForms] = useState([]);
-  const [feedbackList, setFeedbackList] = useState([]);
 
   useEffect(() => {
     const fetchFeedbackForms = async () => {
@@ -76,42 +72,7 @@ const GestionareFeedback = () => {
     return <div>Se încarcă...</div>;
   }
 
-  // Calculul mediei punctajelor pentru fiecare departament
-  /* const mediiPunctajeDepartamente = useMemo(() => {
-    const sume = {};
-    const counts = {};
-
-    employees.forEach(employee => {
-      if (!sume[employee.department]) {
-        sume[employee.department] = 0;
-        counts[employee.department] = 0;
-      }
-      sume[employee.department] += employee.puncte;
-      counts[employee.department] += 1;
-    });
-
-    return Object.keys(sume).map(departament => ({
-      departament,
-      punctajMediu: sume[departament] / counts[departament],
-    }));
-  }, [employees]);
-
-  const dataForChart = {
-    labels: mediiPunctajeDepartamente.map(item => item.departament),
-    datasets: [{
-      label: 'Punctaj mediu per departament',
-      data: mediiPunctajeDepartamente.map(item => item.punctajMediu),
-      backgroundColor: 'rgba(54, 162, 235, 0.2)',
-      borderColor: 'rgba(54, 162, 235, 1)',
-      borderWidth: 1,
-    }]
-  };
-*/
-  const options = {
-    // opțiunile tale pentru grafic, dacă este cazul
-  };
-
-  // Apoi folosește logica de filtrare și paginație
+  
   const angajatiFiltrati = employees
     .filter(angajat => angajat.nume.toLowerCase().includes(cautare.toLowerCase()))
     .filter(angajat => filtrareDepartament ? angajat.departament === filtrareDepartament : true);

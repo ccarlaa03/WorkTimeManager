@@ -729,6 +729,23 @@ def workschedule_list(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def employee_training_list(request, user_id):
+    sessions = Training.objects.filter(employee__id=user_id)
+    serializer = TrainingSerializer(sessions, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_feedback_list(request, user_id):
+    feedbacks = EmployeeFeedback.objects.filter(employee_id=user_id)
+    serializer = EmployeeFeedbackSerializer(feedbacks, many=True)
+    return Response(serializer.data)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def employee_workschedule_list(request, user_id):
     schedules = WorkSchedule.objects.filter(user_id=user_id)
     serializer = WorkScheduleSerializer(schedules, many=True)

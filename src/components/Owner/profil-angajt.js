@@ -6,7 +6,9 @@ import axios from 'axios';
 
 const ProfilAngajatOwner = () => {
     const { user_id } = useParams();
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [feedbackForms, setFeedbackForms] = useState([]);
     const [confirmationMessage, setConfirmationMessage] = useState('');
     const initialEmployeeState = {
         user_id: '',
@@ -105,12 +107,35 @@ const ProfilAngajatOwner = () => {
         }
     };
 
+    const fetchFeedbackData = async () => {
+        setIsLoading(true);
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            console.error("No access token found. User is not logged in.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await axios.get(`/employee/${user_id}/feedback/`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            console.log('Feedback Forms:', response.data);
+            setFeedbackForms(response.data);
+        } catch (error) {
+            console.error('Error fetching feedback data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     // Initialize all data fetch operations
     useEffect(() => {
         const initializeData = async () => {
             await fetchEmployeeDetails();
             await fetchLeaves();
             await fetchWorkSchedule();
+            await fetchFeedbackData();
         };
 
         initializeData();
@@ -370,6 +395,41 @@ const ProfilAngajatOwner = () => {
                         <p>Încărcarea programului de lucru...</p>
                     )}
                 </div>
+
+                <div className="card-curs">
+                    <h2>Feedback</h2>
+                    {isLoading ? (
+                        <p>Încărcarea feedback-ului...</p>
+                    ) : feedbackForms.length > 0 ? (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Titlu</th>
+                                    <th>Creat de</th>
+                                    <th>Creat la ora</th>
+                                    <th>Angajat</th>
+                                    <th>Data completată</th>
+                                    <th>Scorul</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {feedbackForms.map((feedback) => (
+                                    <tr key={feedback.id}>
+                                        <td>{feedback.form.title}</td>
+                                        <td>{feedback.form.created_by}</td>
+                                        <td>{new Date(feedback.form.created_at).toLocaleDateString()}</td>
+                                        <td>{feedback.employee_name}</td>
+                                        <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
+                                        <td>{feedback.total_score}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>Nu există feedback-uri disponibile.</p>
+                    )}
+                </div>
+
 
             </div>
         </div>
