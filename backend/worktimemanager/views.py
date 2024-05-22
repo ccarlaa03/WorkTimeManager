@@ -727,12 +727,14 @@ def workschedule_list(request):
     serializer = WorkScheduleSerializer(schedules, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def employee_training_list(request, user_id):
-    sessions = Training.objects.filter(employee__id=user_id)
+    sessions = Training.objects.filter(training_participants__employee_id=user_id)
     serializer = TrainingSerializer(sessions, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

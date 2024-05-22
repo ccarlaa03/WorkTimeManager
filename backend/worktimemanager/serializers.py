@@ -168,6 +168,8 @@ class TrainingSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     available_seats = serializers.IntegerField(read_only=True)
     is_registered = serializers.BooleanField(read_only=True)
+    start_date = serializers.DateField(source='date')
+    end_date = serializers.DateField(source='date')
     class Meta:
         model = Training
         fields = '__all__'

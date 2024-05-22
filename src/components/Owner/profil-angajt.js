@@ -9,6 +9,7 @@ const ProfilAngajatOwner = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [feedbackForms, setFeedbackForms] = useState([]);
+    const [trainingSessions, setTrainingSessions] = useState([]);
     const [confirmationMessage, setConfirmationMessage] = useState('');
     const initialEmployeeState = {
         user_id: '',
@@ -128,6 +129,27 @@ const ProfilAngajatOwner = () => {
             setIsLoading(false);
         }
     };
+    const fetchTrainingData = async () => {
+        setIsLoading(true);
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            console.error("No access token found. User is not logged in.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await axios.get(`/employee/${user_id}/trainings/`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            console.log('Training Sessions:', response.data);
+            setTrainingSessions(response.data);
+        } catch (error) {
+            console.error('Error fetching training data:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Initialize all data fetch operations
     useEffect(() => {
@@ -136,6 +158,7 @@ const ProfilAngajatOwner = () => {
             await fetchLeaves();
             await fetchWorkSchedule();
             await fetchFeedbackData();
+            await fetchTrainingData();
         };
 
         initializeData();
@@ -430,7 +453,33 @@ const ProfilAngajatOwner = () => {
                     )}
                 </div>
 
-
+                <div className="card-curs">
+                    <h2>Particicpări la cursuri</h2>
+                    {isLoading ? (
+                        <p>Încărcarea sesiunilor de training...</p>
+                    ) : trainingSessions.length > 0 ? (
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Titlu</th>
+                                    <th>Data începerii</th>
+                                    <th>Data terminării</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {trainingSessions.map((session) => (
+                                    <tr key={session.id}>
+                                        <td>{session.title}</td>
+                                        <td>{new Date(session.start_date).toLocaleDateString()}</td>
+                                        <td>{new Date(session.end_date).toLocaleDateString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>Nu există sesiuni de training disponibile.</p>
+                    )}
+                </div>
             </div>
         </div>
     );
