@@ -15,34 +15,29 @@ const NavbarOwner = () => {
       <ul>
         <li>
           <NavLink to="/owner-dashboard/" className={({ isActive }) => isActive ? 'active' : ''}>
-            Dashboard 
+            Dashboard
           </NavLink>
         </li>
         <li>
           <NavLink to="/gestionare-angajati" className={({ isActive }) => isActive ? 'active' : ''}>
-           Angajati
-          </NavLink>
-        </li>
-        <li>
-          <NavLink to="/owner-setari" className={({ isActive }) => isActive ? 'active' : ''}>
-            Setări companie
+            Angajati
           </NavLink>
         </li>
         <li>
           <NavLink to="/owner-rapoarte" className={({ isActive }) => isActive ? 'active' : ''}>
             Rapoarte feedback
           </NavLink>
-          </li>
-          <li>
+        </li>
+        <li>
           <NavLink to="/owner-rapoarte" className={({ isActive }) => isActive ? 'active' : ''}>
             Rapoarte cursuri
           </NavLink>
-          </li>
-          <li>
+        </li>
+        <li>
           <NavLink to="/logout" onClick={handleLogout}>
             Log out
           </NavLink>
-          </li>
+        </li>
       </ul>
     </nav>
   );

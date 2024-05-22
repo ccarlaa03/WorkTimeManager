@@ -328,8 +328,16 @@ def delete_employee(request, user_id):
             return Response({'error': 'Doar proprietarul poate șterge angajați.'}, status=status.HTTP_403_FORBIDDEN)
     except Employee.DoesNotExist:
         return Response({'error': 'Angajatul nu a fost găsit.'}, status=status.HTTP_404_NOT_FOUND)
-
-
+    
+@api_view(['GET'])
+@permission_classes([IsAuthenticated]) 
+def owner_employee_profile(request, user_id):
+    logger.debug(f"Starting employee_detail view for user_id: {user_id}")
+    employee = get_object_or_404(Employee, user=user_id)
+    serializer = EmployeeSerializer(employee)
+    logger.debug(f"Serialized data: {serializer.data}")
+    return Response(serializer.data)
+        
 @api_view(['GET'])  
 def check_user_exists(request):
     return Response({"message": "Funcția check_user_exists funcționează corect."})

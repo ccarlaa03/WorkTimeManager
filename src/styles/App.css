@@ -778,8 +778,9 @@ th {
 .info-table th {
   text-align: left;
   padding: 8px;
-  color: #A087BC;
+  color: white;
 }
+
 
 .info-table td {
   padding: 8px;

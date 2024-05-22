@@ -394,7 +394,7 @@ const EmployeeManagement = () => {
                                     <td>{employee.user}</td>
                                     <td>
                                         <Link
-                                            to={`/angajat-profil/${employee.user}`}
+                                            to={`owner/angajat-profil/${employee.user}`}
                                             style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
                                         >
                                             {employee.name}
