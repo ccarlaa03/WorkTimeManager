@@ -338,7 +338,7 @@ const EmployeeManagement = () => {
 
     return (
         <div className="container-dashboard">
-            <h1>Gestionare angajați</h1>
+            <h1 style={{ textAlign: 'center' }}>Gestionare angajați</h1>
             <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <input
                     type="text"
@@ -371,8 +371,7 @@ const EmployeeManagement = () => {
                     <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
             </div>
-
-            <table className="tabel">
+            <table className="tabel column">
                 <thead>
                     <tr>
                         <th>ID</th>

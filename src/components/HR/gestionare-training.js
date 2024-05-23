@@ -300,7 +300,7 @@ const GestionareTrainingHR = () => {
                         <p>Durata: {training.duration_days} zile</p>
                         <p>Capacitate: {training.capacity} persoane</p>
                         <p>Înregistrare până la: {training.enrollment_deadline ? new Date(training.enrollment_deadline).toLocaleDateString() : 'N/A'}</p>
-                        <p>Creat de: {training.created_by}</p>  
+                        <p>Creat de: {training.created_by}</p>
                         <div className="button-container">
                             <button className='buton' onClick={() => handleOpenDetails(training.id)}>Detali</button>
                             <button className='buton' onClick={() => openEditModal(training)}>Editează</button>

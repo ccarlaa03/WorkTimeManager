@@ -224,7 +224,7 @@ class TrainingDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Training
-        fields = ('id', 'title', 'participant_count', 'participants')
+        fields = ('id', 'title', 'description', 'date', 'status', 'duration_days', 'capacity', 'enrollment_deadline', 'participant_count', 'participants')
 
     def get_participant_count(self, obj):
         return obj.training_participants.count()

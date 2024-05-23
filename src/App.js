@@ -26,6 +26,7 @@ import FeedbackDetails from './components/HR/feedback-details';
 import TrainingEmployee from './components/Angajat/training';
 import EmployeeManagement from './components/Owner/gestionare-angajati';
 import ProfilAngajatOwner from './components/Owner/profil-angajt';
+import RapoarteTraining from './components/Owner/rapoarte-training';
 
 const App = () => {
 
@@ -58,6 +59,7 @@ const App = () => {
           <Route path="/feedback-details/:form_id" element={<FeedbackDetails />} />
           <Route path="/gestionare-angajati" element={<EmployeeManagement />} />
           <Route path="/gestionare-angajati/owner/angajat-profil/:user_id" element={<ProfilAngajatOwner />} />
+          <Route path="/owner-rapoarte-training" element={<RapoarteTraining />} />
 
         </Routes>
         <Footer />

@@ -110,7 +110,9 @@ urlpatterns = [
     path('owner/angajat-profil/<int:user_id>/', views.owner_employee_profile, name='owner-employee-profile'),
     path('employee/<int:user_id>/trainings/', views.employee_training_list, name='employee-training-list'),
     path('employee/<int:user_id>/feedback/', views.employee_feedback_list, name='employee-feedback-list'),
-
+    path('employee/<int:user_id>/feedback-reports/', views.employee_feedback_reports, name='employee-feedback-reports'),
+    path('training-reports/', views.owner_training_reports, name='training-reports'),
+    path('trainings/<int:training_id>/', views.training_detail_owner, name='training-detail'),
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 

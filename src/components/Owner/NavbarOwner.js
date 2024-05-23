@@ -24,12 +24,12 @@ const NavbarOwner = () => {
           </NavLink>
         </li>
         <li>
-          <NavLink to="/owner-rapoarte" className={({ isActive }) => isActive ? 'active' : ''}>
+          <NavLink to="/owner-rapoarte-feedback" className={({ isActive }) => isActive ? 'active' : ''}>
             Rapoarte feedback
           </NavLink>
         </li>
         <li>
-          <NavLink to="/owner-rapoarte" className={({ isActive }) => isActive ? 'active' : ''}>
+          <NavLink to="/owner-rapoarte-training" className={({ isActive }) => isActive ? 'active' : ''}>
             Rapoarte cursuri
           </NavLink>
         </li>

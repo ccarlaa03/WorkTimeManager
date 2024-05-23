@@ -310,7 +310,7 @@ const ProfilAngajatOwner = () => {
     const EmployeeDetailsView = ({ employee, onEditClick }) => {
         return (
             <div className="personal-info">
-                <table className="info-table">
+                      <table className="tabel column">
                     <tbody>
                         <tr>
                             <th>Nume:</th>
@@ -374,7 +374,7 @@ const ProfilAngajatOwner = () => {
                 <div className="card-curs">
                     <h2>Concedii</h2>
                     {leaves ? (
-                        <table>
+                              <table className="tabel column">
                             <tbody>
                                 {leaves.map((leave) => (
                                     <tr key={leave.id} className="leave-item">
@@ -398,7 +398,7 @@ const ProfilAngajatOwner = () => {
                 <div className="card-curs">
                     <h2>Program de lucru</h2>
                     {workschedule ? (
-                        <table>
+                              <table className="tabel column">
                             <tbody>
                                 {workschedule.map((schedule) => (
                                     <tr key={schedule.id} className="schedule-item">
@@ -424,7 +424,7 @@ const ProfilAngajatOwner = () => {
                     {isLoading ? (
                         <p>Încărcarea feedback-ului...</p>
                     ) : feedbackForms.length > 0 ? (
-                        <table>
+                        <table className="tabel column">
                             <thead>
                                 <tr>
                                     <th>Titlu</th>
@@ -458,7 +458,7 @@ const ProfilAngajatOwner = () => {
                     {isLoading ? (
                         <p>Încărcarea sesiunilor de training...</p>
                     ) : trainingSessions.length > 0 ? (
-                        <table>
+                        <table className="tabel column">
                             <thead>
                                 <tr>
                                     <th>Titlu</th>

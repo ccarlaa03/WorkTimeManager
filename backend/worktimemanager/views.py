@@ -337,7 +337,33 @@ def owner_employee_profile(request, user_id):
     serializer = EmployeeSerializer(employee)
     logger.debug(f"Serialized data: {serializer.data}")
     return Response(serializer.data)
-        
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def owner_training_reports(request):
+    training_sessions = Training.objects.all()
+    serializer = TrainingSerializer(training_sessions, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def training_detail_owner(request, training_id):
+    try:
+        training = Training.objects.get(id=training_id)
+        serializer = TrainingDetailSerializer(training)
+        return Response(serializer.data)
+    except Training.DoesNotExist:
+        return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employee_feedback_reports(request, user_id):
+    feedback_reports = EmployeeFeedback.objects.filter(employee_id=user_id)
+    serializer = EmployeeFeedbackSerializer(feedback_reports, many=True)
+    return Response(serializer.data)
+
 @api_view(['GET'])  
 def check_user_exists(request):
     return Response({"message": "Funcția check_user_exists funcționează corect."})
