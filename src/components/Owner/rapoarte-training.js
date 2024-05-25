@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import Rapoarte from '../HR/training-rapoarte';
+import Participanti from './chart-training';
+import ReactPaginate from 'react-paginate';
 
 Modal.setAppElement('#root');
 
@@ -11,6 +14,8 @@ const RapoarteTraining = () => {
     const [selectedTraining, setSelectedTraining] = useState(null);
     const [modalIsOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
     const [error, setError] = useState(null);
     const [owner, setOwner] = useState(null);
     const [company, setCompany] = useState({
@@ -68,31 +73,33 @@ const RapoarteTraining = () => {
         fetchData();
     }, []);
 
+    const fetchTrainings = async (page = 1) => {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.error("No access token found. User must be logged in to access this page.");
+            setError("No access token found. Please log in.");
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const response = await axios.get('/training-reports/', {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                params: { page }
+            });
+            setTrainings(response.data.results || []);
+            setTotalPages(response.data.total_pages || 1);
+        } catch (error) {
+            console.error('Error fetching training data:', error);
+            setError("Failed to fetch data. Please try again.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchTrainings = async () => {
-            const accessToken = localStorage.getItem('access_token');
-            if (!accessToken) {
-                console.error("No access token found. User must be logged in to access this page.");
-                setError("No access token found. Please log in.");
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                const response = await axios.get('/training-reports/', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` },
-                });
-                setTrainings(response.data || []);
-            } catch (error) {
-                console.error('Error fetching training data:', error);
-                setError("Failed to fetch data. Please try again.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchTrainings();
-    }, []);
+        fetchTrainings(currentPage);
+    }, [currentPage]);
 
     const fetchTrainingDetails = async (training_id) => {
         const accessToken = localStorage.getItem('access_token');
@@ -118,7 +125,9 @@ const RapoarteTraining = () => {
     const openModal = (training_id) => {
         fetchTrainingDetails(training_id);
     };
-
+    const handlePageChange = ({ selected }) => {
+        setCurrentPage(selected + 1);
+    };
     const closeModal = () => {
         setIsModalOpen(false);
     };
@@ -128,30 +137,42 @@ const RapoarteTraining = () => {
 
     return (
         <div className="container-dashboard">
-            <h1 style={{ textAlign: 'center' }}>Rapoarte training angajați</h1>
+            <h1 style={{ textAlign: 'center' }}>Rapoarte cursuri angajați</h1>
             <div className="card-curs">
                 {trainings.length > 0 ? (
-
-                    <table className="tabel column">
-                        <thead>
-                            <tr>
-                                <th>Titlu</th>
-                                <th>Data începerii</th>
-                                <th>Data terminării</th>
-                                <th>Detalii</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {trainings.map((training) => (
-                                <tr key={training.id}>
-                                    <td>{training.title}</td>
-                                    <td>{new Date(training.date).toLocaleDateString()}</td>
-                                    <td>{new Date(training.date).toLocaleDateString()}</td>
-                                    <td><button onClick={() => openModal(training.id)}>Vizualizează Detalii</button></td>
+                    <>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Titlu</th>
+                                    <th>Data începerii</th>
+                                    <th>Data terminării</th>
+                                    <th>Detalii</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {trainings.map((training) => (
+                                    <tr key={training.id}>
+                                        <td>{training.title}</td>
+                                        <td>{new Date(training.date).toLocaleDateString()}</td>
+                                        <td>{new Date(training.date).toLocaleDateString()}</td>
+                                        <td><button onClick={() => openModal(training.id)}>Vizualizează Detalii</button></td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <ReactPaginate
+                            previousLabel={'Anterior'}
+                            nextLabel={'Următorul'}
+                            breakLabel={'...'}
+                            pageCount={totalPages}
+                            onPageChange={handlePageChange}
+                            containerClassName={'pagination'}
+                            activeClassName={'active'}
+                            forcePage={currentPage - 1}
+                        />
+                    </>
                 ) : <p>Nu există sesiuni de training disponibile.</p>}
 
                 {selectedTraining && (
@@ -181,6 +202,14 @@ const RapoarteTraining = () => {
                         <button className='buton' onClick={closeModal}>Închide</button>
                     </Modal>
                 )}
+            </div>
+            <div className="rapoarte-container">
+                <div className="rapoarte-section">
+                    <Rapoarte trainings={trainings} />
+                </div>
+                <div className="rapoarte-section">
+                    <Participanti />
+                </div>
             </div>
         </div>
     );

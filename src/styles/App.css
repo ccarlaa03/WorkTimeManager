@@ -782,6 +782,36 @@ th {
 }
 
 
+
+.rapoarte-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 50px;
+  margin: 20px; 
+}
+
+.rapoarte-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40%; 
+  max-width: 600px; 
+}
+
+.rapoarte-cursuri {
+  width: 100%;
+  height: 350px; 
+    background-color: #FFF;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
+
+}
+
+
 .info-table td {
   padding: 8px;
 }
@@ -804,14 +834,6 @@ th {
   margin-bottom: 10px;
 }
 
-
-.rapoarte-cursuri {
-  background-color: #FFF;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
-}
 
 @media only screen and (max-width: 768px) {
   .rapoarte-cursuri {
@@ -845,6 +867,7 @@ th {
 .pagination {
   display: flex;
   list-style: none;
+  margin: 20px 0;
   justify-content: center;
 }
 

@@ -27,6 +27,7 @@ import TrainingEmployee from './components/Angajat/training';
 import EmployeeManagement from './components/Owner/gestionare-angajati';
 import ProfilAngajatOwner from './components/Owner/profil-angajt';
 import RapoarteTraining from './components/Owner/rapoarte-training';
+import RapoarteFeedback from './components/Owner/rapoarte-feedback';
 
 const App = () => {
 
@@ -60,7 +61,7 @@ const App = () => {
           <Route path="/gestionare-angajati" element={<EmployeeManagement />} />
           <Route path="/gestionare-angajati/owner/angajat-profil/:user_id" element={<ProfilAngajatOwner />} />
           <Route path="/owner-rapoarte-training" element={<RapoarteTraining />} />
-
+          <Route path="/owner-rapoarte-feedback" element={<RapoarteFeedback />} />
         </Routes>
         <Footer />
       </Router>

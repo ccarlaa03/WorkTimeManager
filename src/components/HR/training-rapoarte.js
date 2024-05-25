@@ -63,8 +63,9 @@ const Rapoarte = ({ trainings }) => {
 
 
   return (
-    <div className="rapoarte-cursuri">
+    <div  className="rapoarte-cursuri">
       <h2>Rapoarte cursuri</h2>
+      
       <Bar data={data} />
     </div>
   );

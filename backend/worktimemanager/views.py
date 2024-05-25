@@ -342,9 +342,42 @@ def owner_employee_profile(request, user_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def owner_training_reports(request):
+    paginator = EmployeePagination()
     training_sessions = Training.objects.all()
-    serializer = TrainingSerializer(training_sessions, many=True)
-    return Response(serializer.data)
+    result_page = paginator.paginate_queryset(training_sessions, request)
+    serializer = TrainingSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def owner_feedback_forms(request):
+    paginator = EmployeePagination()
+    feedback_forms = FeedbackForm.objects.all()
+    result_page = paginator.paginate_queryset(feedback_forms, request)
+    serializer = FeedbackFormSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def owner_employee_feedbacks(request):
+    paginator = EmployeePagination()
+    feedbacks = EmployeeFeedback.objects.all()
+    result_page = paginator.paginate_queryset(feedbacks, request)
+    serializer = EmployeeFeedbackSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def participant_growth_over_time(request):
+    growth_data = TrainingParticipant.objects.values('training__date').annotate(participant_count=Count('employee')).order_by('training__date')
+    
+    response_data = {
+        'dates': [data['training__date'] for data in growth_data],
+        'counts': [data['participant_count'] for data in growth_data],
+    }
+    
+    return Response(response_data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
