@@ -8,11 +8,11 @@ const Despre = () => {
     <>
       <section className="despre">
         <h1>Despre noi și serviciile noastre</h1>
-        
+
         <div className="image">
           <img src={imagine3} alt="Imagine3" className="imagine3" />
         </div>
-        
+
         <div className="content1">
           <div className="column">
             <h2>Scopul nostru</h2>

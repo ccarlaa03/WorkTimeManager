@@ -58,8 +58,8 @@ const SignUp = () => {
   };
 
   return (
-    <div className="container">
-      <div className="content">
+    <div className="container-dashboard">
+      <div className="card-curs">
         <h2>Înregistrare</h2>
         <form onSubmit={handleSignUp} className="form-stack" method="POST">
           <div className="form-element">

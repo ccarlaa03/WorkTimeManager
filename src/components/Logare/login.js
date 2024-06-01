@@ -44,8 +44,8 @@ const Login = () => {
   };
 
   return (
-    <div className="container">
-      <div className="content">
+    <div className="container-dashboard">
+      <div className="card-curs">
         <h2>Login</h2>
         <form onSubmit={handleLogin} className="form-stack">
           <div className="form-element">
@@ -59,7 +59,7 @@ const Login = () => {
             />
           </div>
           <div className="form-element">
-            <label htmlFor="password" className="form-label">Password:</label>
+            <label htmlFor="password" className="form-label">Parolă:</label>
             <input
               id="password"
               type="password"
@@ -68,7 +68,7 @@ const Login = () => {
               required
             />
           </div>
-          <button type="submit" className="login-button" disabled={isLoading}>
+          <button type="submit" className="buton" disabled={isLoading}>
             {isLoading ? 'Se încarcă...' : 'Login'}
           </button>
         </form>

@@ -349,14 +349,28 @@ def owner_training_reports(request):
     return paginator.get_paginated_response(serializer.data)
 
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def owner_feedback_forms(request):
-    paginator = EmployeePagination()
-    feedback_forms = FeedbackForm.objects.all()
-    result_page = paginator.paginate_queryset(feedback_forms, request)
-    serializer = FeedbackFormSerializer(result_page, many=True)
-    return paginator.get_paginated_response(serializer.data)
+    feedback_forms = FeedbackForm.objects.all().order_by('id')
+    serializer = FeedbackFormSerializer(feedback_forms, many=True)
+    print("Serialized data:", serializer.data)  # This should print in your Django console
+    return Response(serializer.data)
+
+
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def feedback_completion_report(request):
+    completion_data = (
+        EmployeeFeedback.objects
+        .values('form__title')
+        .annotate(completion_count=Count('id'))
+        .order_by('form__title')
+    )
+    return Response(completion_data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

@@ -116,6 +116,7 @@ urlpatterns = [
     path('participanti/', views.participant_growth_over_time, name='participant-growth-over-time'), 
     path('feedback-forms/', views.owner_feedback_forms, name='feedback-forms'),
     path('employee-feedbacks/', views.owner_employee_feedbacks, name='employee-feedbacks'),
+    path('feedback-completion-report/', views.feedback_completion_report, name='feedback-completion-report'),
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

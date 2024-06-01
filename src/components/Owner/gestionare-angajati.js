@@ -475,7 +475,7 @@ const EmployeeManagement = () => {
                         <input type="text" name="address" value={formData.address} onChange={handleInputChange} placeholder="Adresa" required />
                         <input type="text" name="telephoneNumber" value={formData.telephoneNumber} onChange={handleInputChange} placeholder="Numărul de telefon" required />
                         <button type="submit">Adaugă</button>
-                        <button type="button" onClick={closeAddModal}>Close</button>
+                        <button type="button" onClick={closeAddModal}>Închide</button>
                     </form>
                 )}
             </Modal>

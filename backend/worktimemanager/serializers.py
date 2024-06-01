@@ -147,7 +147,7 @@ class EmployeeFeedbackSerializer(serializers.ModelSerializer):
 
 class FeedbackFormSerializer(serializers.ModelSerializer):
     employee_feedbacks = EmployeeFeedbackSerializer(many=True, read_only=True, source='feedback_responses')
-    hr_review_status_display = serializers.SerializerMethodField()
+    hr_review_status_display = serializers.CharField(source='get_hr_review_status_display')
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     class Meta:
         model = FeedbackForm
@@ -155,6 +155,11 @@ class FeedbackFormSerializer(serializers.ModelSerializer):
 
     def get_hr_review_status_display(self, obj):
         return obj.get_hr_review_status_display()
+    
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        print(f"Serialized FeedbackForm {instance.id}: {representation}")
+        return representation
 
 class LeaveSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='user.name', read_only=True)
