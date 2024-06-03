@@ -150,24 +150,30 @@ class Employee(models.Model):
         return self.trainings.all()
     
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        super().save(*args, **kwargs) 
+
+    def get_total_worked_hours(self):
+        return self.work_schedules.aggregate(total_hours=Sum('worked_hours'))['total_hours'] or 0
+    
     class Meta:
-        ordering = ['user']    
+        ordering = ['user']   
+
 
 class WorkSchedule(models.Model):
     user = models.ForeignKey(Employee, on_delete=models.CASCADE, db_column='user_id', related_name='work_schedules')
     start_time = models.TimeField()
-    end_time = models.TimeField(null=True, blank=True)  
+    end_time = models.TimeField(null=True, blank=True)
     date = models.DateField()
     overtime_hours = models.DecimalField(max_digits=4, decimal_places=2, default=0.00)
-    public_holidays = models.BooleanField(default=False, verbose_name="Public Holiday")  
-    work_history_details = models.JSONField(default=dict, verbose_name="Work history details")  
+    public_holidays = models.BooleanField(default=False, verbose_name="Public Holiday")
+    work_history_details = models.JSONField(default=dict, verbose_name="Work history details")
+    worked_hours = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
 
     def __str__(self):
         employee_name = self.user.name if self.user else "Unknown Employee"
         department = self.user.department if self.user else "Unknown Department"
         return f"{employee_name} - {department} - {self.date}"
-    
+
     def clock_in(self):
         self.start_time = timezone.now().time()
         self.save()
@@ -178,11 +184,15 @@ class WorkSchedule(models.Model):
         end_dt = timezone.datetime.combine(self.date, self.end_time)
         worked_duration = end_dt - start_dt
         worked_hours = worked_duration.total_seconds() / 3600
+        self.worked_hours = worked_hours
         if worked_hours > 8:
             self.overtime_hours = worked_hours - 8
         else:
             self.overtime_hours = 0
-        self.save()
+        self.user.working_hours += worked_hours 
+        self.user.save()
+        self.save() 
+
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = (

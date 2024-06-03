@@ -31,6 +31,7 @@ from django.dispatch import receiver
 from django.utils import timezone
 from django.db.models.functions import Lower
 from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
@@ -349,16 +350,13 @@ def owner_training_reports(request):
     return paginator.get_paginated_response(serializer.data)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def owner_feedback_forms(request):
     feedback_forms = FeedbackForm.objects.all().order_by('id')
     serializer = FeedbackFormSerializer(feedback_forms, many=True)
-    print("Serialized data:", serializer.data)  # This should print in your Django console
+    print("Serialized data:", serializer.data) 
     return Response(serializer.data)
-
-
 
 
 @api_view(['GET'])
@@ -535,26 +533,36 @@ def add_event(request):
 @permission_classes([IsAuthenticated])
 def hr_dashboard(request):
     if not request.user.is_authenticated:
-        return Response({'error': 'Authentication required'}, status=403)
+        return Response({'error': 'Authentication required'}, status=status.HTTP_403_FORBIDDEN)
 
     if not hasattr(request.user, 'hr_details'):
-        return Response({'error': 'Nu aveți permisiunea de a accesa această resursă.'}, status=403)
+        return Response({'error': 'Nu aveți permisiunea de a accesa această resursă.'}, status=status.HTTP_403_FORBIDDEN)
 
     try:
         hr = request.user.hr_details
-        company_name = hr.company.name if hr.company else None  
+        company = hr.company
+        company_name = company.name if company else None
+
+        events = Event.objects.filter(company=company)
+        events_data = [{
+            "title": event.title,
+            "start": event.start,
+            "end": event.end
+        } for event in events]
+
         return Response({
             'id': hr.user.id,
             'name': hr.name,
             'department': hr.department,
             'position': hr.position,
-            'company': company_name,  
-            'company_id': hr.company.id,
+            'company': company_name,
+            'company_id': company.id if company else None,
+            'events': events_data
         })
     except HR.DoesNotExist:
-        return Response({'error': 'HR profile not found'}, status=404)
+        return Response({'error': 'HR profile not found'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'error': 'An unexpected error occurred'}, status=500)
+        return Response({'error': f'An unexpected error occurred: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
@@ -720,11 +728,26 @@ def clock_out(request, user_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_employees(request):
-    employees = Employee.objects.all()
-    serializer = EmployeeSerializer(employees, many=True)
-    return Response(serializer.data)
+def list_employees_hr(request, company_id):
+    if request.user.role == 'hr':
+        name = request.GET.get('name', '')
+        function = request.GET.get('function', '')
+        department = request.GET.get('department', '')
 
+        employees = Employee.objects.filter(company_id=company_id)
+        if name:
+            employees = employees.filter(name__icontains=name)
+        if function:
+            employees = employees.filter(position__icontains=function)
+        if department:
+            employees = employees.filter(department__icontains=department)
+
+        paginator = EmployeePagination()
+        paginated_employees = paginator.paginate_queryset(employees, request)
+        serializer = EmployeeSerializer(paginated_employees, many=True)
+        return paginator.get_paginated_response(serializer.data)
+    else:
+        return Response({'error': 'Doar HR-ul poate vizualiza angajații.'}, status=403)
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -762,7 +785,9 @@ def events_view(request):
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
     else:
+        print(f'User {user} is not associated with any company.')
         return Response({'error': 'No company associated with the user for retrieving events.'}, status=status.HTTP_404_NOT_FOUND)
+
 
     
 class EmployeeViewSet(viewsets.ModelViewSet):

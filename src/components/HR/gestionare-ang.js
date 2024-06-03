@@ -5,13 +5,13 @@ import ReactPaginate from 'react-paginate';
 import axios from 'axios';
 import instance from '../../axiosConfig';
 import { AuthContext } from '../../AuthContext';
-
 Modal.setAppElement('#root');
 
 const GestionareAngajati = () => {
     const { user } = useContext(AuthContext);
     const [employee, setEmployees] = useState([]);
     const [currentPage, setCurrentPage] = useState(0);
+    const [error, setError] = useState(null);
     const [filter, setFilter] = useState({
         user: '',
         name: '',
@@ -28,7 +28,7 @@ const GestionareAngajati = () => {
     const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [newEmployee, setNewEmployee] = useState({
     });
-    const employeesPerPage = 5;
+    const employeesPerPage = 6;
     const [totalPages, setTotalPages] = useState(0);
 
 
@@ -46,71 +46,85 @@ const GestionareAngajati = () => {
         });
         closeAddModal();
     };;
+    const handlePageChange = ({ selected }) => {
+        setCurrentPage(selected);
+    };
+
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         setNewEmployee({ ...newEmployee, [name]: value });
     };
 
-    useEffect(() => {
-        const fetchHrCompany = async () => {
-            const accessToken = getAccessToken();
-            try {
-                const hrResponse = await instance.get('/hr-dashboard/', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` },
-                });
-                if (hrResponse.data && hrResponse.data.company_id) {
-                    setHrCompany(hrResponse.data.company_id);
-                    console.log('HR Company ID:', hrResponse.data.company_id);
-                    return hrResponse.data.company_id;
-                } else {
-                    console.log('HR Company data:', hrResponse.data);
-                    return null;
-                }
-            } catch (error) {
-                console.error('Error fetching HR company data:', error.response ? error.response.data : error);
-                return null;
+    const fetchHrCompany = async () => {
+        const accessToken = getAccessToken();
+        try {
+            const hrResponse = await instance.get('/hr-dashboard/', {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            if (hrResponse.data && hrResponse.data.company_id) {
+                setHrCompany(hrResponse.data.company_id);
+                console.log('HR Company ID:', hrResponse.data.company_id);
+            } else {
+                console.log('HR Company data:', hrResponse.data);
             }
-        };
-        const fetchEmployees = async () => {
-            const accessToken = getAccessToken();
-            try {
-                const response = await axios.get('/gestionare-ang/', {
-                    headers: { 'Authorization': `Bearer ${accessToken}` },
-                    params: {
-                        offset: currentPage * employeesPerPage,
-                        limit: employeesPerPage,
-                    },
-                });
-
-                if (response.data) {
-                    const fetchedEmployees = response.data;
-                    setEmployees(fetchedEmployees);
-
-                    setTotalPages(Math.ceil(response.total / employeesPerPage));
-                }
-            } catch (error) {
-                console.error('Error fetching employees:', error);
-            }
-        };
-
-        const initializeData = async () => {
-            const hrCompanyResponse = await fetchHrCompany();
-            if (hrCompanyResponse) {
-                fetchEmployees(hrCompanyResponse, currentPage);
-            }
-        };
-
-        initializeData();
-    }, [currentPage, employeesPerPage]);
-
-    const handlePageChange = (selectedItem) => {
-        const newPage = selectedItem.selected;
-        setCurrentPage(newPage);
-
-        console.log(`Page changed to: ${newPage}`);
-
+        } catch (error) {
+            console.error('Error fetching HR company data:', error.response ? error.response.data : error);
+        }
     };
 
+    const fetchEmployees = async () => {
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            console.error("No access token provided.");
+            return;
+        }
+
+        if (!hrCompanyId) {
+            console.error("No HR Company ID found.");
+            return;
+        }
+
+        const params = new URLSearchParams({
+            page: currentPage + 1, // Pagination starts at 1 in backend
+            per_page: employeesPerPage,
+            name: filter.name,
+            function: filter.function,
+            department: filter.department
+        }).toString();
+
+        const url = `http://localhost:8000/hr/${hrCompanyId}/employees/?${params}`;
+        console.log(`Fetching employees from: ${url}`);
+
+        try {
+            const response = await axios.get(url, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (response.data && response.data.results) {
+                setEmployees(response.data.results);
+                setTotalPages(Math.ceil(response.data.count / employeesPerPage));
+            } else {
+                setEmployees([]);
+                console.error('No employees data or data not in expected format:', response.data);
+            }
+        } catch (err) {
+            setError(err.response ? err.response.data : 'Error fetching employees');
+            console.error('Failed to fetch employees:', err);
+        }
+    };
+    useEffect(() => {
+        fetchHrCompany();
+    }, []);
+
+    useEffect(() => {
+        if (hrCompanyId) {
+            fetchEmployees();
+        }
+    }, [currentPage, filter, hrCompanyId]);
+    
     const handleEmployeeEditChange = (e) => {
         const { name, value } = e.target;
         setEmployeeToEdit((prevEmployee) => ({
@@ -118,7 +132,6 @@ const GestionareAngajati = () => {
             [name]: value,
         }));
     };
-
 
     /// CREATE
     const createEmployee = async (newEmployee) => {
@@ -251,9 +264,9 @@ const GestionareAngajati = () => {
 
     };
 
-    const employeesOnCurrentPage = filteredEmployees ? filteredEmployees.slice(
-        currentPage * employeesPerPage,
-        (currentPage + 1) * employeesPerPage
+    const employeesOnCurrentPage = employee ? employee.slice(
+        (currentPage - 1) * employeesPerPage,
+        currentPage * employeesPerPage
     ) : [];
 
 
@@ -264,7 +277,6 @@ const GestionareAngajati = () => {
             [name]: value
         }));
     };
-
     console.log(employee);
 
     return (
@@ -279,12 +291,12 @@ const GestionareAngajati = () => {
                         onChange={(e) => setFilter({ ...filter, name: e.target.value })}
                         style={{ flexBasis: '100%' }}
                     />
-                    <br></br>
+                    <br />
                     <div style={{ display: 'flex', width: '100%', gap: '10px' }}>
                         <select
-                            name="functie"
+                            name="function"
                             value={filter.function}
-                            onChange={handleSearch}
+                            onChange={(e) => setFilter({ ...filter, function: e.target.value })}
                             className="select-style"
                         >
                             <option value="">Toate funcțiile</option>
@@ -293,9 +305,9 @@ const GestionareAngajati = () => {
                         </select>
 
                         <select
-                            name="departament"
+                            name="department"
                             value={filter.department}
-                            onChange={handleSearch}
+                            onChange={(e) => setFilter({ ...filter, department: e.target.value })}
                             className="select-style"
                         >
                             <option value="">Toate departamentele</option>
@@ -305,10 +317,10 @@ const GestionareAngajati = () => {
 
                         <input
                             type="date"
-                            name="dataAngajarii"
+                            name="hireDate"
                             placeholder="Caută după data angajării..."
                             value={filter.hireDate}
-                            onChange={handleSearch}
+                            onChange={(e) => setFilter({ ...filter, hireDate: e.target.value })}
                             style={{ flex: 1 }}
                         />
                         <button onClick={handleSearch} className="buton">
@@ -316,56 +328,55 @@ const GestionareAngajati = () => {
                         </button>
                     </div>
                 </div>
-                <br></br>
-                <table className="tabel">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nume</th>
-                            <th>Număr de telefon</th>
-                            <th>Adresa de email</th>
-                            <th>Departament</th>
-                            <th>Funcție</th>
-                            <th>Prezența</th>
-                            <th>Adresă</th>
-                            <th>Data angajării</th>
-                            <th>Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {employee.map((employee) => {
-
-                            console.log('Rendering employee:', employee);
-                            return (
-
+                <div className='card-curs'>
+                    <table className="tabel">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nume</th>
+                                <th>Număr de telefon</th>
+                                <th>Adresa de email</th>
+                                <th>Departament</th>
+                                <th>Funcție</th>
+                                <th>Ore lucrate</th>
+                                <th>Adresă</th>
+                                <th>Data angajării</th>
+                                <th>Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {employee.map(employee => (
                                 <tr key={employee.user}>
                                     <td>{employee.user}</td>
-                                    <td>
-                                        <Link
-                                            to={`/angajat-profil/${employee.user}`}
-                                            style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                                        >
-                                            {employee.name}
-                                        </Link>
-                                    </td>
-
+                                    <td>{employee.name}</td>
                                     <td>{employee.telephone_number}</td>
                                     <td>{employee.email}</td>
                                     <td>{employee.department}</td>
                                     <td>{employee.position}</td>
-                                    <td>{employee.free_days}</td>
+                                    <td>{employee.working_hours}</td>
                                     <td>{employee.address}</td>
-                                    <td>{employee.hire_date}</td>
+                                    <td>{new Date(employee.hire_date).toLocaleDateString()}</td>
                                     <td>
                                         <button className='buton' onClick={() => openEditModal(employee)}>Editează</button>
                                         <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
                                     </td>
                                 </tr>
-                            );
-                        })}
+                            ))}
+                        </tbody>
+                    </table>
 
-                    </tbody>
-                </table>
+                    <ReactPaginate
+                        previousLabel={'Anterior'}
+                        nextLabel={'Următorul'}
+                        breakLabel={'...'}
+                        pageCount={totalPages}
+                        onPageChange={handlePageChange}
+                        containerClassName={'pagination'}
+                        activeClassName={'active'}
+                        forcePage={currentPage} // This should directly reflect the currentPage state if it's 0-indexed
+                    />
+
+                </div>
 
                 <div className="button-container">
 
@@ -379,14 +390,6 @@ const GestionareAngajati = () => {
                         <button className="buton">Gestionare program de lucru</button>
                     </Link>
 
-                    <ReactPaginate
-                        previousLabel={'Anterior'}
-                        nextLabel={'Următorul'}
-                        pageCount={totalPages}
-                        onPageChange={handlePageChange}
-                        containerClassName={'pagination'}
-                        activeClassName={'active'}
-                    />
 
                 </div>
                 <Modal

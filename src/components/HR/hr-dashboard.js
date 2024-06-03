@@ -35,9 +35,10 @@ const HrDashboard = () => {
   const [profileEdit, setEditProfile] = useState(false);
   const [isAddEventModalOpen, setIsAddEventModalOpen] = useState(false);
   const [newEvent, setNewEvent] = useState({ title: '', start: moment().toDate(), end: moment().toDate() });
-  const getAccessToken = () => localStorage.getItem('access_token');
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+
+  const getAccessToken = () => localStorage.getItem('access_token');
 
   const openModal = () => {
     setModalIsOpen(true);
@@ -47,53 +48,47 @@ const HrDashboard = () => {
     setModalIsOpen(false);
   }
 
-
   useEffect(() => {
     const fetchData = async () => {
-        const accessToken = localStorage.getItem('access_token');
-        if (!accessToken) {
-            console.log("No access token found. User is not logged in.");
-            return;
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.log("No access token found. User is not logged in.");
+        return;
+      }
+
+      try {
+        const hrResponse = await instance.get('/hr-dashboard/', {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (hrResponse.data) {
+          console.log('HR data:', hrResponse.data);
+          setHR({
+            id: hrResponse.data.id || '',
+            name: hrResponse.data.name || '',
+            position: hrResponse.data.position || '',
+            department: hrResponse.data.department || '',
+            company: hrResponse.data.company || '',
+            company_id: hrResponse.data.company_id || '',
+          });
+          setEvents(hrResponse.data.events.map(event => ({
+            ...event,
+            start: new Date(event.start),
+            end: new Date(event.end),
+          })));
         }
-
-        try {
-            const hrResponse = await instance.get('/hr-dashboard/', {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-
-            if (hrResponse.data) {
-                setHR({
-                    id: hrResponse.data.id || '',
-                    name: hrResponse.data.name || '',
-                    position: hrResponse.data.position || '',
-                    department: hrResponse.data.department || '',
-                    company: hrResponse.data.company || '',
-                    company_id: hrResponse.data.company_id || '',
-                });
-            }
-            console.log('Company data:', hrResponse.data.company_id);
-
-            const eventsResponse = await instance.get('/events/', {
-                headers: { Authorization: `Bearer ${accessToken}` },
-            });
-            setEvents(eventsResponse.data.map(event => ({
-                ...event,
-                start: new Date(event.start),
-                end: new Date(event.end),
-            })));
-        } catch (error) {
-            console.error("Error fetching data:", error.response ? error.response.data : error.message);
-        }
+      } catch (error) {
+        console.error("Error fetching data:", error.response ? error.response.data : error.message);
+      }
     };
     fetchData();
-}, []);
-
-
+  }, []);
 
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setHR((prevHR) => ({ ...prevHR, [name]: value }));
   };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     const accessToken = getAccessToken();
@@ -103,7 +98,6 @@ const HrDashboard = () => {
     }
 
     const userId = HR.id;
-    const company_id = HR.company_id;
 
     if (!userId) {
       console.error("User ID is undefined.");
@@ -114,8 +108,7 @@ const HrDashboard = () => {
       name: HR.name,
       position: HR.position,
       department: HR.department,
-      company: HR.company.id,
-      id: HR.id,
+      company: HR.company,
       company_id: HR.company_id,
     };
 
@@ -143,15 +136,11 @@ const HrDashboard = () => {
     }
   };
 
-
   const handleEventInputChange = (e) => {
     const { name, value } = e.target;
-
     const newValue = (name === 'start' || name === 'end') ? new Date(value) : value;
-
     setNewEvent({ ...newEvent, [name]: newValue });
   };
-
 
   const handleAddEvent = async (e) => {
     e.preventDefault();
@@ -192,7 +181,6 @@ const HrDashboard = () => {
     }
   };
 
-
   const openEditProfileModal = () => setEditProfile(true);
   const closeEditProfileModal = () => setEditProfile(false);
   const closeAddEventModal = () => setIsAddEventModalOpen(false);
@@ -206,7 +194,6 @@ const HrDashboard = () => {
     setIsAddEventModalOpen(true);
   };
 
-
   return (
     <div className="container-dashboard">
       <h1>Bine ai venit, {HR.name}</h1>
@@ -215,7 +202,6 @@ const HrDashboard = () => {
         <p>Post: {HR.position || 'Poziție Implicită'}</p>
         <p>Departament: {HR.department || 'Departament Implicit'}</p>
         <p>Companie: {HR.company || 'Companie Implicită'}</p>
-
       </div>
       {updateSuccess && <div className="update-success-message">Datele au fost actualizate cu succes!</div>}
       <Modal isOpen={profileEdit} onRequestClose={closeEditProfileModal} contentLabel="Editare Profil" className="modal-content-hr">
@@ -248,7 +234,6 @@ const HrDashboard = () => {
             value={HR.company}
             onChange={(e) => setHR({ ...HR, company: e.target.value })}
           />
-
           <button type="submit">Salvează modificările</button>
         </form>
       </Modal>
@@ -307,12 +292,12 @@ const HrDashboard = () => {
         </button>
       </div>
 
-      <div>
+      <div className="card-curs">
         <DepartmentRaporte />
-
       </div>
     </div>
   );
 };
 
 export default HrDashboard;
+

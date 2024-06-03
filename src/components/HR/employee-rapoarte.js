@@ -30,7 +30,6 @@ const DepartmentRaporte = () => {
         console.error("No access token found. User is not logged in.");
         return;
       }
-      console.log(departmentData);
 
       try {
         const reportResponse = await instance.get('/department-rapoarte/', {
@@ -45,24 +44,48 @@ const DepartmentRaporte = () => {
     fetchDepartmentReport();
   }, []);
 
-  const purple = 'rgba(160, 135, 188, 0.5)';
-  const darkGray = 'rgba(201, 203, 207, 0.8)';
-
   const chartData = {
     labels: departmentData.map(dept => dept.department.charAt(0).toUpperCase() + dept.department.slice(1)),
     datasets: [
       {
         label: 'Numărul de angajați pe departament',
         data: departmentData.map(dept => dept.employee_count),
-        backgroundColor: purple,  
+        backgroundColor: 'rgba(160, 135, 188, 0.5)',
+        borderColor: 'rgba(160, 135, 188, 1)',
+        borderWidth: 1,
       },
     ],
   };
-  
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Numărul de angajați pe departament',
+      },
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1,
+        },
+      },
+    },
+  };
+
   return (
-    <div className="rapoarte-cursuri">
+    <div >
       <h2>Rapoarte angajați pe departamente</h2>
-      <Bar data={chartData} />
+      <Bar data={chartData} options={chartOptions} />
     </div>
   );
 };

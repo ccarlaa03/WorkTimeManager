@@ -26,11 +26,20 @@ class OwnerSerializer(serializers.ModelSerializer):
         fields = '__all__'
         extra_kwargs = {'user': {'required': False}}
 
+class WorkScheduleSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source='user.name', read_only=True)
+    employee_department = serializers.CharField(source='user.department', read_only=True)
+
+    class Meta:
+        model = WorkSchedule
+        fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
+        read_only_fields = ('id',)
 class EmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Employee
-        fields = '__all__'  
-        
+        fields = '__all__' 
+
+
 class HRSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(source='company.id')
     email = serializers.EmailField(source='user.email', read_only=True)
@@ -56,14 +65,6 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'message', 'is_read', 'created_at', 'sender', 'recipient', 'notification_type']
 
-class WorkScheduleSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source='user.name', read_only=True)
-    employee_department = serializers.CharField(source='user.department', read_only=True)
-
-    class Meta:
-        model = WorkSchedule
-        fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
-        read_only_fields = ('id',)
 
 class FeedbackResponseOptionSerializer(serializers.ModelSerializer):
     class Meta:

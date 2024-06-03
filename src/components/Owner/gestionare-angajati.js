@@ -371,7 +371,7 @@ const EmployeeManagement = () => {
                     <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
             </div>
-            <table className="tabel column">
+            <table className="card-curs">
                 <thead>
                     <tr>
                         <th>ID</th>
