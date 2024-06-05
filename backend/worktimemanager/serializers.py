@@ -36,7 +36,7 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
         read_only_fields = ('id',)
 
 class EmployeeSerializer(serializers.ModelSerializer):
-    email = serializers.SerializerMethodField()  # Using SerializerMethodField to get the email
+    email = serializers.SerializerMethodField() 
 
     class Meta:
         model = Employee

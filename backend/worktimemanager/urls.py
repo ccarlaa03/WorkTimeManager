@@ -44,7 +44,7 @@ urlpatterns = [
     path('notifications/mark-read/<int:notification_id>/', views.mark_notification_as_read, name='mark-notification-as-read'),
     path('employee-profile/', views.employee_detail, name='employee-profile'), 
     path('hr/<int:company_id>/employees/', views.list_employees_hr, name='list-employees-hr'),
-    path('gestionare-prog/', views.workschedule_list, name='employee-workschedules'),
+    path('gestionare-prog/<int:hrCompanyId>/schedules/', views.workschedule_list, name='employee-workschedules'),
     path('angajat-prog/<int:user_id>/', views.employee_workschedule_list, name='angajat-prog'),
     path('employee/<int:user_id>/work-schedule/', views.get_work_schedule, name='work-schedule-by-month'),
     path('employee/<int:user_id>/work-history/<int:year>/<int:month>/', views.get_work_history_by_month, name='work-history-by-month'),
@@ -117,6 +117,8 @@ urlpatterns = [
     path('feedback-forms/', views.owner_feedback_forms, name='feedback-forms'),
     path('employee-feedbacks/', views.owner_employee_feedbacks, name='employee-feedbacks'),
     path('feedback-completion-report/', views.feedback_completion_report, name='feedback-completion-report'),
+    path('departments/', views.list_departments, name='list-departments'),
+
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

@@ -862,11 +862,18 @@ def get_all_hr(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def workschedule_list(request):
-    schedules = WorkSchedule.objects.all()
-    serializer = WorkScheduleSerializer(schedules, many=True)
-    return Response(serializer.data)
-
+def workschedule_list(request, hrCompanyId=None):
+    paginator = EmployeePagination()
+    
+    if hrCompanyId:
+        company = get_object_or_404(Company, pk=hrCompanyId)
+        schedules = WorkSchedule.objects.filter(user__company=company)
+    else:
+        schedules = WorkSchedule.objects.all()
+    
+    result_page = paginator.paginate_queryset(schedules, request)
+    serializer = WorkScheduleSerializer(result_page, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -892,6 +899,8 @@ def employee_workschedule_list(request, user_id):
     schedules = WorkSchedule.objects.filter(user_id=user_id)
     serializer = WorkScheduleSerializer(schedules, many=True)
     return Response(serializer.data)
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -952,22 +961,31 @@ def get_work_history_by_month(request, user_id, year, month):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def workschedule_create(request):
-    employee_user_id = request.data.get('employee_user_id') 
+    department_query = request.data.get('department', None)
+    employee_user_id = request.data.get('employee_user_id')
 
     try:
-        employee = Employee.objects.get(user_id=employee_user_id)
+        if department_query:
+            employee = Employee.objects.get(user_id=employee_user_id, department=department_query)
+        else:
+            employee = Employee.objects.get(user_id=employee_user_id)
     except Employee.DoesNotExist:
-        return Response({'error': 'Employee does not exist'}, status=status.HTTP_404_NOT_FOUND)
-    
-    request.data['user'] = employee_user_id  
+        return Response({'error': 'Employee does not exist or not in the specified department'}, status=status.HTTP_404_NOT_FOUND)
+
+    request.data['user'] = employee_user_id
     serializer = WorkScheduleSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save() 
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_departments(request):
+    departments = Employee.objects.values('department').annotate(count=Count('department')).order_by('department')
+    return Response({'departments': [dept['department'] for dept in departments if dept['department']]})
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1441,7 +1459,6 @@ def training_details(request, training_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def department_report(request):
-    # Query to count the employees per department, lowercasing the department names
     department_counts = Employee.objects.annotate(
         department_lower=Lower('department')
     ).values(
@@ -1450,7 +1467,6 @@ def department_report(request):
         employee_count=Count('user_id')
     ).order_by('department_lower')
 
-    # Query to count the HR employees per department, also lowercasing the department names
     hr_counts = HR.objects.annotate(
         department_lower=Lower('department')
     ).values(
@@ -1460,8 +1476,6 @@ def department_report(request):
     ).filter(
         department_lower='hr'
     ).order_by('department_lower')
-
-    # Combine the counts from both Employee and HR into a single data structure
     combined_counts = {dept['department_lower']: dept['employee_count'] for dept in department_counts}
     for hr in hr_counts:
         department = hr['department_lower']
@@ -1473,6 +1487,7 @@ def department_report(request):
     ]
     
     return Response(data)
+
 
 
 @api_view(['GET'])

@@ -9,9 +9,13 @@ import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import instance from '../../axiosConfig';
 import Cookies from 'js-cookie';
+import ReactPaginate from 'react-paginate';
 
 const GestionareProgramLucru = () => {
-  const [schedules, setSchedules] = useState([]);
+
+  const [currentPage, setCurrentPage] = useState(0);
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -27,11 +31,46 @@ const GestionareProgramLucru = () => {
   const csrfToken = Cookies.get('csrftoken');
   const [selectedDateRange, setSelectedDateRange] = useState([new Date(), new Date()]);
   const localizer = momentLocalizer(moment);
+  const employeesPerPage = 6;
+  const [totalPages, setTotalPages] = useState(0);
   const events = [];
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+
   const getAccessToken = () => localStorage.getItem('access_token');
   axios.defaults.xsrfCookieName = 'csrftoken';
   axios.defaults.xsrfHeaderName = 'X-CSRFToken';
 
+  const schedulesPerPage = 10;
+
+  const showModal = (message) => {
+    setModalMessage(message);
+    setModalOpen(true);
+  };
+  useEffect(() => {
+
+    const fetchDepartments = async () => {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.log("No access token found. User is not logged in.");
+        return;
+      }
+      const response = await axios.get('http://localhost:8000/departments/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      console.log(response.data);
+      if (response.data && response.data.departments) {
+        setDepartments(response.data.departments);
+      } else {
+        console.error('Departments data not received or in incorrect format:', response.data);
+      }
+    };
+
+
+    fetchDepartments();
+  }, []);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -60,27 +99,97 @@ const GestionareProgramLucru = () => {
     return config;
   });
 
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
 
-  const fetchWorkSchedules = async (hrCompanyId) => {
-    const accessToken = getAccessToken();
+
+  useEffect(() => {
+    if (hrCompanyId) {
+      fetchWorkSchedules();
+    }
+  }, [currentPage, hrCompanyId]);
+
+  const fetchEmployees = async () => {
+    if (!selectedDepartment) {
+      console.error("No department selected.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      department: selectedDepartment,
+      page: currentPage + 1,
+      per_page: employeesPerPage,
+    }).toString();
+
+    const url = `http://localhost:8000/hr/${hrCompanyId}/employees/?page_size=100`;
+    console.log(`Fetching employees from: ${url}`);
+
     try {
-      const workSchedulesResponse = await instance.get(`/gestionare-prog/?company_id=${hrCompanyId}`, {
+      const response = await axios.get(url, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${getAccessToken()}`,
+          'Content-Type': 'application/json',
         },
       });
-      console.log('Work Schedules data:', workSchedulesResponse.data);
-      setWorkSchedules(workSchedulesResponse.data);
+
+      if (response.data && response.data.results) {
+        setFilteredEmployees(response.data.results);
+      } else {
+        setFilteredEmployees([]);
+      }
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (hrCompanyId && selectedDepartment) {
+      fetchEmployees();
+    }
+  }, [selectedDepartment]);
+
+
+  const fetchWorkSchedules = async () => {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      console.error("No access token provided.");
+      return;
+    }
+
+    if (!hrCompanyId) {
+      console.error("No HR Company ID found.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      page: currentPage + 1,
+      per_page: schedulesPerPage,
+    }).toString();
+
+    const url = `http://localhost:8000/gestionare-prog/${hrCompanyId}/schedules/?${params}`;
+    console.log(`Fetching work schedules from: ${url}`);
+
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data && response.data.results) {
+        setWorkSchedules(response.data.results);
+        setTotalPages(Math.ceil(response.data.count / employeesPerPage));
+      } else {
+        setWorkSchedules([]);
+        console.error('No work schedules data or data not in expected format:', response.data);
+      }
     } catch (error) {
       console.error('Error fetching work schedules:', error.response ? error.response.data : error);
     }
   };
 
-  useEffect(() => {
-    if (hrCompanyId) {
-      fetchWorkSchedules(hrCompanyId);
-    }
-  }, [hrCompanyId]);
 
   const fetchHrCompany = async () => {
     try {
@@ -151,50 +260,15 @@ const GestionareProgramLucru = () => {
 
       console.log('Work schedule created successfully:', response.data);
       setWorkSchedules([...workSchedules, response.data]);
+      fetchWorkSchedules(); // Refresh the schedule list
       handleCloseAddModal();
+      showModal('Programul de lucru a fost creat cu succes.');
     } catch (error) {
       console.error('Error creating work schedule:', error.response ? error.response.data : error);
       alert('Error: ' + (error.response ? error.response.data : error.message));
     }
   };
 
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        console.error("No access token found. User is not logged in.");
-        return;
-      }
-
-      try {
-        const response = await axios.get('/gestionare-ang/', {
-          headers: { 'Authorization': `Bearer ${accessToken}` },
-        });
-
-        console.log('All Employees:', response.data);
-
-        const filtered = response.data.filter(employee => {
-          console.log(`Checking employee with company_id: ${employee.company}`);
-          return employee.company === hrCompanyId;
-        });
-
-        console.log(`Filtered Employees for company_id ${hrCompanyId}:`, filtered);
-        console.log('Filtered Employees structure:', filteredEmployees[0]);
-
-        if (filtered.length === 0) {
-          console.log('No matching employees found for company ID:', hrCompanyId);
-        }
-
-        setFilteredEmployees(filtered);
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
-    };
-
-    if (hrCompanyId) {
-      fetchEmployees();
-    }
-  }, [hrCompanyId]);
 
 
   const getDatesInRange = (startDate, endDate, daysToAdd) => {
@@ -333,54 +407,79 @@ const GestionareProgramLucru = () => {
   return (
     <div className="container-dashboard">
       <h1>Gestionare program lucru</h1>
-      <table className="tabel">
-        <thead>
-          <tr>
-            <th>Nume</th>
-            <th>Departament</th>
-            <th>Data</th>
-            <th>Oră de start</th>
-            <th>Oră de sfârșit</th>
-            <th>Ore suplimentare</th>
-            <th>Acțiuni</th>
-          </tr>
-        </thead>
-        <tbody>
-          {workSchedules.map((schedule) => (
-            <tr key={schedule.id}>
-              <td>
-                <Link
-                  to={`/angajat-profil/${schedule.user}`}
-                  style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                >
-                  {schedule.employee_name}
-                </Link>
-              </td>
-              <td>{schedule.employee_department}</td>
-              <td>{moment(schedule.date).format('YYYY-MM-DD')}</td>
-              <td>{schedule.start_time}</td>
-              <td>{schedule.end_time}</td>
-              <td>{schedule.overtime_hours}</td>
-              <td>
-                <button className='buton' onClick={() => OpenEditModal(schedule)}>Editează</button>
-                <button className='buton' onClick={() => handleDeleteWorkSchedule(schedule.id)}>Șterge</button>
-              </td>
+      <div className='card-curs'>
+        <table className="tabel">
+          <thead>
+            <tr>
+              <th>Nume</th>
+              <th>Departament</th>
+              <th>Data</th>
+              <th>Oră de start</th>
+              <th>Oră de sfârșit</th>
+              <th>Ore suplimentare</th>
+              <th>Acțiuni</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {workSchedules.map((schedule) => (
+              <tr key={schedule.id}>
+                <td>
+                  <Link
+                    to={`/angajat-profil/${schedule.user}`}
+                    style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                  >
+                    {schedule.employee_name}
+                  </Link>
+                </td>
+                <td>{schedule.employee_department}</td>
+                <td>{moment(schedule.date).format('YYYY-MM-DD')}</td>
+                <td>{schedule.start_time}</td>
+                <td>{schedule.end_time}</td>
+                <td>{schedule.overtime_hours}</td>
+                <td>
+                  <button className='buton' onClick={() => OpenEditModal(schedule)}>Editează</button>
+                  <button className='buton' onClick={() => handleDeleteWorkSchedule(schedule.id)}>Șterge</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <ReactPaginate
+          previousLabel={'Anterior'}
+          nextLabel={'Următorul'}
+          breakLabel={'...'}
+          pageCount={totalPages}
+          onPageChange={handlePageChange}
+          containerClassName={'pagination'}
+          activeClassName={'active'}
+          forcePage={currentPage}
+        />
+      </div>
 
       <div className="button-container">
         <button className="buton" onClick={handleOpenAddModal}>Adaugă program de lucru</button>
       </div>
-
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-      />
+      
+      <div className='card-curs'>
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 500 }}
+        />
+      </div>
+      <Modal
+        isOpen={modalOpen}
+        onRequestClose={() => setModalOpen(false)}
+        className="modal-content"
+        contentLabel="Notificare"
+      >
+        <h2>Notificare</h2>
+        <p>{modalMessage}</p>
+        <button onClick={() => setModalOpen(false)}>Închide</button>
+      </Modal>
 
       <Modal
         isOpen={isAddModalOpen}
@@ -393,15 +492,31 @@ const GestionareProgramLucru = () => {
         <h2>Adaugă program de lucru</h2>
         <form onSubmit={handleCreateWorkSchedule}>
           <div className="form-group">
+            <label htmlFor="department">Departament:</label>
+            <select value={selectedDepartment} onChange={(e) => setSelectedDepartment(e.target.value)}>
+              <option value="">Selectează un departament</option>
+              {departments.map((department, index) => (
+                <option key={index} value={department}>{department}</option>
+              ))}
+            </select>
+
+          </div>
+          <div className="form-group">
             <label htmlFor="employee">Angajat:</label>
-            <select multiple value={selectedEmployeeIds} onChange={handleEmployeeSelectionChange}>
-              {filteredEmployees.map((employee) => (
+            <select
+              multiple
+              value={selectedEmployeeIds}
+              onChange={handleEmployeeSelectionChange}
+              disabled={!selectedDepartment}
+            >
+              {filteredEmployees.filter(emp => emp.department === selectedDepartment).map((employee) => (
                 <option key={employee.user} value={employee.user}>
                   {employee.name} - {employee.department} ({employee.user})
                 </option>
               ))}
             </select>
           </div>
+
 
           <div className="form-group">
             <label>Intervalul de timp:</label>
