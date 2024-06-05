@@ -13,6 +13,7 @@ from django.dispatch import receiver
 from django.db.models.signals import post_save, post_delete
 from django.core.exceptions import ValidationError
 from django.core.cache import cache
+from django.utils.crypto import get_random_string
 logger = logging.getLogger(__name__)
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
@@ -39,11 +40,24 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', False)
         return self.create_user(email, password, **extra_fields)
 
-    def create_employee_user(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_employee', True)
-        extra_fields.setdefault('is_staff', False)
-        return self.create_user(email, password, **extra_fields)
-
+    def create_employee_user(self, email=None, password=None, name='', birth_date=None, **extra_fields):
+        if email is None and name:
+            first_name, *last_name_parts = name.split()
+            last_name = ' '.join(last_name_parts)
+            email = f"{first_name.lower()}.{last_name.lower()}@company.com" if last_name else f"{first_name.lower()}@company.com"
+        
+        if password is None and birth_date:
+            birth_date_str = birth_date.strftime('%Y%m%d')
+            password = get_random_string(8) + birth_date_str  
+        
+        if not email:
+            raise ValueError('The email must be set')
+        
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -135,8 +149,10 @@ class Employee(models.Model):
     address = models.CharField(max_length=100, null=True)
     telephone_number = models.CharField(max_length=100, validators=[RegexValidator(r'^\+?1?\d{9,15}$')], null=True)
     is_employee = models.BooleanField(default=True)
+
     def __str__(self):
         return self.name
+    
     def get_schedules(self):
         return self.work_schedules.all()
 
@@ -155,6 +171,9 @@ class Employee(models.Model):
     def get_total_worked_hours(self):
         return self.work_schedules.aggregate(total_hours=Sum('worked_hours'))['total_hours'] or 0
     
+    @property
+    def email(self):
+        return self.user.email
     class Meta:
         ordering = ['user']   
 

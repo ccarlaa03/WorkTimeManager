@@ -34,12 +34,16 @@ class WorkScheduleSerializer(serializers.ModelSerializer):
         model = WorkSchedule
         fields = ('id', 'start_time', 'end_time', 'date', 'overtime_hours', 'user', 'employee_name', 'employee_department')
         read_only_fields = ('id',)
+
 class EmployeeSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField()  # Using SerializerMethodField to get the email
+
     class Meta:
         model = Employee
-        fields = '__all__' 
+        fields = ['user', 'name', 'email', 'telephone_number', 'department', 'position', 'working_hours', 'address', 'hire_date', 'company']
 
-
+    def get_email(self, obj):
+        return obj.user.email
 class HRSerializer(serializers.ModelSerializer):
     company_id = serializers.IntegerField(source='company.id')
     email = serializers.EmailField(source='user.email', read_only=True)

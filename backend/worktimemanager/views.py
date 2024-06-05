@@ -457,17 +457,59 @@ def owner_dashboard(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_employee(request):
-    if request.method == 'POST':
-        hr_company_id = request.data.get('company_id') 
-        employee_user_id = request.data.get('user_id') 
-        request.data['user_id'] = employee_user_id
-        request.data['company_id'] = hr_company_id
-        serializer = EmployeeSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=200)
-        else: 
-            return Response(serializer.errors, status=400)
+    data = request.data
+    try:
+        company_id = data.get('company')
+        if not company_id:
+            return Response({'error': 'Company ID is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        company = Company.objects.get(id=company_id)
+        
+        # Despărțirea numelui în prenume și nume de familie
+        full_name_parts = data.get('name', '').split()
+        if not full_name_parts:
+            return Response({'error': 'Name is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        first_name = full_name_parts[0]
+        last_name = ' '.join(full_name_parts[1:]) if len(full_name_parts) > 1 else ''
+        
+        # Generarea emailului
+        email = f"{first_name.lower()}.{last_name.lower()}@company.com" if last_name else f"{first_name.lower()}@company.com"
+        password = data.get('password', User.objects.make_random_password())  # Ensure there's a password
+
+        # Create the user instance
+        user = User.objects.create_user(
+            email=email,
+            password=password
+        )
+        
+        # Create the Employee instance associated with the user
+        Employee.objects.create(
+            user=user,
+            company=company,
+            name=data.get('name', ''), 
+            birth_date=data.get('birth_date'),
+            department=data.get('department', ''),
+            position=data.get('position', ''),
+            hire_date=data.get('hire_date'),
+            address=data.get('address', ''),
+            telephone_number=data.get('telephone_number', ''),
+            working_hours=data.get('working_hours', 0),
+            free_days=data.get('free_days', 0),
+        )
+        
+        return Response({'message': 'Employee created successfully', 'user_id': user.id, 'email': email}, status=status.HTTP_201_CREATED)
+    except Company.DoesNotExist:
+        return Response({'error': 'Company matching query does not exist.'}, status=status.HTTP_400_BAD_REQUEST)
+    except IntegrityError as e:
+        logger.error(f"Integrity error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
    
 @api_view(['GET'])
 @permission_classes([IsAdminUser]) 

@@ -158,11 +158,11 @@ const EmployeeManagement = () => {
     const generateEmailAndPassword = (formData) => {
         const { name, birthDate } = formData;
         if (name && birthDate) {
-            const [firstName, lastName] = name.split(' ');
-            if (firstName && lastName) {
+            const [name] = name.split(' ');
+            if (name) {
                 const formattedDate = new Date(birthDate).toISOString().split('T')[0];
-                const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}@gmail.com`;
-                const password = `${firstName.toLowerCase()}${lastName.toLowerCase()}${formattedDate.replace(/-/g, '')}`;
+                const email = `${name.toLowerCase()}.${name.toLowerCase()}@gmail.com`;
+                const password = `${name.toLowerCase()}${name.toLowerCase()}${formattedDate.replace(/-/g, '')}`;
                 setFormData(prevFormData => ({
                     ...prevFormData,
                     email,
