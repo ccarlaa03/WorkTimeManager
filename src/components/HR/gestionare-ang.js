@@ -163,7 +163,7 @@ const GestionareAngajati = () => {
         }
     };
 
-    
+
     // CREATE
     const createEmployee = async (newEmployee) => {
         newEmployee.company = hrCompanyId;
@@ -316,7 +316,7 @@ const GestionareAngajati = () => {
                     </div>
                 </div>
                 <div className='card-curs'>
-                    <table className="tabel">
+                    <table className="tabel column">
                         <thead>
                             <tr>
                                 <th>ID</th>

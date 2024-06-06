@@ -408,7 +408,7 @@ const GestionareProgramLucru = () => {
     <div className="container-dashboard">
       <h1>Gestionare program lucru</h1>
       <div className='card-curs'>
-        <table className="tabel">
+        <table className="tabel column">
           <thead>
             <tr>
               <th>Nume</th>
@@ -460,7 +460,6 @@ const GestionareProgramLucru = () => {
       <div className="button-container">
         <button className="buton" onClick={handleOpenAddModal}>Adaugă program de lucru</button>
       </div>
-      
       <div className='card-curs'>
         <Calendar
           localizer={localizer}

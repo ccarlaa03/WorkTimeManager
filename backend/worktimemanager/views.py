@@ -1123,10 +1123,24 @@ def edit_employee(request, user_id):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def list_feedback_forms(request):
+def list_feedback_forms(request, company_id):
+    paginator = PageNumberPagination()
+    paginator.page_size = request.query_params.get('page_size', 10)
+
+    company = get_object_or_404(Company, pk=company_id)
     forms = FeedbackForm.objects.all()
-    logger.debug(f"Fetching forms: {forms}")
-    serializer = FeedbackFormSerializer(forms, many=True)
+
+    result_page = paginator.paginate_queryset(forms, request)
+    serializer = FeedbackFormSerializer(result_page, many=True)
+
+    return paginator.get_paginated_response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def employees_lists(request, company_id):
+    employees = Employee.objects.filter(company=company_id)
+    serializer = EmployeeSerializer(employees, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
