@@ -260,7 +260,7 @@ const GestionareProgramLucru = () => {
 
       console.log('Work schedule created successfully:', response.data);
       setWorkSchedules([...workSchedules, response.data]);
-      fetchWorkSchedules(); // Refresh the schedule list
+      fetchWorkSchedules(); 
       handleCloseAddModal();
       showModal('Programul de lucru a fost creat cu succes.');
     } catch (error) {
@@ -408,42 +408,45 @@ const GestionareProgramLucru = () => {
     <div className="container-dashboard">
       <h1>Gestionare program lucru</h1>
       <div className='card-curs'>
-        <table className="tabel column">
-          <thead>
-            <tr>
-              <th>Nume</th>
-              <th>Departament</th>
-              <th>Data</th>
-              <th>Oră de start</th>
-              <th>Oră de sfârșit</th>
-              <th>Ore suplimentare</th>
-              <th>Acțiuni</th>
-            </tr>
-          </thead>
-          <tbody>
-            {workSchedules.map((schedule) => (
-              <tr key={schedule.id}>
-                <td>
-                  <Link
-                    to={`/angajat-profil/${schedule.user}`}
-                    style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                  >
-                    {schedule.employee_name}
-                  </Link>
-                </td>
-                <td>{schedule.employee_department}</td>
-                <td>{moment(schedule.date).format('YYYY-MM-DD')}</td>
-                <td>{schedule.start_time}</td>
-                <td>{schedule.end_time}</td>
-                <td>{schedule.overtime_hours}</td>
-                <td>
-                  <button className='buton' onClick={() => OpenEditModal(schedule)}>Editează</button>
-                  <button className='buton' onClick={() => handleDeleteWorkSchedule(schedule.id)}>Șterge</button>
-                </td>
+        <div className="table-container">
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Nume</th>
+                <th>Departament</th>
+                <th>Data</th>
+                <th>Oră de start</th>
+                <th>Oră de sfârșit</th>
+                <th>Ore suplimentare</th>
+                <th>Acțiuni</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {workSchedules.map((schedule) => (
+                <tr key={schedule.id}>
+                  <td>
+                    <Link
+                      to={`/angajat-profil/${schedule.user}`}
+                      style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                    >
+                      {schedule.employee_name}
+                    </Link>
+                  </td>
+                  <td>{schedule.employee_department}</td>
+                  <td>{moment(schedule.date).format('YYYY-MM-DD')}</td>
+                  <td>{schedule.start_time}</td>
+                  <td>{schedule.end_time}</td>
+                  <td>{schedule.overtime_hours}</td>
+                  <td>
+                    <button className='buton' onClick={() => OpenEditModal(schedule)}>Editează</button>
+                    <button className='buton' onClick={() => handleDeleteWorkSchedule(schedule.id)}>Șterge</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
 
         <ReactPaginate
           previousLabel={'Anterior'}

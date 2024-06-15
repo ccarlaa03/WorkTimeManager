@@ -46,7 +46,7 @@ urlpatterns = [
     path('hr/<int:company_id>/employees/', views.list_employees_hr, name='list-employees-hr'),
     path('gestionare-prog/<int:hrCompanyId>/schedules/', views.workschedule_list, name='employee-workschedules'),
     path('gestionare-ang/<int:company_id>/', views.employees_lists, name='employees-lists'),
-    path('angajat-prog/<int:user_id>/', views.employee_workschedule_list, name='angajat-prog'),
+
     path('employee/<int:user_id>/work-schedule/', views.get_work_schedule, name='work-schedule-by-month'),
     path('employee/<int:user_id>/work-history/<int:year>/<int:month>/', views.get_work_history_by_month, name='work-history-by-month'),
     path('employee/<int:user_id>/leaves/year/<int:year>/', views.get_leaves_by_year, name='leaves-by-year'),
@@ -74,7 +74,7 @@ urlpatterns = [
     path('gestionare-concedii/', views.leave_list, name='gestionare-concedii'),
     path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
     path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
-    path('angajat-concedii/<int:user_id>/', views.employee_leaves, name='employee-leaves'),
+
     path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),
     path('gestionare-feedback/<int:company_id>/', views.list_feedback_forms, name='list-feedback-forms'),
     path('formulare-feedback/', views.list_feedback_forms, name='formulare_feedback'),
@@ -109,8 +109,7 @@ urlpatterns = [
     path('employees/<int:user_id>/delete/', views.delete_employee, name='delete-employee'),
     path('hr/<int:user_id>/delete/', views.delete_hr, name='delete-hr'),
     path('owner/angajat-profil/<int:user_id>/', views.owner_employee_profile, name='owner-employee-profile'),
-    path('employee/<int:user_id>/trainings/', views.employee_training_list, name='employee-training-list'),
-    path('employee/<int:user_id>/feedback/', views.employee_feedback_list, name='employee-feedback-list'),
+  
     path('employee/<int:user_id>/feedback-reports/', views.employee_feedback_reports, name='employee-feedback-reports'),
     path('training-reports/', views.owner_training_reports, name='training-reports'),
     path('trainings/<int:training_id>/', views.training_detail_owner, name='training-detail'),
@@ -119,6 +118,11 @@ urlpatterns = [
     path('employee-feedbacks/', views.owner_employee_feedbacks, name='employee-feedbacks'),
     path('feedback-completion-report/', views.feedback_completion_report, name='feedback-completion-report'),
     path('departments/', views.list_departments, name='list-departments'),
+    path('employee/<int:user_id>/trainings/', views.employee_training_list, name='employee-trainings'),
+    path('employee/<int:user_id>/feedback/', views.employee_feedback_list, name='employee-feedback'),
+    path('angajat-prog/<int:user_id>/', views.employee_workschedule_list, name='employee-work-schedule'),
+    path('angajat-concedii/<int:user_id>/', views.employee_leaves_list, name='employee-leaves'),
+
 
 
     path('', RedirectView.as_view(url=reverse_lazy('acasa'), permanent=False)),

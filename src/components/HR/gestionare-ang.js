@@ -6,6 +6,7 @@ import axios from 'axios';
 import instance from '../../axiosConfig';
 import { AuthContext } from '../../AuthContext';
 
+
 Modal.setAppElement('#root');
 
 const GestionareAngajati = () => {
@@ -277,49 +278,50 @@ const GestionareAngajati = () => {
     };
 
     return (
-        <div>
-            <div className="container-dashboard">
-                <h1>Gestionare angajați</h1>
-                <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Caută după nume..."
-                        value={filter.name}
-                        onChange={handleFilterChange}
-                        style={{ flexBasis: 'auto' }}
-                    />
 
-                    <div style={{ display: 'flex', width: '83%', gap: '10px', alignItems: 'center' }}>
-                        <select
-                            name="function"
-                            value={filter.function}
-                            onChange={handleFilterChange}
-                        >
-                            <option value="">Selectează funcția</option>
-                            <option value="Programator">Programator</option>
-                            <option value="Analist">Analist</option>
-                            <option value="Tester">Tester</option>
-                            <option value="Inginer">Inginer software</option>
-                            <option value="Administrator">Admininstrator rețea</option>
-                        </select>
-                        <select
-                            name="department"
-                            value={filter.department}
-                            onChange={handleFilterChange}
-                        >
-                            <option value="">Selectează departamentul</option>
-                            <option value="IT">IT</option>
-                            <option value="Marketing">Marketing</option>
-                        </select>
-                        <button onClick={handleSearch}>CAUTĂ</button>
-                    </div>
+        <div className="container-dashboard">
+            <h1>Gestionare angajați</h1>
+            <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                <input
+                    type="text"
+                    name="name"
+                    placeholder="Caută după nume..."
+                    value={filter.name}
+                    onChange={handleFilterChange}
+                    style={{ flexBasis: 'auto' }}
+                />
+
+                <div style={{ display: 'flex', width: '83%', gap: '10px', alignItems: 'center' }}>
+                    <select
+                        name="function"
+                        value={filter.function}
+                        onChange={handleFilterChange}
+                    >
+                        <option value="">Selectează funcția</option>
+                        <option value="Programator">Programator</option>
+                        <option value="Analist">Analist</option>
+                        <option value="Tester">Tester</option>
+                        <option value="Inginer">Inginer software</option>
+                        <option value="Administrator">Admininstrator rețea</option>
+                    </select>
+                    <select
+                        name="department"
+                        value={filter.department}
+                        onChange={handleFilterChange}
+                    >
+                        <option value="">Selectează departamentul</option>
+                        <option value="IT">IT</option>
+                        <option value="Marketing">Marketing</option>
+                    </select>
+                    <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
-                <div className='card-curs'>
-                    <table className="tabel column">
+            </div>
+            <div className='card-curs'>
+                <div className="table-container">
+                    <table className="styled-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
+
                                 <th>Nume</th>
                                 <th>Număr de telefon</th>
                                 <th>Adresa de email</th>
@@ -334,8 +336,15 @@ const GestionareAngajati = () => {
                         <tbody>
                             {employee.map(employee => (
                                 <tr key={employee.user}>
-                                    <td>{employee.user}</td>
-                                    <td>{employee.name}</td>
+                                    <td>
+                                        <Link
+                                            to={`/angajat-profil/${employee.user}`}
+                                            style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                                        >
+                                            {employee.name}
+                                        </Link>
+                                    </td>
+
                                     <td>{employee.telephone_number}</td>
                                     <td>{employee.email}</td>
                                     <td>{employee.department}</td>
@@ -351,133 +360,135 @@ const GestionareAngajati = () => {
                             ))}
                         </tbody>
                     </table>
-
-                    <ReactPaginate
-                        previousLabel={'Anterior'}
-                        nextLabel={'Următorul'}
-                        breakLabel={'...'}
-                        pageCount={totalPages}
-                        onPageChange={handlePageChange}
-                        containerClassName={'pagination'}
-                        activeClassName={'active'}
-                        forcePage={currentPage}
-                    />
                 </div>
 
-                <div className="button-container">
-                    <Link to="/gestionare-concedii">
-                        <button className="buton">Gestionare concedii</button>
-                    </Link>
 
-                    <button className="buton" onClick={openAddModal}>Adaugă angajat nou</button>
-
-                    <Link to="/gestionare-prog">
-                        <button className="buton">Gestionare program de lucru</button>
-                    </Link>
-                </div>
-                <Modal
-                    isOpen={modalAddOpen}
-                    onRequestClose={closeAddModal}
-                    contentLabel="Adaugă angajat nou"
-                    className="modal-content"
-                >
-                    <h2>Adaugă angajat nou</h2>
-                    <form onSubmit={handleSubmit}>
-                        <label>Nume:<input type="text" name="name" value={newEmployee.name} onChange={handleInputChange} required /></label>
-                        <label>Data de naștere:<input type="date" name="birth_date" value={newEmployee.birth_date} onChange={handleInputChange} required /></label>
-                        <label>Număr de telefon:<input type="text" name="telephone_number" value={newEmployee.telephone_number} onChange={handleInputChange} required /></label>
-                        <label>Departament:<input type="text" name="department" value={newEmployee.department} onChange={handleInputChange} required /></label>
-                        <label>Funcție:<input type="text" name="position" value={newEmployee.position} onChange={handleInputChange} required /></label>
-                        <label>Adresă:<input type="text" name="address" value={newEmployee.address} onChange={handleInputChange} required /></label>
-                        <label>Data angajării:<input type="date" name="hire_date" value={newEmployee.hire_date} onChange={handleInputChange} required /></label>
-                        <button type="submit">Adaugă</button>
-                        <button type="button" onClick={closeAddModal}>Închide</button>
-                    </form>
-                </Modal>
-                <Modal
-                    isOpen={modalEditOpen}
-                    onRequestClose={closeEditModal}
-                    contentLabel="Editează angajat"
-                    className="modal-content"
-                >
-                    <h2>Editează Angajat</h2>
-                    <form onSubmit={updateEmployee}>
-                        <label>
-                            Nume:
-                            <input
-                                type="text"
-                                name="name"
-                                defaultValue={employeeToEdit ? employeeToEdit.name : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Număr de telefon:
-                            <input
-                                type="text"
-                                name="telephone_number"
-                                defaultValue={employeeToEdit ? employeeToEdit.telephone_number : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Adresa de email:
-                            <input
-                                type="email"
-                                name="email"
-                                defaultValue={employeeToEdit ? employeeToEdit.email : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Departament:
-                            <input
-                                type="text"
-                                name="department"
-                                defaultValue={employeeToEdit ? employeeToEdit.department : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Funcție:
-                            <input
-                                type="text"
-                                name="position"
-                                defaultValue={employeeToEdit ? employeeToEdit.position : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Data angajării:
-                            <input
-                                type="text"
-                                name="hire_date"
-                                defaultValue={employeeToEdit ? employeeToEdit.hire_date : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <label>
-                            Adresă:
-                            <input
-                                type="text"
-                                name="address"
-                                defaultValue={employeeToEdit ? employeeToEdit.address : ''}
-                                onChange={handleEmployeeEditChange}
-                                required
-                            />
-                        </label>
-                        <button type="submit">Salvează modificările</button>
-                        <button type="button" onClick={closeEditModal}>Închide</button>
-                    </form>
-                </Modal>
+                <ReactPaginate
+                    previousLabel={'Anterior'}
+                    nextLabel={'Următorul'}
+                    breakLabel={'...'}
+                    pageCount={totalPages}
+                    onPageChange={handlePageChange}
+                    containerClassName={'pagination'}
+                    activeClassName={'active'}
+                    forcePage={currentPage}
+                />
             </div>
+
+            <div className="button-container">
+                <Link to="/gestionare-concedii">
+                    <button className="buton">Gestionare concedii</button>
+                </Link>
+
+                <button className="buton" onClick={openAddModal}>Adaugă angajat nou</button>
+
+                <Link to="/gestionare-prog">
+                    <button className="buton">Gestionare program de lucru</button>
+                </Link>
+            </div>
+            <Modal
+                isOpen={modalAddOpen}
+                onRequestClose={closeAddModal}
+                contentLabel="Adaugă angajat nou"
+                className="modal-content"
+            >
+                <h2>Adaugă angajat nou</h2>
+                <form onSubmit={handleSubmit}>
+                    <label>Nume:<input type="text" name="name" value={newEmployee.name} onChange={handleInputChange} required /></label>
+                    <label>Data de naștere:<input type="date" name="birth_date" value={newEmployee.birth_date} onChange={handleInputChange} required /></label>
+                    <label>Număr de telefon:<input type="text" name="telephone_number" value={newEmployee.telephone_number} onChange={handleInputChange} required /></label>
+                    <label>Departament:<input type="text" name="department" value={newEmployee.department} onChange={handleInputChange} required /></label>
+                    <label>Funcție:<input type="text" name="position" value={newEmployee.position} onChange={handleInputChange} required /></label>
+                    <label>Adresă:<input type="text" name="address" value={newEmployee.address} onChange={handleInputChange} required /></label>
+                    <label>Data angajării:<input type="date" name="hire_date" value={newEmployee.hire_date} onChange={handleInputChange} required /></label>
+                    <button type="submit">Adaugă</button>
+                    <button type="button" onClick={closeAddModal}>Închide</button>
+                </form>
+            </Modal>
+            <Modal
+                isOpen={modalEditOpen}
+                onRequestClose={closeEditModal}
+                contentLabel="Editează angajat"
+                className="modal-content"
+            >
+                <h2>Editează Angajat</h2>
+                <form onSubmit={updateEmployee}>
+                    <label>
+                        Nume:
+                        <input
+                            type="text"
+                            name="name"
+                            defaultValue={employeeToEdit ? employeeToEdit.name : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Număr de telefon:
+                        <input
+                            type="text"
+                            name="telephone_number"
+                            defaultValue={employeeToEdit ? employeeToEdit.telephone_number : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Adresa de email:
+                        <input
+                            type="email"
+                            name="email"
+                            defaultValue={employeeToEdit ? employeeToEdit.email : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Departament:
+                        <input
+                            type="text"
+                            name="department"
+                            defaultValue={employeeToEdit ? employeeToEdit.department : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Funcție:
+                        <input
+                            type="text"
+                            name="position"
+                            defaultValue={employeeToEdit ? employeeToEdit.position : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Data angajării:
+                        <input
+                            type="text"
+                            name="hire_date"
+                            defaultValue={employeeToEdit ? employeeToEdit.hire_date : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <label>
+                        Adresă:
+                        <input
+                            type="text"
+                            name="address"
+                            defaultValue={employeeToEdit ? employeeToEdit.address : ''}
+                            onChange={handleEmployeeEditChange}
+                            required
+                        />
+                    </label>
+                    <button type="submit">Salvează modificările</button>
+                    <button type="button" onClick={closeEditModal}>Închide</button>
+                </form>
+            </Modal>
         </div>
+
     );
 };
 

@@ -86,36 +86,35 @@ const GestionareFeedback = () => {
 
   return (
     <div className="container-dashboard">
-      <h1>Gestionare feedback angajați</h1>
+      <h1>Gestionare feedback</h1>
       <div className="card-curs">
-        <table className="tabel column">
-          <thead>
-            <tr>
-              <th>Titlu</th>
-              <th>Creat de</th>
-              <th>Creat la ora</th>
-              <th>Status</th>
-              <th>Angajat</th>
-              <th>Data completată</th>
-              <th>Scorul</th>
-            </tr>
-          </thead>
-          <tbody>
-            {feedbackForms.map((form, formIndex) => {
-              if (form.employee_feedbacks && form.employee_feedbacks.length > 0) {
-                return form.employee_feedbacks.map((feedback, feedbackIndex) => (
-                  <tr key={`${formIndex}-${feedbackIndex}`}>
-                    <td>{form.title}</td>
-                    <td>{form.created_by}</td>
-                    <td>{new Date(form.created_at).toLocaleDateString()}</td>
-                    <td>{form.hr_review_status_display}</td>
-                    <td>{feedback.employee_name}</td>
-                    <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
-                    <td>{feedback.total_score}</td>
-                  </tr>
-                ));
-              } else {
-                return (
+        <div className="table-container">
+          <table className="styled-table">
+            <thead>
+              <tr>
+                <th>Titlu</th>
+                <th>Creat de</th>
+                <th>Creat la ora</th>
+                <th>Status</th>
+                <th>Angajat</th>
+                <th>Data completată</th>
+                <th>Scorul</th>
+              </tr>
+            </thead>
+            <tbody>
+              {feedbackForms.map((form, formIndex) => (
+                form.employee_feedbacks.length > 0 ?
+                  form.employee_feedbacks.map((feedback, feedbackIndex) => (
+                    <tr key={`${formIndex}-${feedbackIndex}`}>
+                      <td>{form.title}</td>
+                      <td>{form.created_by}</td>
+                      <td>{new Date(form.created_at).toLocaleDateString()}</td>
+                      <td>{form.hr_review_status_display}</td>
+                      <td>{feedback.employee_name}</td>
+                      <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
+                      <td>{feedback.total_score}</td>
+                    </tr>
+                  )) :
                   <tr key={`form-${formIndex}`}>
                     <td>{form.title}</td>
                     <td>{form.created_by}</td>
@@ -123,11 +122,11 @@ const GestionareFeedback = () => {
                     <td>{form.hr_review_status_display}</td>
                     <td colSpan="3">Niciun angajt nu a completat formularul.</td>
                   </tr>
-                );
-              }
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
         <ReactPaginate
           previousLabel={'Anterior'}
           nextLabel={'Următorul'}

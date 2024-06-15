@@ -4,6 +4,7 @@ import instance from '../../axiosConfig';
 import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
 import { useParams } from 'react-router-dom';
+import ReactPaginate from 'react-paginate';
 
 const FeedbackForm = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -20,6 +21,9 @@ const FeedbackForm = () => {
     const [editFormDescription, setEditFormDescription] = useState('');
     const [editHrReviewStatus, setEditHrReviewStatus] = useState('pending');
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const feedbackFormsPerPage = 4;
+    const [totalPages, setTotalPages] = useState(0);
 
     useEffect(() => {
         const fetchFeedbackForms = async () => {
@@ -39,35 +43,51 @@ const FeedbackForm = () => {
                     const hrCompanyId = hrResponse.data.company_id;
                     setHrCompany(hrCompanyId);
 
-                    const employeeResponse = await axios.get('/gestionare-ang/', {
-                        headers: { 'Authorization': `Bearer ${accessToken}` },
-                    });
-                    console.log('All Employees:', employeeResponse.data);
-
-                    console.log("Employees data:", employees);
-
-
-
-                    const feedbackResponse = await axios.get(`/formulare-feedback/?company_id=${hrCompanyId}`, {
-                        headers: { 'Authorization': `Bearer ${accessToken}` },
-                    });
-                    console.log('Feedback Forms:', feedbackResponse.data);
-                    setFeedbackForms(feedbackResponse.data);
-
-                    setIsLoading(false);
-
+                    // Now calling the paginated feedback forms fetch function
+                    fetchPaginatedFeedbackForms(hrCompanyId, currentPage);
                 } else {
                     console.log('HR Company data:', hrResponse.data);
                     setIsLoading(false);
                 }
             } catch (error) {
-                console.error('Error fetching feedback data:', error.response ? error.response.data : error);
+                console.error('Error fetching HR company data:', error);
                 setIsLoading(false);
             }
         };
 
         fetchFeedbackForms();
-    }, []);
+    }, [currentPage]); // Include currentPage in dependencies to fetch new pages
+
+    const fetchPaginatedFeedbackForms = async (companyId, page) => {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+            console.error("No access token found. User is not logged in.");
+            return;
+        }
+
+        const params = new URLSearchParams({
+            page: page + 1,
+            page_size: feedbackFormsPerPage
+        }).toString();
+
+        try {
+            const feedbackResponse = await axios.get(`http://localhost:8000/gestionare-feedback/${companyId}/?${params}`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            if (feedbackResponse.data) {
+                setFeedbackForms(feedbackResponse.data.results);
+                setTotalPages(Math.ceil(feedbackResponse.data.count / feedbackFormsPerPage));
+                console.log('Feedback Forms:', feedbackResponse.data);
+            } else {
+                setFeedbackForms([]);
+                console.error('No feedback forms found or data not in expected format:', feedbackResponse.data);
+            }
+            setIsLoading(false);
+        } catch (error) {
+            console.error('Error fetching feedback data:', error.response ? error.response.data : error);
+            setIsLoading(false);
+        }
+    };
 
     const handleCreateForm = async (form_id) => {
 
@@ -141,7 +161,6 @@ const FeedbackForm = () => {
                 },
             });
 
-            // Update the feedbackForms state to reflect the changes
             setFeedbackForms(prevForms => prevForms.map(form => {
                 if (form.id === editFormId) {
                     return { ...form, ...response.data };
@@ -150,12 +169,11 @@ const FeedbackForm = () => {
             }));
 
             alert('Formularul a fost actualizat cu succes!');
-            // Reset edit state and close modal if you have one
             setEditFormId(null);
             setEditFormTitle('');
             setEditFormDescription('');
             setEditHrReviewStatus('pending');
-            closeModal(); // You should have a function to close your edit modal
+            closeModal();
         } catch (error) {
             console.error('Error updating feedback form:', error.response ? error.response.data : error);
             alert('A apărut o eroare la actualizarea formularului.');
@@ -195,128 +213,147 @@ const FeedbackForm = () => {
         }
         return text;
     };
+
+    const handlePageChange = ({ selected }) => {
+        setCurrentPage(selected);
+    };
+
     return (
-        <div>
-            <div className="container-dashboard">
-                <h1>Gestionare feedback angajați</h1>
-                <table className="tabel column">
-                    <thead>
-                        <tr>
-                            <th>Titlu</th>
-                            <th>Descriere</th>
-                            <th>Creat de</th>
-                            <th>Creat la ora</th>
-                            <th>Status</th>
-                            <th>Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {feedbackForms.map((form) => (
-                            <tr key={form.id}>
-                                <td>
-                                    <Link to={`/feedback-details/${form.id}/`} style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}>
-                                        {form.title}
-                                    </Link>
-                                </td>
-                                <td>{truncateText(form.description, 50)}</td>
-                                <td>{form.created_by}</td>
-                                <td>{new Date(form.created_at).toLocaleDateString('ro-RO')}</td>
-                                <td>{form.hr_review_status_display}</td>
-                                <td>
-                                    <button onClick={() => openEditModal(form)}>Editează</button>
-                                    <button onClick={() => handleDeleteFeedback(form.id)}>Șterge</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        <div className="container-dashboard">
+            <h1>Formulare feedback</h1>
+            <div className="card-curs">
+            <div className="table-container">
+  <table className="styled-table">
+    <thead>
+      <tr>
+        <th>Titlu</th>
+        <th>Descriere</th>
+        <th>Creat de</th>
+        <th>Creat la ora</th>
+        <th>Status</th>
+        <th>Acțiuni</th>
+      </tr>
+    </thead>
+    <tbody>
+      {feedbackForms.map((form) => (
+        <tr key={form.id}>
+          <td>
+            <Link to={`/feedback-details/${form.id}/`} style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}>
+              {form.title}
+            </Link>
+          </td>
+          <td>{truncateText(form.description, 50)}</td>
+          <td>{form.created_by}</td>
+          <td>{new Date(form.created_at).toLocaleDateString('ro-RO')}</td>
+          <td>{form.hr_review_status_display}</td>
+          <td>
+            <button className='buton' onClick={() => openEditModal(form)}>Editează</button>
+            <button className='buton' onClick={() => handleDeleteFeedback(form.id)}>Șterge</button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
+                <ReactPaginate
+                    previousLabel={'Anterior'}
+                    nextLabel={'Următorul'}
+                    breakLabel={'...'}
+                    pageCount={totalPages}
+                    onPageChange={handlePageChange}
+                    containerClassName={'pagination'}
+                    activeClassName={'active'}
+                    forcePage={currentPage}
+                />
+                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                    <button className='buton' onClick={openModal}>Adaugă Formular Nou</button>
+                </div>
 
-                <Modal
-                    isOpen={isModalOpen}
-                    onRequestClose={closeModal}
-                    contentLabel="Adaugă Formular Nou"
-                    className="modal-content"
-                >
-                    <h2>Adaugă Formular Nou</h2>
-                    <form onSubmit={handleCreateForm}>
-                        <label htmlFor="title">Titlu Formular:</label>
-                        <input
-                            id="title"
-                            type="text"
-                            value={formTitle}
-                            onChange={(e) => setFormTitle(e.target.value)}
-                            required
-                        />
-                        <label htmlFor="description">Descriere:</label>
-                        <textarea
-                            id="description"
-                            value={formDescription}
-                            onChange={(e) => setFormDescription(e.target.value)}
-                        />
-                        <label htmlFor="hrReviewStatus">Status Revizuire HR:</label>
-                        <select
-                            id="hrReviewStatus"
-                            value={hrReviewStatus}
-                            onChange={(e) => setHrReviewStatus(e.target.value)}
-                            required
-                        >
-                            <option value="pending">În așteptare</option>
-                            <option value="reviewed">Revizuit</option>
-                            <option value="action_required">Acțiune necesară</option>
-                        </select>
-                        <div className="modal-footer">
-                            <button type="submit">Creează Formular</button>
-                            <button type="buton" onClick={closeModal}>Anulează</button>
-                        </div>
-                    </form>
-                </Modal>
-                <Modal
-                    isOpen={isEditModalOpen}
-                    onRequestClose={closeEditModal}
-                    contentLabel="Editează Formular"
-                    className="modal-content"
-                >
-                    <h2>Editează Formular</h2>
-                    <form onSubmit={handleEditFeedback}>
-                        <label htmlFor="editFormTitle">Titlu Formular:</label>
-                        <input
-                            id="editFormTitle"
-                            type="text"
-                            value={editFormTitle}
-                            onChange={(e) => setEditFormTitle(e.target.value)}
-                            required
-                        />
-                        <label htmlFor="editFormDescription">Descriere:</label>
-                        <textarea
-                            id="editFormDescription"
-                            value={editFormDescription}
-                            onChange={(e) => setEditFormDescription(e.target.value)}
-                        />
-                        <label htmlFor="editHrReviewStatus">Status Revizuire HR:</label>
-                        <select
-                            id="editHrReviewStatus"
-                            value={editHrReviewStatus}
-                            onChange={(e) => setEditHrReviewStatus(e.target.value)}
-                            required
-                        >
-                            <option value="pending">În așteptare</option>
-                            <option value="reviewed">Revizuit</option>
-                            <option value="action_required">Acțiune necesară</option>
-                        </select>
-                        <div className="modal-footer">
-                            <button type="submit">Salvează Modificările</button>
-                            <button type="button" onClick={closeEditModal}>Anulează</button>
-                        </div>
-                    </form>
-                </Modal>
 
             </div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <button className='buton' onClick={openModal}>Adaugă Formular Nou</button>
-            </div>
+
+            <Modal
+                isOpen={isModalOpen}
+                onRequestClose={closeModal}
+                contentLabel="Adaugă Formular Nou"
+                className="modal-content"
+            >
+                <h2>Adaugă Formular Nou</h2>
+                <form onSubmit={handleCreateForm}>
+                    <label htmlFor="title">Titlu Formular:</label>
+                    <input
+                        id="title"
+                        type="text"
+                        value={formTitle}
+                        onChange={(e) => setFormTitle(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="description">Descriere:</label>
+                    <textarea
+                        id="description"
+                        value={formDescription}
+                        onChange={(e) => setFormDescription(e.target.value)}
+                    />
+                    <label htmlFor="hrReviewStatus">Status Revizuire HR:</label>
+                    <select
+                        id="hrReviewStatus"
+                        value={hrReviewStatus}
+                        onChange={(e) => setHrReviewStatus(e.target.value)}
+                        required
+                    >
+                        <option value="pending">În așteptare</option>
+                        <option value="reviewed">Revizuit</option>
+                        <option value="action_required">Acțiune necesară</option>
+                    </select>
+                    <div className="modal-footer">
+                        <button type="submit">Creează Formular</button>
+                        <button type="buton" onClick={closeModal}>Anulează</button>
+                    </div>
+                </form>
+            </Modal>
+            <Modal
+                isOpen={isEditModalOpen}
+                onRequestClose={closeEditModal}
+                contentLabel="Editează Formular"
+                className="modal-content"
+            >
+                <h2>Editează Formular</h2>
+                <form onSubmit={handleEditFeedback}>
+                    <label htmlFor="editFormTitle">Titlu Formular:</label>
+                    <input
+                        id="editFormTitle"
+                        type="text"
+                        value={editFormTitle}
+                        onChange={(e) => setEditFormTitle(e.target.value)}
+                        required
+                    />
+                    <label htmlFor="editFormDescription">Descriere:</label>
+                    <textarea
+                        id="editFormDescription"
+                        value={editFormDescription}
+                        onChange={(e) => setEditFormDescription(e.target.value)}
+                    />
+                    <label htmlFor="editHrReviewStatus">Status Revizuire HR:</label>
+                    <select
+                        id="editHrReviewStatus"
+                        value={editHrReviewStatus}
+                        onChange={(e) => setEditHrReviewStatus(e.target.value)}
+                        required
+                    >
+                        <option value="pending">În așteptare</option>
+                        <option value="reviewed">Revizuit</option>
+                        <option value="action_required">Acțiune necesară</option>
+                    </select>
+                    <div className="modal-footer">
+                        <button type="submit">Salvează Modificările</button>
+                        <button type="button" onClick={closeEditModal}>Anulează</button>
+                    </div>
+                </form>
+            </Modal>
 
         </div>
+
     );
 };
 

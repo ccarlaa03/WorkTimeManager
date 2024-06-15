@@ -1,22 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
+import { Link } from 'react-router-dom';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import instance from '../../axiosConfig';
 import Cookies from 'js-cookie';
+import ReactPaginate from 'react-paginate';
 
 Modal.setAppElement('#root');
 
 const localizer = momentLocalizer(moment);
 
 const GestionareConcedii = () => {
-    const [renderData, setRenderData] = useState([]);
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [department, setDepartment] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [filteredEmployees, setFilteredEmployees] = useState([]);
     const [leaves, setLeaves] = useState([]);
     const [selectedLeave, setSelectedLeave] = useState(null);
@@ -30,23 +31,25 @@ const GestionareConcedii = () => {
     const [selectedDepartment, setSelectedDepartment] = useState('');
     const [reason, setReason] = useState('');
     const [modalError, setModalError] = useState('');
-    const [events, setEvents] = useState([]);
     const [hrCompanyId, setHrCompany] = useState(null);
-    const [filteredLeaves, setFilteredLeaves] = useState(leaves);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [error, setError] = useState(null);
+    const [filter, setFilter] = useState({
+        name: '',
+        function: '',
+        department: '',
+        leaveType: '',
+        startDate: '',
+        endDate: ''
+    });
+
+    const leavesPerPage = 6;
+    const [totalPages, setTotalPages] = useState(0);
     const navigate = useNavigate();
     const getAccessToken = () => localStorage.getItem('access_token');
     axios.defaults.xsrfCookieName = 'csrftoken';
     axios.defaults.xsrfHeaderName = 'X-CSRFToken';
     const csrfToken = Cookies.get('csrftoken');
-    const [displayedLeaves, setDisplayedLeaves] = useState(leaves);
-
-    const [filter, setFilter] = useState({
-        nume: '',
-        department: '',
-        leaveType: '',
-        status: '',
-    });
-    const departments = ["IT", "Marketing", "HR", "Contabilitate"];
 
     const LEAVE_TYPES = [
         { value: 'AN', label: 'Concediu Anual' },
@@ -87,19 +90,7 @@ const GestionareConcedii = () => {
                     const hrCompanyId = hrResponse.data.company_id;
                     setHrCompany(hrCompanyId);
 
-                    const employeeResponse = await axios.get('/gestionare-ang/', {
-                        headers: { 'Authorization': `Bearer ${accessToken}` },
-                    });
-                    console.log('All Employees:', employeeResponse.data);
-                    const filteredEmployees = employeeResponse.data.filter(employee => employee.company === hrCompanyId);
-                    setFilteredEmployees(filteredEmployees);
-
-                    const LeavesResponse = await instance.get(`/gestionare-concedii/?company_id=${hrCompanyId}`, {
-                        headers: { 'Authorization': `Bearer ${accessToken}` },
-                    });
-                    console.log('Leaves data:', LeavesResponse.data);
-                    setLeaves(LeavesResponse.data);
-
+                    await fetchLeaves(accessToken, hrCompanyId);
                 } else {
                     console.log('HR Company data:', hrResponse.data);
                 }
@@ -110,6 +101,46 @@ const GestionareConcedii = () => {
 
         initializeData();
     }, []);
+
+    const fetchLeaves = async (accessToken, hrCompanyId) => {
+        if (!accessToken || !hrCompanyId) {
+            console.error("No access token or HR Company ID found.");
+            return;
+        }
+
+        const params = new URLSearchParams({
+            company_id: hrCompanyId,
+            leave_type: filter.leaveType,
+            start_date: filter.startDate,
+            end_date: filter.endDate,
+            department: filter.department
+        }).toString();
+
+        const url = `http://localhost:8000/gestionare-concedii/?${params}`;
+        console.log(`Fetching leaves from: ${url}`);
+
+        try {
+            const LeavesResponse = await axios.get(url, {
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+            });
+            console.log('Leaves to render:', leaves);
+
+            console.log('Leaves data:', LeavesResponse.data);
+            setLeaves(LeavesResponse.data.results.leaves || []);
+            console.log('Departments data:', LeavesResponse.data.departments);
+            setDepartments(LeavesResponse.data.departments || []);
+
+            setTotalPages(Math.ceil(LeavesResponse.data.count / leavesPerPage));
+        } catch (error) {
+            console.error('Error fetching leaves:', error.response ? error.response.data : error);
+        }
+    }
+
+    useEffect(() => {
+        if (hrCompanyId) {
+            fetchLeaves();
+        }
+    }, [hrCompanyId, currentPage, filter]);
 
 
     //CREATE
@@ -122,7 +153,6 @@ const GestionareConcedii = () => {
             return;
         }
 
-        // Presupunem că `selectedEmployeeIds` este un array de string-uri cu ID-uri de angajați
         const leaveData = {
             users: selectedEmployeeIds,
             leave_type: selectedLeaveType,
@@ -151,13 +181,10 @@ const GestionareConcedii = () => {
         }
     };
 
-
-
     const handleEmployeeSelectionChange = (event) => {
         const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
         setSelectedEmployeeIds(selectedOptions);
     };
-
 
     // UPDATE
     const handleUpdateLeave = async (e) => {
@@ -203,7 +230,6 @@ const GestionareConcedii = () => {
         }
     };
 
-
     //DELETE
     const handleDeleteLeave = async (leaveId) => {
         try {
@@ -227,22 +253,6 @@ const GestionareConcedii = () => {
         resetForm();
     };
 
-
-
-
-    const holidays = [
-        new Date('2024-01-01'),
-        new Date('2024-04-01'),
-
-    ];
-
-
-    const isHoliday = (date) => {
-
-    };
-
-
-
     const handleApproveLeave = (leaveId, newStatus) => {
         setLeaves(leaves.map((leave) =>
             leave.id === leaveId ? { ...leave, status: newStatus } : leave
@@ -252,9 +262,7 @@ const GestionareConcedii = () => {
     const publicHolidays = [
         new Date('2024-01-01'),
         new Date('2024-04-01'),
-
     ];
-
 
     const isPublicHoliday = (date) => {
         return publicHolidays.some(
@@ -264,7 +272,6 @@ const GestionareConcedii = () => {
                 holiday.getFullYear() === date.getFullYear()
         );
     };
-
 
     const checkLeave = (startDate, endDate) => {
         let totalDays = 0;
@@ -276,8 +283,6 @@ const GestionareConcedii = () => {
         return totalDays;
     };
 
-
-
     const checkLeaveBalance = (employeeId, leaveDuration) => {
         const employee = employees.find(emp => emp.id === employeeId);
         if (!employee) return false;
@@ -285,7 +290,6 @@ const GestionareConcedii = () => {
     };
 
     const checkOverlap = (startDate, endDate, department) => {
-
         const employeesOnLeave = leaves.filter((leave) => {
             const employee = employees.find(emp => emp.id === leave.employeeId && emp.department === department);
             if (!employee) return false;
@@ -294,8 +298,7 @@ const GestionareConcedii = () => {
                 (new Date(leave.endDate) >= new Date(startDate))
             );
         });
-
-    }
+    };
 
     const resetForm = () => {
         setSelectedDepartment('');
@@ -309,27 +312,15 @@ const GestionareConcedii = () => {
         return Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
     };
 
-
-    const getLeaveHistory = (employeeId, leaves, totalLeaveDays) => {
-
-        const employeeLeaves = leaves.filter(leave => leave.employeeId === employeeId);
-
-
-        const usedLeaveDays = employeeLeaves.reduce((total, leave) => {
-            return total + calculateLeaveDays(leave.startDate, leave.endDate);
-        }, 0);
-
-        const leaveBalance = totalLeaveDays - usedLeaveDays;
-
-        return { leaves: employeeLeaves, leaveBalance };
-    };
-
-
     const OpenEditModal = (leave) => {
         setSelectedLeave(leave);
         setEditModalOpen(true);
     };
 
+    const getLeaveTypeLabel = (leaveTypeValue) => {
+        const type = LEAVE_TYPES.find(type => type.value === leaveTypeValue);
+        return type ? type.label : 'Nu este specificat tipul de concediu.';
+    };
 
     const handleSaveLeave = () => {
         if (selectedLeave) {
@@ -354,12 +345,10 @@ const GestionareConcedii = () => {
         }
     };
 
-
     const CloseAddModal = () => {
         setAddModalOpen(false);
         resetForm();
     };
-
 
     const leaveStatus = (leaveId, newStatus) => {
         if (leaveId === null) return;
@@ -374,122 +363,122 @@ const GestionareConcedii = () => {
         setLeaves(updatedLeaves);
     };
 
-    const handleFilterChange = (updatedFilters) => {
-        setFilter(updatedFilters);
+    const handleSearch = async () => {
+        setCurrentPage(0);
+        await fetchLeaves(getAccessToken(), hrCompanyId);
     };
 
-
-    const handleSearch = () => {
-        const filteredResults = leaves.filter(leave => {
-            // Find the corresponding employee for the leave entry
-            const employee = employees.find(emp => emp.user_id === leave.user_id); // Ensure the user_id fields match your database and JSON structure
-            if (!employee) return false; // Skip the leave if the employee isn't found
-
-            // Filter conditions
-            const matchesName = filter.nume ? employee.name.toLowerCase().includes(filter.nume.toLowerCase()) : true;
-            const matchesDepartment = filter.department ? employee.department === filter.department : true;
-            const matchesLeaveType = filter.leaveType ? leave.leave_type === filter.leaveType : true;
-            const matchesStatus = filter.status ? leave.status === filter.status : true;
-
-            // Return true if all conditions are met
-            return matchesName && matchesDepartment && matchesLeaveType && matchesStatus;
-        });
-
-        // Update the state with the filtered results
-        setFilteredLeaves(filteredResults);
+    const handleFilterChange = ({ target: { name, value } }) => {
+        setFilter(prevFilter => ({
+            ...prevFilter,
+            [name]: value
+        }));
     };
 
+    const handlePageChange = ({ selected }) => {
+        setCurrentPage(selected);
+    };
 
     return (
         <div>
             <div className="container-dashboard">
                 <h1>Gestionare concedii</h1>
                 <div className="filter-section" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                    <input
-                        type="text"
-                        placeholder="Caută după nume"
-                        value={filter.name}
-                        onChange={(e) => handleFilterChange({ ...filter, name: e.target.value })}
-                    />
-                    <button onClick={handleSearch}>Caută</button>
-                    <select
-                        className="select-style"
-                        value={filter.department}
-                        onChange={(e) => handleFilterChange({ ...filter, department: e.target.value })}
-                    >
-                        <option value="">Toate departamentele</option>
-                        {departments.map((department) => (
-                            <option key={department} value={department}>{department}</option>
-                        ))}
-                    </select>
+                    <div style={{ display: 'flex', width: '83%', gap: '10px', alignItems: 'center' }}>
+                        <select
+                            name="leaveType"
+                            value={filter.leaveType}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">Selectează tipul de concediu</option>
+                            {LEAVE_TYPES.map(type => (
+                                <option key={type.value} value={type.value}>{type.label}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="date"
+                            name="startDate"
+                            value={filter.startDate}
+                            onChange={handleFilterChange}
+                        />
+                        <input
+                            type="date"
+                            name="endDate"
+                            value={filter.endDate}
+                            onChange={handleFilterChange}
+                        />
+                        <select
+                            name="department"
+                            value={filter.department}
+                            onChange={handleFilterChange}
+                        >
+                            <option value="">Selectează departamentul</option>
+                            <option value="IT">IT</option>
+                            <option value="Marketing">Marketing</option>
+                        </select>
 
-                    <select
-                        className="select-style"
-                        value={filter.leaveType}
-                        onChange={(e) => handleFilterChange({ ...filter, leaveType: e.target.value })}
-                    >
-                        <option value="">Toate tipurile</option>
-                        {LEAVE_TYPES.map((type) => (
-                            <option key={type.value} value={type.value}>{type.label}</option>
-                        ))}
-                    </select>
-
-
-                    <select
-                        id="status-filter"
-                        className="select-style"
-                        value={filter.status}
-                        onChange={(e) => handleFilterChange({ ...filter, status: e.target.value })}
-                    >
-                        <option value="">Toate stările</option>
-                        <option value="În așteptare">În așteptare</option>
-                        <option value="Acceptat">Acceptat</option>
-                        <option value="Respins">Respins</option>
-                    </select>
-
+                        <button onClick={handleSearch}>CAUTĂ</button>
+                    </div>
                 </div>
-
-                <table className="tabel column">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Nume</th>
-                            <th>Departament</th>
-                            <th>Tipul de concediu</th>
-                            <th>Data început</th>
-                            <th>Data sfârșit</th>
-                            <th>Status</th>
-                            <th>Aprobare</th>
-                            <th>Acțiuni</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {leaves.length > 0 ? (
-                            leaves.map((leave) => (
-                                <tr key={leave.id}>
-                                    <td>{leave.user}</td>
-                                    <td onClick={() => navigate(`/angajat-profil/${leave.user}`)} style={{ cursor: 'pointer' }}>
-                                        {leave.employee_name}
-                                    </td>
-                                    <td>{leave.employee_department}</td>
-                                    <td>{leave.leave_type}</td>
-                                    <td>{moment(leave.start_date).format('YYYY-MM-DD')}</td>
-                                    <td>{moment(leave.end_date).format('YYYY-MM-DD')}</td>
-                                    <td>{statusMap[leave.status]}</td>
-                                    <td>{leave.is_approved ? 'Da' : 'Nu'}</td>
-                                    <td>
-                                        <button className='button' onClick={() => OpenEditModal(leave)}>Editare</button>
-                                        <button className='button' onClick={() => handleDeleteLeave(leave.id)}>Șterge</button>
-                                    </td>
+                <div className="table-container">
+                    <div className='card-curs'>
+                        <table className="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nume</th>
+                                    <th>Departament</th>
+                                    <th>Tipul de concediu</th>
+                                    <th>Data început</th>
+                                    <th>Data sfârșit</th>
+                                    <th>Status</th>
+                                    <th>Acțiuni</th>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="9">Nu există concedii.</td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                            </thead>
+
+                            <tbody>
+
+                                {leaves.length > 0 ? leaves.map(leave => (
+                                    <tr key={leave.id}>
+                                        <td>{leave.id}</td>
+                                        <td>
+                                            <Link
+                                                to={`/angajat-profil/${leave.user}`}
+                                                style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                                            >
+                                                {leave.employee_name}
+                                            </Link>
+                                        </td>
+                                        <td>{leave.employee_department}</td>
+                                        <td>{getLeaveTypeLabel(leave.leave_type)}</td>
+                                        <td>{moment(leave.start_date).format('YYYY-MM-DD')}</td>
+                                        <td>{moment(leave.end_date).format('YYYY-MM-DD')}</td>
+                                        <td>{statusMap[leave.status]}</td>
+                                        <td>
+                                            <button className='buton' onClick={() => OpenEditModal(leave)}>Editare</button>
+                                            <button className='buton' onClick={() => handleDeleteLeave(leave.id)}>Șterge</button>
+                                        </td>
+                                    </tr>
+                                )) : (
+                                    <tr>
+                                        <td colSpan="9">Nu există concedii.</td>
+                                    </tr>
+                                )}
+                            </tbody>
+
+                        </table>
+                        <ReactPaginate
+                            previousLabel={'Anterior'}
+                            nextLabel={'Următorul'}
+                            breakLabel={'...'}
+                            pageCount={totalPages}
+                            onPageChange={handlePageChange}
+                            containerClassName={'pagination'}
+                            activeClassName={'active'}
+                            forcePage={currentPage}
+                        />
+                    </div>
+                </div>
 
                 <Modal
                     isOpen={AddModalOpen}
@@ -513,7 +502,6 @@ const GestionareConcedii = () => {
                                     </option>
                                 ))}
                             </select>
-
                         </div>
 
                         <div className="form-group">
@@ -590,7 +578,6 @@ const GestionareConcedii = () => {
                     </form>
                 </Modal>
 
-
                 <Modal
                     isOpen={EditModalOpen}
                     onRequestClose={CloseEditModal}
@@ -647,8 +634,8 @@ const GestionareConcedii = () => {
                                 <label htmlFor="leaveType">Tipul de concediu:</label>
                                 <select
                                     className="select-style"
-                                    value={filter.leaveType}
-                                    onChange={(e) => handleFilterChange({ ...filter, leaveType: e.target.value })}
+                                    value={selectedLeave?.leave_type || ''}
+                                    onChange={(e) => setSelectedLeave({ ...selectedLeave, leave_type: e.target.value })}
                                 >
                                     <option value="">Toate tipurile</option>
                                     {LEAVE_TYPES.map((tip, index) => (
@@ -694,21 +681,9 @@ const GestionareConcedii = () => {
                 <div className="button-container">
                     <button className='buton' onClick={OpenAddModal}>Adaugă concediu</button>
                 </div>
-
-
-                <Calendar
-                    localizer={localizer}
-                    events={events}
-                    startAccessor="start"
-                    endAccessor="end"
-                    style={{ height: 500 }}
-                />
-
             </div>
         </div>
-
     );
-
 };
 
 export default GestionareConcedii;

@@ -2,11 +2,21 @@ import React, { useState, useEffect } from 'react';
 import instance from '../../axiosConfig';
 import { useParams } from 'react-router-dom';
 import Modal from 'react-modal';
+import axios from 'axios';
 
 const ProfilAngajat = () => {
   const { user_id } = useParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [confirmationMessage, setConfirmationMessage] = useState('');
+  const [filter, setFilter] = useState('month');
+  const [leaves, setLeaves] = useState({ data: [], pageCount: 0 });
+  const [workschedule, setWorkSchedule] = useState({ data: [], pageCount: 0 });
+  const [feedbackForms, setFeedbackForms] = useState({ data: [], pageCount: 0 });
+  const [trainingSessions, setTrainingSessions] = useState({ data: [], pageCount: 0 });
+  const itemsPerPage = 5;
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [selectedWeek, setSelectedWeek] = useState(1);
   const initialEmployeeState = {
     user_id: '',
     name: '',
@@ -18,6 +28,51 @@ const ProfilAngajat = () => {
     telephone_number: '',
   };
 
+  const [employee, setEmployee] = useState(initialEmployeeState);
+  const [employeeDetails, setEmployeeDetails] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const LEAVE_TYPES = [
+    { value: 'AN', label: 'Concediu Anual' },
+    { value: 'SI', label: 'Concediu Medical' },
+    { value: 'UP', label: 'Concediu Fără Plată' },
+    { value: 'MA', label: 'Concediu de Maternitate' },
+    { value: 'PA', label: 'Concediu de Paternitate' },
+    { value: 'ST', label: 'Concediu de Studii' },
+  ];
+
+  const statusMap = {
+    'AC': 'Acceptat',
+    'RE': 'Refuzat',
+    'PE': 'În așteptare'
+  };
+
+  const handleYearChange = (e) => {
+    setSelectedYear(e.target.value);
+  };
+
+  const handleMonthChange = (e) => {
+    setSelectedMonth(e.target.value);
+  };
+
+  const handleWeekChange = (e) => {
+    setSelectedWeek(e.target.value);
+  };
+
+  const FilterOptions = ({ onFilterChange }) => (
+    <select onChange={onFilterChange} value={filter}>
+      <option value="week">Săptămână</option>
+      <option value="month">Lună</option>
+      <option value="year">An</option>
+    </select>
+  );
+
+  const handleFilterChange = (e) => {
+    console.log("Selected value before set state:", e.target.value);
+    setFilter(e.target.value);
+    console.log("Selected value after set state:", filter);
+  };
+
+
   const handleEdit = () => {
     setIsModalOpen(true);
   };
@@ -27,15 +82,9 @@ const ProfilAngajat = () => {
     setConfirmationMessage("");
   };
 
-  const [editMode, setEditMode] = useState(false);
-  const [employee, setEmployee] = useState(initialEmployeeState);
-  const [workschedule, setWorkSchedule] = useState(null);
-  const [leaves, setLeaves] = useState(null);
-  const [employeedetails, seEmployeeDetails] = useState(null);
-
   useEffect(() => {
     const getAccessToken = () => localStorage.getItem('access_token');
-
+    console.log("Filter or user_id changed:", filter, user_id);
     const fetchHrCompany = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) {
@@ -65,30 +114,25 @@ const ProfilAngajat = () => {
         console.error("No access token found. User is not logged in.");
         return;
       }
-      console.log(`User ID from useParams is: ${user_id}`);
-      if (!user_id) {
-        console.error('User ID is undefined or null');
-        return;
-      }
 
       const url = `/angajat-profil/${user_id}/`;
-
-      console.log(`Requesting employee details from URL: http://localhost:8000${url}`);
-
-      const headers = {
-        'Authorization': `Bearer ${accessToken}`,
-      };
-      console.log(`Making a GET request to: ${url}`);
-      console.log(`Headers:`, headers);
-
       try {
-        const response = await instance.get(url, { headers });
+        console.log(`Fetching employee details from ${url}`);
+        const response = await instance.get(url, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
         setEmployee(response.data);
-
       } catch (error) {
         console.error('Error fetching employee details:', error);
       }
     };
+
+    const buildUrl = (base, userId) => {
+      let url = `${base}${userId}/`;
+      console.log("Built URL:", url);
+      return url;
+    };
+
 
     const fetchLeaves = async () => {
       const accessToken = getAccessToken();
@@ -96,11 +140,13 @@ const ProfilAngajat = () => {
         console.error("No access token found. User is not logged in.");
         return;
       }
+      const url = buildUrl('http://localhost:8000/angajat-concedii/', user_id);
+
       try {
-        const leaveResponse = await instance.get(`http://localhost:8000/angajat-concedii/${user_id}/`, {
+        const leaveResponse = await instance.get(url, {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
-        setLeaves(leaveResponse.data);
+        setLeaves({ data: leaveResponse.data || [], pageCount: Math.ceil(leaveResponse.data.length / itemsPerPage) });
       } catch (error) {
         console.error('Error fetching leaves:', error);
       }
@@ -113,30 +159,74 @@ const ProfilAngajat = () => {
         console.error("No access token found. User is not logged in.");
         return;
       }
+      const url = buildUrl('http://localhost:8000/angajat-prog/', user_id);
+
       try {
-        const leaveResponse = await instance.get(`http://localhost:8000/angajat-prog/${user_id}/`, {
+        const scheduleResponse = await instance.get(url, {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
-        setWorkSchedule(leaveResponse.data);
+        setWorkSchedule({ data: scheduleResponse.data || [], pageCount: Math.ceil(scheduleResponse.data.length / itemsPerPage) });
       } catch (error) {
-        console.error('Error fetching workschedule:', error);
+        console.error('Error fetching work schedule:', error);
       }
     };
 
+    const fetchFeedbackData = async () => {
+      setIsLoading(true);
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.error("No access token found. User is not logged in.");
+        setIsLoading(false);
+        return;
+      }
+      // Aici este corectată interpolarea lui user_id
+      const url = buildUrl('http://localhost:8000/employee/', `${user_id}/feedback`);
 
+      try {
+        const response = await axios.get(url, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setFeedbackForms({ data: response.data || [], pageCount: Math.ceil(response.data.length / itemsPerPage) });
+      } catch (error) {
+        console.error('Error fetching feedback data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const fetchTrainingData = async () => {
+      setIsLoading(true);
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.error("No access token found. User is not logged in.");
+        setIsLoading(false);
+        return;
+      }
+      // Aici este corectată interpolarea lui user_id
+      const url = buildUrl('http://localhost:8000/employee/', `${user_id}/trainings`);
+
+      try {
+        const response = await axios.get(url, {
+          headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setTrainingSessions({ data: response.data || [], pageCount: Math.ceil(response.data.length / itemsPerPage) });
+      } catch (error) {
+        console.error('Error fetching training data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Initialize all data fetch operations
     const initializeData = async () => {
-      const hrCompanyId = await fetchHrCompany();
-      if (hrCompanyId) {
-        await fetchEmployeeDetails();
-        await fetchLeaves();
-        await fetchWorkSchedule();
-
-      }
+      await fetchEmployeeDetails();
+      await fetchLeaves();
+      await fetchWorkSchedule();
+      await fetchFeedbackData();
+      await fetchTrainingData();
     };
-
-    initializeData(user_id);
-  }, [user_id]);
-
+    initializeData();
+  }, [user_id, filter]);
 
   const saveEmployeeDetails = async () => {
     const getAccessToken = () => localStorage.getItem('access_token');
@@ -154,8 +244,7 @@ const ProfilAngajat = () => {
 
     try {
       const response = await instance.put(url, employee, { headers });
-      console.log(typeof saveEmployeeDetails);
-      seEmployeeDetails(response.data);
+      setEmployeeDetails(response.data);
       setConfirmationMessage('Modificările au fost salvate cu succes!');
       setTimeout(() => {
         setConfirmationMessage('');
@@ -277,6 +366,7 @@ const ProfilAngajat = () => {
       </div>
     );
   };
+
   const EmployeeDetailsView = ({ employee, onEditClick }) => {
     return (
       <div className="personal-info">
@@ -320,19 +410,16 @@ const ProfilAngajat = () => {
             </tr>
           </tbody>
         </table>
-        <button className='buton' onClick={handleEdit}>Editează profilul</button>
+        <button className='buton' onClick={onEditClick}>Editează profilul</button>
       </div>
     );
   };
+
   return (
     <div className="container-dashboard">
       <div className="profile-content">
         <Modal className="modal-content" isOpen={isModalOpen} onRequestClose={handleCloseModal}>
-          <EmployeeDetailsEdit
-            employee={employee}
-            onSave={saveEmployeeDetails}
-            onChange={handleChange}
-          />
+          <EmployeeDetailsEdit employee={employee} onSave={saveEmployeeDetails} onChange={handleChange} confirmationMessage={confirmationMessage} />
           <button className='buton' onClick={handleCloseModal}>Închide</button>
         </Modal>
 
@@ -343,18 +430,20 @@ const ProfilAngajat = () => {
         <div className="lista-cursuri">
           <div className="card-curs">
             <h2>Concedii</h2>
-            {leaves ? (
-              <table>
+            <FilterOptions onFilterChange={handleFilterChange} />
+
+            {leaves.data.length > 0 ? (
+              <table className="tabel column">
                 <tbody>
-                  {leaves.map((leave) => (
+                  {leaves.data.map((leave) => (
                     <tr key={leave.id} className="leave-item">
-                      <th style={{ color: '#A087BC' }}>Id:</th>
+                      <th>Id:</th>
                       <td>{leave.id}</td>
-                      <th style={{ color: '#A087BC' }}>Status:</th>
-                      <td>{leave.status}</td>
-                      <th style={{ color: '#A087BC' }}>Tipul de concediu:</th>
-                      <td>{leave.leave_type}</td>
-                      <th style={{ color: '#A087BC' }}>Perioada:</th>
+                      <th>Status:</th>
+                      <td>{statusMap[leave.status]}</td>
+                      <th>Tipul de concediu:</th>
+                      <td>{LEAVE_TYPES.find(type => type.value === leave.leave_type)?.label}</td>
+                      <th>Perioada:</th>
                       <td>{`${leave.start_date} - ${leave.end_date}`}</td>
                     </tr>
                   ))}
@@ -367,18 +456,20 @@ const ProfilAngajat = () => {
 
           <div className="card-curs">
             <h2>Program de lucru</h2>
-            {workschedule ? (
-              <table>
+            <FilterOptions onFilterChange={handleFilterChange} />
+
+            {workschedule.data.length > 0 ? (
+              <table className="tabel column">
                 <tbody>
-                  {workschedule.map((schedule) => (
+                  {workschedule.data.map((schedule) => (
                     <tr key={schedule.id} className="schedule-item">
-                      <th style={{ color: '#A087BC' }}>Id:</th>
+                      <th>Id:</th>
                       <td>{schedule.id}</td>
-                      <th style={{ color: '#A087BC' }}>Data:</th>
+                      <th>Data:</th>
                       <td>{schedule.date}</td>
-                      <th style={{ color: '#A087BC' }}>Program:</th>
+                      <th>Program:</th>
                       <td>{`${schedule.start_time} - ${schedule.end_time}`}</td>
-                      <th style={{ color: '#A087BC' }}>Ore suplimentare:</th>
+                      <th>Ore suplimentare:</th>
                       <td>{schedule.overtime_hours}</td>
                     </tr>
                   ))}
@@ -386,6 +477,72 @@ const ProfilAngajat = () => {
               </table>
             ) : (
               <p>Încărcarea programului de lucru...</p>
+            )}
+          </div>
+
+          <div className="card-curs">
+            <h2>Feedback</h2>
+            <FilterOptions onFilterChange={handleFilterChange} />
+
+            {isLoading ? (
+              <p>Încărcarea feedback-ului...</p>
+            ) : feedbackForms.data.length > 0 ? (
+              <table className="tabel column">
+                <thead>
+                  <tr>
+                    <th>Titlu</th>
+                    <th>Creat de</th>
+                    <th>Creat la ora</th>
+                    <th>Angajat</th>
+                    <th>Data completată</th>
+                    <th>Scorul</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feedbackForms.data.map((feedback) => (
+                    <tr key={feedback.id}>
+                      <td>{feedback.form.title}</td>
+                      <td>{feedback.form.created_by}</td>
+                      <td>{new Date(feedback.form.created_at).toLocaleDateString()}</td>
+                      <td>{feedback.employee_name}</td>
+                      <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
+                      <td>{feedback.total_score}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Nu există feedback-uri disponibile.</p>
+            )}
+          </div>
+
+          <div className="card-curs">
+            <h2>Particicpări la cursuri</h2>
+            <FilterOptions onFilterChange={handleFilterChange} />
+
+            {isLoading ? (
+              <p>Încărcarea sesiunilor de training...</p>
+            ) : trainingSessions.data.length > 0 ? (
+              <table className="tabel column">
+                <thead>
+                  <tr>
+                    <th>Titlu</th>
+                    <th>Data începerii</th>
+                    <th>Data terminării</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {trainingSessions.data.map((session) => (
+                    <tr key={session.id}>
+                      <td>{session.title}</td>
+                      <td>{new Date(session.start_date).toLocaleDateString()}</td>
+                      <td>{new Date(session.end_date).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>Nu există sesiuni de training disponibile.</p>
             )}
           </div>
         </div>

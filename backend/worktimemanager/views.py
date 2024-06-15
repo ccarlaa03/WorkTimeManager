@@ -2,6 +2,7 @@ from django.db.models import Count, Sum, F, ExpressionWrapper, fields
 from django.db.models import Exists, OuterRef
 from collections import defaultdict
 from django.db import IntegrityError
+import calendar
 from decimal import Decimal
 from django.db.models import Q
 from dateutil.relativedelta import relativedelta
@@ -875,6 +876,25 @@ def workschedule_list(request, hrCompanyId=None):
     serializer = WorkScheduleSerializer(result_page, many=True)
     return paginator.get_paginated_response(serializer.data)
 
+
+
+def filter_query_by_date(queryset, year, month=None, week=None, date_field='date'):
+    year = int(year)
+    start_date, end_date = datetime(year, 1, 1), datetime(year, 12, 31)
+
+    if month:
+        start_date = datetime(year, int(month), 1)
+        end_date = datetime(year, int(month), calendar.monthrange(year, int(month))[1])
+    
+    if week and month:
+        start_of_week = start_date + timedelta(days=(int(week) - 1) * 7)
+        start_date = max(start_of_week, start_date)
+        end_date = min(start_date + timedelta(days=6), end_date)
+
+    start_date, end_date = make_aware(start_date), make_aware(end_date)
+    return queryset.filter(**{f"{date_field}__range": [start_date, end_date]})
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def employee_training_list(request, user_id):
@@ -882,15 +902,12 @@ def employee_training_list(request, user_id):
     serializer = TrainingSerializer(sessions, many=True)
     return Response(serializer.data)
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def employee_feedback_list(request, user_id):
     feedbacks = EmployeeFeedback.objects.filter(employee_id=user_id)
     serializer = EmployeeFeedbackSerializer(feedbacks, many=True)
     return Response(serializer.data)
-
-
 
 
 @api_view(['GET'])
@@ -901,13 +918,15 @@ def employee_workschedule_list(request, user_id):
     return Response(serializer.data)
 
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def employee_leaves_list(request, user_id):
     leaves = Leave.objects.filter(user_id=user_id)
     serializer = LeaveSerializer(leaves, many=True)
     return Response(serializer.data)
+
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1049,7 +1068,42 @@ def leave_list_create(request):
     serializer = LeaveSerializer(created_leaves, many=True)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def leave_list(request):
+    if request.user.role != 'hr':
+        return Response({'error': 'Doar HR-ul poate vizualiza concediile.'}, status=403)
+    
+    leave_type = request.query_params.get('leave_type')
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    department = request.query_params.get('department')
 
+    leaves = Leave.objects.all()
+    
+    if leave_type:
+        leaves = leaves.filter(leave_type__iexact=leave_type)
+    if start_date:
+        leaves = leaves.filter(start_date__gte=start_date)
+    if end_date:
+        leaves = leaves.filter(end_date__lte=end_date)
+    if department:
+        leaves = leaves.filter(user__department__iexact=department)  
+
+    paginator = PageNumberPagination()
+    paginated_leaves = paginator.paginate_queryset(leaves, request)
+    serializer = LeaveSerializer(paginated_leaves, many=True)
+
+    departments = Employee.objects.values('department').annotate(count=Count('department')).order_by('department')
+    department_list = [dept['department'] for dept in departments if dept['department']]
+
+    response_data = {
+        'leaves': serializer.data,
+        'departments': department_list,
+        'count': leaves.count()
+    }
+
+    return paginator.get_paginated_response(response_data)
 
 @api_view(['GET', 'PUT', 'DELETE'])
 @permission_classes([IsAuthenticated])
@@ -1074,12 +1128,8 @@ def leave_detail(request, id):
         leave.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
     
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def leave_list(request):
-    schedules = Leave.objects.all()
-    serializer = LeaveSerializer(schedules, many=True)
-    return Response(serializer.data)
+
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

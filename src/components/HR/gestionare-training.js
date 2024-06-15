@@ -65,10 +65,11 @@ const GestionareTrainingHR = () => {
                     const hrCompanyId = hrResponse.data.company_id;
                     setHrCompany(hrCompanyId);
 
-                    const employeeResponse = await axios.get('/gestionare-ang/', {
+                    const employeeResponse = await axios.get(`/gestionare-ang/${hrCompanyId}/`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` },
                     });
                     console.log('All Employees:', employeeResponse.data);
+                    
 
                     console.log("Employees data:", employees);
 

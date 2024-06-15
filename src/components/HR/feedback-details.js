@@ -13,9 +13,6 @@ const FeedbackDetails = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState({});
     const [newQuestionText, setNewQuestionText] = useState('');
-    const [newQuestionOrder, setNewQuestionOrder] = useState('');
-    const [newQuestionResponseType, setNewQuestionResponseType] = useState('text');
-    const [newQuestionRatingScale, setNewQuestionRatingScale] = useState('');
     const [options, setOptions] = useState([]);
     const [importance, setImportance] = useState(1);
 
@@ -54,13 +51,40 @@ const FeedbackDetails = () => {
             }
         }
 
-        async function fetchEmployees(accessToken) {
-            const employeeResponse = await instance.get('/gestionare-ang/', {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            console.log('All Employees:', employeeResponse.data);
-            setEmployees(employeeResponse.data);
+        async function fetchEmployees(accessToken, hrCompanyId) {
+            if (!accessToken) {
+                console.error("No access token found. User is not logged in.");
+                return;
+            }
+        
+            if (!hrCompanyId) {
+                console.error("No HR Company ID found.");
+                return;
+            }
+        
+            const url = `http://localhost:8000/gestionare-ang/${hrCompanyId}/`;
+            console.log(`Fetching employees from: ${url}`);
+        
+            try {
+                const employeeResponse = await instance.get(url, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+        
+                if (employeeResponse.data) {
+                    console.log('All Employees:', employeeResponse.data);
+                    setEmployees(employeeResponse.data);  
+                } else {
+                    console.error('No employee data or data not in expected format:', employeeResponse.data);
+                    setEmployees([]);  
+                }
+            } catch (error) {
+                console.error('Error fetching employees:', error.response ? error.response.data : error);
+            }
         }
+        
 
         async function fetchFormDetails(accessToken, formId) {
             try {
@@ -84,7 +108,7 @@ const FeedbackDetails = () => {
     const handleAddQuestion = async (e) => {
         e.preventDefault();
 
-        // Prepare the data structure
+
         const newQuestionData = {
             text: newQuestion.text.trim(),
             order: formDetails.questions.length + 1,

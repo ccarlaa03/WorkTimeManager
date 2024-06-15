@@ -135,7 +135,7 @@ p a {
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #E4E9EF;
-  max-width: 100%;
+  max-width: auto;
   overflow-x: auto;
   white-space: nowrap;
 }
@@ -394,8 +394,9 @@ button {
 
 .container-dashboard {
   max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
-  padding: 40px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 50px;
@@ -691,10 +692,6 @@ th {
     max-width: 100%;
   }
 
-  .container-dashboard {
-    margin: 0 -20px;
-    padding: 10px;
-  }
 }
 
 .container-profil img {
@@ -727,16 +724,21 @@ th {
 
 .tabel {
   width: auto;
-  max-width: auto;
+  max-width: 100%;
   margin: auto;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  margin-bottom: 30px;
+  margin-bottom: 20px;
   table-layout: fixed;
   overflow-x: auto;
   background-color: #A087BC;
   color: white;
   border-collapse: collapse;
-  border-spacing: 20px;
+  border-spacing: 0px;
+}
+@media (max-width: 768px) {
+  .tabel th, .tabel td {
+    width: 25%;
+  }
 }
 
 .tabel.column th,
@@ -747,17 +749,16 @@ th {
   text-align: center;
 }
 
-
 .tabel.column th {
   background-color: #A087BC;
+  width: 20%; 
 }
-
 
 .tabel td {
   border-bottom: 5px solid #FFFFFF;
   background-color: white;
   color: #333;
-  padding: 8px;
+  padding: 6px;
   text-align: center;
 }
 
@@ -767,10 +768,8 @@ th {
   color: white;
   border: none;
   padding: 6px 12px;
-  /* ajustat pentru a avea un aspect mai echilibrat */
   border-radius: 2px;
   margin-right: 10px;
-  /* spațiu la dreapta fiecărui buton */
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
@@ -785,8 +784,6 @@ th {
   padding: 8px;
   color: white;
 }
-
-
 
 .rapoarte-container {
   display: flex;
@@ -849,7 +846,6 @@ th {
 
 .employee-profile {
   background-color: #f5f5f5;
-  /* or your preferred background color */
   padding: 20px;
 }
 
@@ -990,12 +986,14 @@ th {
 @media (max-width: 768px) {
   .card-curs {
     flex: 0 1 calc(50% - 20px);
+    padding: 10px;
   }
 }
 
 @media (max-width: 480px) {
   .card-curs {
     flex: 0 1 100%;
+    padding: 10px; 
   }
 }
 
@@ -1154,4 +1152,46 @@ select::-ms-expand {
     font-size: 13px;
   }
 
+}
+
+.table-container {
+  overflow-x: auto; /* Asigură-te că tabelul este scrollabil pe ecrane mici */
+}
+
+.styled-table {
+  width: 100%;
+  margin: 20px 0;
+  border-collapse: collapse;
+  box-shadow: 0 0 20px rgba(0,0,0,0.15);
+}
+
+.styled-table th,
+.styled-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #dddddd;
+}
+
+.styled-table thead th {
+  background-color: #A087BC;
+  color: white;
+}
+
+.styled-table tbody td {
+  color: #333333;
+}
+
+.styled-table tbody tr:last-of-type {
+  border-bottom: 2px solid #A087BC;
+}
+
+.styled-table tbody tr:nth-of-type(even) {
+  background-color: #f3f3f3;
+}
+
+@media (max-width: 768px) {
+  .styled-table th, .styled-table td {
+    padding: 10px 5px;
+    font-size: 0.8rem; /* Micsorează fontul pentru vizibilitate mai bună pe ecrane mici */
+  }
 }

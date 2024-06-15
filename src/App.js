@@ -56,7 +56,7 @@ const App = () => {
           <Route path="/training" element={<TrainingEmployee />} />
           <Route path="/gestionare-training" element={<GestionareTraining />} />
           <Route path="/owner-dashboard" element={<OwnerDashboard />} />
-          <Route path="/formulare-feeedback" element={<FeedbackForm />} />
+          <Route path="/formulare-feedback" element={<FeedbackForm />} />
           <Route path="/feedback-details/:form_id" element={<FeedbackDetails />} />
           <Route path="/gestionare-angajati" element={<EmployeeManagement />} />
           <Route path="/gestionare-angajati/owner/angajat-profil/:user_id" element={<ProfilAngajatOwner />} />
