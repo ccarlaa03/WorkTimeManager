@@ -1,4 +1,4 @@
-from django.db.models import Count, Sum, F, ExpressionWrapper, fields
+from django.db.models import Count, Sum, F, ExpressionWrapper, DurationField
 from django.db.models import Exists, OuterRef
 from collections import defaultdict
 from django.db import IntegrityError
@@ -262,7 +262,7 @@ def create_employee_user(request):
             address=data.get('address', ''),
             telephone_number=data.get('telephone_number', ''),
             working_hours=data.get('working_hours', 0),
-            free_days=data.get('free_days', 0)
+            free_days=data.get('free_days', 22)
         )
         return Response({'message': 'Employee created successfully', 'user_id': user.id}, status=status.HTTP_201_CREATED)
     except IntegrityError as e:
@@ -496,7 +496,7 @@ def create_employee(request):
             address=data.get('address', ''),
             telephone_number=data.get('telephone_number', ''),
             working_hours=data.get('working_hours', 0),
-            free_days=data.get('free_days', 0),
+            free_days=data.get('free_days', 22),
         )
         
         return Response({'message': 'Employee created successfully', 'user_id': user.id, 'email': email}, status=status.HTTP_201_CREATED)
@@ -634,7 +634,7 @@ def employee_dashboard(request):
 def fetch_notifications(request, user_id=None):
     user = get_object_or_404(User, pk=user_id)
     if request.user.id == user.id:  
-        notifications = Notification.objects.filter(recipient=user).order_by('-created_at')
+        notifications = Notification.objects.filter(recipient=user, is_read=False).order_by('-created_at')
         notifications_data = [{
             "id": n.id,
             "message": n.message,
@@ -644,6 +644,7 @@ def fetch_notifications(request, user_id=None):
         return Response({'notifications': notifications_data})
     else:
         return Response({"error": "Unauthorized access"}, status=403)
+
 
 
 @api_view(['POST'])
@@ -678,14 +679,20 @@ def send_notification(request):
 @permission_classes([IsAuthenticated])
 def mark_notification_as_read(request, notification_id):
     try:
-        if not Notification.is_read:
-            Notification.is_read = True
-            Notification.save()
+        notification = Notification.objects.get(id=notification_id)
+        
+        if not notification.is_read:
+            notification.is_read = True
+            notification.save()
             return Response({'status': 'success', 'message': 'Notificarea a fost marcată ca citită.'})
-        return Response({'status': 'error', 'message': 'Notificarea este deja marcată ca citită.'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({'status': 'error', 'message': 'Notificarea este deja marcată ca citită.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Notification.DoesNotExist:
+        return Response({'status': 'error', 'message': 'Notificarea nu a fost găsită.'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
         logger.error(f"Failed to mark notification as read: {e}", exc_info=True)
-        return Response({'status': 'error', 'message': str(e)}, status=500)
+        return Response({'status': 'error', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['PUT'])
@@ -708,19 +715,19 @@ def update_employee_profile(request, user_id):
 @permission_classes([IsAuthenticated])
 def weekly_statistics(request, user_id):
     today = now().date()
-    year, week_num, weekday = today.isocalendar()
+    year, week_num, _ = today.isocalendar()  # Ignorăm ziua săptămânii
     weekly_schedules = WorkSchedule.objects.filter(
         user_id=user_id,
         date__year=year,
-        date__week=week_num
+        date__week=week_num  # Folosim date__week pentru a filtra după săptămâna ISO
     ).annotate(
-        worked_hours=ExpressionWrapper(
+        calculated_worked_hours=ExpressionWrapper(
             F('end_time') - F('start_time'),
-            output_field=fields.DurationField()
+            output_field=DurationField()
         )
     )
     statistics = weekly_schedules.aggregate(
-        total_hours=Sum('worked_hours'),
+        total_hours=Sum('calculated_worked_hours'),
         total_overtime=Sum('overtime_hours')
     )
     total_hours = statistics['total_hours'].total_seconds() / 3600 if statistics['total_hours'] else 0

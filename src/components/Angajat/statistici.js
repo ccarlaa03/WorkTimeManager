@@ -9,16 +9,16 @@ const Statistici = ({ user_id }) => {
 
   useEffect(() => {
     const fetchStats = async () => {
-
       if (!accessToken) {
         console.log("Access denied. No token available.");
         return;
       }
-
+    
       try {
         const response = await axios.get(`http://localhost:8000/employee/${user_id}/weekly-stats/`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
+        console.log("Response data:", response.data);  // Afișează datele primite pentru a verifica structura
         if (response.data) {
           updateChartData(response.data);
         }
@@ -26,12 +26,15 @@ const Statistici = ({ user_id }) => {
         console.error("Error loading weekly statistics:", error);
       }
     };
+    
 
 
     fetchStats();
   }, [user_id]);
 
   const updateChartData = (data) => {
+    // Verifică structura datelor și ajustează dacă este necesar
+    console.log("Data for chart:", data);
     const chartData = {
       labels: ['Ore lucrate ', 'Media zilnică de ore', 'Ore suplimentare'],
       datasets: [
@@ -44,6 +47,7 @@ const Statistici = ({ user_id }) => {
     };
     setStatsData(chartData);
   };
+  
 
   return (
     <div className="content-container">

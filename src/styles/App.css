@@ -1195,3 +1195,21 @@ select::-ms-expand {
     font-size: 0.8rem; /* Micsorează fontul pentru vizibilitate mai bună pe ecrane mici */
   }
 }
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-bottom: 1px solid #ccc;
+}
+
+.notification-item p {
+  margin: 0;
+  flex: 1;
+}
+
+input[type="checkbox"] {
+  margin-left: 10px;
+}

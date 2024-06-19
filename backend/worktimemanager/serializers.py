@@ -40,7 +40,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Employee
-        fields = ['user', 'name', 'email', 'telephone_number', 'department', 'position', 'working_hours', 'address', 'hire_date', 'company']
+        fields = ['user', 'name', 'email', 'telephone_number', 'department', 'position', 'working_hours', 'address', 'hire_date', 'company', 'free_days', 'birth_date']
 
     def get_email(self, obj):
         return obj.user.email

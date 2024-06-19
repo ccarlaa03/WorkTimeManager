@@ -3,6 +3,25 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import instance from '../../axiosConfig';
 import ReactPaginate from 'react-paginate';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const GestionareFeedback = () => {
   const navigate = useNavigate();
@@ -10,7 +29,7 @@ const GestionareFeedback = () => {
   const [hrCompanyId, setHrCompany] = useState(null);
   const [feedbackForms, setFeedbackForms] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const feedbackFormsPerPage = 4;
+  const feedbackFormsPerPage = 6;
   const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
@@ -75,14 +94,24 @@ const GestionareFeedback = () => {
     }
   };
 
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  const feedbackData = {
+    labels: feedbackForms.map(form => form.title),
+    datasets: [{
+      label: 'Număr de feedback-uri completate',
+      data: feedbackForms.map(form => form.employee_feedbacks.length),
+      backgroundColor: 'rgba(160, 135, 188, 0.5)',
+      borderColor: 'rgba(201, 203, 207, 0.8)',
+      borderWidth: 1,
+    }]
+  };
 
   if (isLoading) {
     return <div>Se încarcă...</div>;
   }
-
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
-  };
 
   return (
     <div className="container-dashboard">
@@ -120,7 +149,7 @@ const GestionareFeedback = () => {
                     <td>{form.created_by}</td>
                     <td>{new Date(form.created_at).toLocaleDateString()}</td>
                     <td>{form.hr_review_status_display}</td>
-                    <td colSpan="3">Niciun angajt nu a completat formularul.</td>
+                    <td colSpan="3">Niciun angajat nu a completat formularul.</td>
                   </tr>
               ))}
             </tbody>
@@ -142,6 +171,10 @@ const GestionareFeedback = () => {
         <Link to="/formulare-feedback">
           <button className="buton">Formulare Feedback</button>
         </Link>
+      </div>
+      <div className="card-curs">
+        <h2>Rapoarte feedback</h2>
+        <Bar data={feedbackData} />
       </div>
     </div>
   );

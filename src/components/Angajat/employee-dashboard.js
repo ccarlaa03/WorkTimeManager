@@ -185,9 +185,9 @@ const Dashboard = () => {
             <div className="card-curs" style={{ textAlign: 'center' }}>
 
               <p><strong>Post:</strong> {employeeInfo.position}</p>
+              <p><strong>Data nașteri:</strong> {employeeInfo.birth_date}</p>
               <p><strong>Departament:</strong> {employeeInfo.department}</p>
               <p><strong>Data angajării:</strong> {employeeInfo.hire_date}</p>
-              <p><strong>Ore lucrate pe lună:</strong> {employeeInfo.working_hours}</p>
               <p><strong>Zile libere:</strong> {employeeInfo.free_days}</p>
               <p><strong>Email:</strong> {employeeInfo.email}</p>
               <p><strong>Adresa:</strong> {employeeInfo.address}</p>

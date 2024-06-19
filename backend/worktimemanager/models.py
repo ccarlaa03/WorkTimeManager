@@ -143,7 +143,7 @@ class Employee(models.Model):
     department = models.CharField(max_length=100)
     hire_date = models.DateField()
     working_hours = models.IntegerField(default=0)
-    free_days = models.IntegerField(default=0)
+    free_days = models.IntegerField(default=22)
     company = models.ForeignKey(Company, on_delete=models.CASCADE, null=True, blank=True)
     email = models.EmailField(max_length=100, unique=True, db_index=True, null=True)
     address = models.CharField(max_length=100, null=True)
