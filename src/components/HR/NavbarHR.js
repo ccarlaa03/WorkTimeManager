@@ -23,7 +23,7 @@ const NavbarHR = () => {
           <NavLink to="/gestionare-prog" className={({ isActive }) => isActive ? 'active' : ''}>Program de lucru</NavLink>
         </li>
         <li>
-          <NavLink to="/gestionare-feedback" className={({ isActive }) => isActive ? 'active' : ''}> Feedback</NavLink>
+          <NavLink to="/formulare-feedback" className={({ isActive }) => isActive ? 'active' : ''}> Feedback</NavLink>
         </li>
         <li>
           <NavLink to="/gestionare-concedii" className={({ isActive }) => isActive ? 'active' : ''}>Concedii</NavLink>

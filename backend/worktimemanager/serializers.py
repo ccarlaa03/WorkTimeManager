@@ -134,14 +134,17 @@ def validate(self, attrs):
 class EmployeeFeedbackSerializer(serializers.ModelSerializer):
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     employee_name = serializers.CharField(source='employee.name')
+    department = serializers.CharField(source='employee.department') 
     questions_and_responses = serializers.SerializerMethodField()
     total_score = serializers.IntegerField()
+
     class Meta:
         model = EmployeeFeedback
-        fields = ['id', 'employee_name', 'employee_department', 'form', 'questions', 'date_completed', 'questions_and_responses', 'total_score']
-        depth = 1  
+        fields = ['id', 'employee_name', 'department', 'form', 'questions', 'date_completed', 'questions_and_responses', 'total_score']
+        depth = 1
+
     def get_questions_and_responses(self, obj):
-        responses = obj.responses.all()  
+        responses = obj.responses.all()
         return [
             {
                 'question': response.question.text,

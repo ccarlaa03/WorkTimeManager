@@ -12,7 +12,6 @@ import HrDashboard from './components/HR/hr-dashboard';
 import ProgramLucru from './components/Angajat/program-lucru';
 import Concedii from './components/Angajat/concedii';
 import Feedback from './components/Angajat/feedback-ang';
-import GestionareFeedback from './components/HR/gestionare-feedback';
 import GestionareAngajati from './components/HR/gestionare-ang';
 import GestionareProgramLucru from './components/HR/gestionare-prog';
 import GestionareConcedii from './components/HR/gestionare-concedii';
@@ -48,7 +47,6 @@ const App = () => {
           <Route path="/concedii" element={<Concedii />} />
           <Route path="/feedback-ang" element={<Feedback />} />
           <Route path="/Hr-dashboard" element={<HrDashboard />} />
-          <Route path="/gestionare-feedback" element={<GestionareFeedback />} />
           <Route path="/gestionare-prog" element={<GestionareProgramLucru />} />
           <Route path="/angajat-profil/:user_id" element={<ProfilAngajat />} />
           <Route path="/gestionare-ang" element={<GestionareAngajati />} />

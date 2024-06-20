@@ -77,6 +77,7 @@ urlpatterns = [
 
     path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),
     path('gestionare-feedback/<int:company_id>/', views.list_feedback_forms, name='list-feedback-forms'),
+    path('feedback-form-details/<int:form_id>/', views.get_feedback_form_details, name='feedback-form-details'),
     path('formulare-feedback/', views.list_feedback_forms, name='formulare_feedback'),
     path('feedback/delete/<int:form_id>/', views.delete_feedback_form, name='delete_feedback_form'),
     path('feedback/create/', views.create_feedback, name='create_feedback'),

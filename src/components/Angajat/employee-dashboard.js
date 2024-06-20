@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useContext } from 'react';
-import defaultImage from '../../photos/imagine-profil.jpg';
 import Statistici from './statistici';
 import Notifications from './notificari';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -8,7 +7,6 @@ import moment from 'moment';
 import Modal from 'react-modal';
 import Pontator from './pontator';
 import axios from 'axios';
-import instance from '../../axiosConfig';
 import { AuthContext } from '../../AuthContext';
 
 Modal.setAppElement('#root');
@@ -32,8 +30,6 @@ const Dashboard = () => {
     user: '',
   });
 
-  const [freeDays, setFreeDays] = useState(2);
-  const [modalEditScheduleIsOpen, setModalEditScheduleIsOpen] = useState(false);
   const [modalEditProfileIsOpen, setModalEditProfileIsOpen] = useState(false);
   const [events, setEvents] = useState([]);
   const [profileToEdit, setProfileToEdit] = useState({

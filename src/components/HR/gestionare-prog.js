@@ -260,7 +260,7 @@ const GestionareProgramLucru = () => {
 
       console.log('Work schedule created successfully:', response.data);
       setWorkSchedules([...workSchedules, response.data]);
-      fetchWorkSchedules(); 
+      fetchWorkSchedules();
       handleCloseAddModal();
       showModal('Programul de lucru a fost creat cu succes.');
     } catch (error) {
@@ -458,11 +458,12 @@ const GestionareProgramLucru = () => {
           activeClassName={'active'}
           forcePage={currentPage}
         />
+        <div className="button-container">
+          <button className="buton" onClick={handleOpenAddModal}>Adaugă program de lucru</button>
+        </div>
       </div>
 
-      <div className="button-container">
-        <button className="buton" onClick={handleOpenAddModal}>Adaugă program de lucru</button>
-      </div>
+
       <div className='card-curs'>
         <Calendar
           localizer={localizer}

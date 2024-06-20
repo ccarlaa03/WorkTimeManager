@@ -1181,16 +1181,35 @@ def edit_employee(request, user_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def list_feedback_forms(request, company_id):
-    paginator = PageNumberPagination()
-    paginator.page_size = request.query_params.get('page_size', 10)
-
     company = get_object_or_404(Company, pk=company_id)
+
     forms = FeedbackForm.objects.all()
+    page_size = int(request.query_params.get('page_size', 6))  # Ensure this line correctly gets page_size
+    paginator = Paginator(forms, page_size)
+    
+    page = int(request.query_params.get('page', 1))  # Ensure this line correctly gets page
+    try:
+        forms_page = paginator.page(page)
+    except PageNotAnInteger:
+        forms_page = paginator.page(1)
+    except EmptyPage:
+        forms_page = paginator.page(paginator.num_pages)
+    
+    serializer = FeedbackFormSerializer(forms_page, many=True)
+    return Response({
+        'count': paginator.count,
+        'total_pages': paginator.num_pages,
+        'current_page': forms_page.number,
+        'results': serializer.data
+    })
 
-    result_page = paginator.paginate_queryset(forms, request)
-    serializer = FeedbackFormSerializer(result_page, many=True)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_feedback_form_details(request, form_id):
+    form = get_object_or_404(FeedbackForm, pk=form_id)
+    serializer = FeedbackFormSerializer(form)
+    return Response(serializer.data)
 
-    return paginator.get_paginated_response(serializer.data)
 
 
 @api_view(['GET'])

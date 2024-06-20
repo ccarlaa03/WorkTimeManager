@@ -5,10 +5,10 @@ import { Link } from 'react-router-dom';
 import Modal from 'react-modal';
 import { useParams } from 'react-router-dom';
 import ReactPaginate from 'react-paginate';
+import { Bar } from 'react-chartjs-2';
 
 const FeedbackForm = () => {
     const [isLoading, setIsLoading] = useState(true);
-    const [employees, setEmployees] = useState([]);
     const [hrCompanyId, setHrCompany] = useState(null);
     const [feedbackForms, setFeedbackForms] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,6 +24,8 @@ const FeedbackForm = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const feedbackFormsPerPage = 4;
     const [totalPages, setTotalPages] = useState(0);
+    const [selectedForm, setSelectedForm] = useState(null);
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchFeedbackForms = async () => {
@@ -87,6 +89,17 @@ const FeedbackForm = () => {
             console.error('Error fetching feedback data:', error.response ? error.response.data : error);
             setIsLoading(false);
         }
+    };
+
+    const feedbackData = {
+        labels: feedbackForms.map(form => form.title),
+        datasets: [{
+            label: 'Număr de feedback-uri completate',
+            data: feedbackForms.map(form => form.employee_feedbacks ? form.employee_feedbacks.length : 0),
+            backgroundColor: 'rgba(160, 135, 188, 0.5)',
+            borderColor: 'rgba(201, 203, 207, 0.8)',
+            borderWidth: 1,
+        }]
     };
 
     const handleCreateForm = async (form_id) => {
@@ -203,7 +216,10 @@ const FeedbackForm = () => {
         setFormTitle("");
         setFormDescription("");
     };
-
+    const closeDetailsModal = () => {
+        setIsDetailsModalOpen(false);
+        setSelectedForm(null);
+    };
     if (isLoading) {
         return <div>Se încarcă...</div>;
     }
@@ -217,44 +233,58 @@ const FeedbackForm = () => {
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected);
     };
+    const openDetailsModal = async (formId) => {
+        const accessToken = localStorage.getItem('access_token');
+        try {
+            const response = await axios.get(`http://localhost:8000/feedback-form-details/${formId}/`, {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            setSelectedForm(response.data);
+            setIsDetailsModalOpen(true);
+        } catch (error) {
+            console.error('Error fetching feedback form details:', error);
+        }
+    };
 
     return (
         <div className="container-dashboard">
-            <h1>Formulare feedback</h1>
+            <h1>Gestionare feedback</h1>
             <div className="card-curs">
-            <div className="table-container">
-  <table className="styled-table">
-    <thead>
-      <tr>
-        <th>Titlu</th>
-        <th>Descriere</th>
-        <th>Creat de</th>
-        <th>Creat la ora</th>
-        <th>Status</th>
-        <th>Acțiuni</th>
-      </tr>
-    </thead>
-    <tbody>
-      {feedbackForms.map((form) => (
-        <tr key={form.id}>
-          <td>
-            <Link to={`/feedback-details/${form.id}/`} style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}>
-              {form.title}
-            </Link>
-          </td>
-          <td>{truncateText(form.description, 50)}</td>
-          <td>{form.created_by}</td>
-          <td>{new Date(form.created_at).toLocaleDateString('ro-RO')}</td>
-          <td>{form.hr_review_status_display}</td>
-          <td>
-            <button className='buton' onClick={() => openEditModal(form)}>Editează</button>
-            <button className='buton' onClick={() => handleDeleteFeedback(form.id)}>Șterge</button>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+                <div className="table-container">
+                    <table className="styled-table">
+                        <thead>
+                            <tr>
+                                <th>Titlu</th>
+                                <th>Descriere</th>
+                                <th>Creat de</th>
+                                <th>Creat la ora</th>
+                                <th>Status</th>
+                                <th>Acțiuni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {feedbackForms.map((form) => (
+                                <tr key={form.id}>
+                                    <td>
+                                        <Link to={`/feedback-details/${form.id}/`} style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}>
+                                            {form.title}
+                                        </Link>
+                                    </td>
+                                    <td>{truncateText(form.description, 50)}</td>
+                                    <td>{form.created_by}</td>
+                                    <td>{new Date(form.created_at).toLocaleDateString('ro-RO')}</td>
+                                    <td>{form.hr_review_status_display}</td>
+                                    <td>
+                                        <button className='buton' onClick={() => openEditModal(form)}>Editează</button>
+                                        <button className='buton' onClick={() => handleDeleteFeedback(form.id)}>Șterge</button>
+                                        <button className='buton' onClick={() => openDetailsModal(form.id)}>Detalii</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
 
                 <ReactPaginate
                     previousLabel={'Anterior'}
@@ -272,7 +302,46 @@ const FeedbackForm = () => {
 
 
             </div>
+            <Modal
+                isOpen={isDetailsModalOpen}
+                onRequestClose={closeDetailsModal}
+                contentLabel="Feedback Form Details"
+                className="modal-content"
+            >
+                {selectedForm ? (
+                    <div align="center">
+                        <h2>{selectedForm.title}</h2>
+                        <p><strong>Creat de:</strong> {selectedForm.created_by}</p>
+                        <p><strong>Data creării:</strong> {new Date(selectedForm.created_at).toLocaleDateString()}</p>
+                        <p><strong>Status:</strong> {selectedForm.hr_review_status_display}</p>
+                        <p><strong>Număr de participanți:</strong> {selectedForm.employee_feedbacks.length}</p>
+                        <table className="styled-table">
+                            <thead>
+                                <tr>
+                                    <th>Numele angajatului</th>
+                                    <th>Departamentul</th>
+                                    <th>Scorul</th>
+                                    <th>Data completării</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {selectedForm.employee_feedbacks.map((feedback, index) => (
+                                    <tr key={index}>
+                                        <td>{feedback.employee_name}</td>
+                                        <td>{feedback.department}</td>
+                                        <td>{feedback.total_score}</td>
+                                        <td>{new Date(feedback.date_completed).toLocaleDateString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
 
+                        <button align="center" className="buton" onClick={closeDetailsModal}>Închide</button>
+                    </div>
+                ) : (
+                    <p>Nu există încă detalii.</p>
+                )}
+            </Modal>
             <Modal
                 isOpen={isModalOpen}
                 onRequestClose={closeModal}
@@ -351,7 +420,10 @@ const FeedbackForm = () => {
                     </div>
                 </form>
             </Modal>
-
+            <div className="card-curs">
+                <h2>Rapoarte feedback</h2>
+                <Bar data={feedbackData} />
+            </div>
         </div>
 
     );

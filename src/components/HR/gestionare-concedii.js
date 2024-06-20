@@ -477,6 +477,9 @@ const GestionareConcedii = () => {
                             activeClassName={'active'}
                             forcePage={currentPage}
                         />
+                        <div className="button-container">
+                            <button className='buton' onClick={OpenAddModal}>Adaugă concediu</button>
+                        </div>
                     </div>
                 </div>
 
@@ -678,9 +681,7 @@ const GestionareConcedii = () => {
                     </form>
                 </Modal>
 
-                <div className="button-container">
-                    <button className='buton' onClick={OpenAddModal}>Adaugă concediu</button>
-                </div>
+
             </div>
         </div>
     );
