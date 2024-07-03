@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Modal from 'react-modal';
-import { Calendar, momentLocalizer } from 'react-big-calendar';
 import { Link } from 'react-router-dom';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -9,10 +8,9 @@ import axios from 'axios';
 import instance from '../../axiosConfig';
 import Cookies from 'js-cookie';
 import ReactPaginate from 'react-paginate';
+import DatePicker from 'react-datepicker';
 
 Modal.setAppElement('#root');
-
-const localizer = momentLocalizer(moment);
 
 const GestionareConcedii = () => {
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
@@ -42,22 +40,27 @@ const GestionareConcedii = () => {
         startDate: '',
         endDate: ''
     });
-
+    const [selectedDateRange, setSelectedDateRange] = useState([new Date(), new Date()]);
     const leavesPerPage = 6;
     const [totalPages, setTotalPages] = useState(0);
     const navigate = useNavigate();
-    const getAccessToken = () => localStorage.getItem('access_token');
+    const getAccessToken = () => {
+        const token = localStorage.getItem('access_token');
+        console.log('AccessToken:', token);
+        return token;
+    };
+
     axios.defaults.xsrfCookieName = 'csrftoken';
     axios.defaults.xsrfHeaderName = 'X-CSRFToken';
     const csrfToken = Cookies.get('csrftoken');
 
     const LEAVE_TYPES = [
-        { value: 'AN', label: 'Concediu Anual' },
-        { value: 'SI', label: 'Concediu Medical' },
-        { value: 'UP', label: 'Concediu Fără Plată' },
-        { value: 'MA', label: 'Concediu de Maternitate' },
-        { value: 'PA', label: 'Concediu de Paternitate' },
-        { value: 'ST', label: 'Concediu de Studii' },
+        { value: 'AN', label: 'Concediu anual' },
+        { value: 'SI', label: 'Concediu medical' },
+        { value: 'UP', label: 'Concediu fără plată' },
+        { value: 'MA', label: 'Concediu de maternitate' },
+        { value: 'PA', label: 'Concediu de paternitate' },
+        { value: 'ST', label: 'Concediu de studii' },
     ];
 
     const statusMap = {
@@ -71,6 +74,43 @@ const GestionareConcedii = () => {
         config.headers['X-CSRFToken'] = csrftoken;
         return config;
     });
+
+   // Funcția pentru preluarea concediilor
+const fetchLeaves = async (accessToken, hrCompanyId, page = 0) => {
+    if (!accessToken || !hrCompanyId) {
+        console.error("Nu s-a găsit niciun token de acces sau ID Companie HR.");
+        return;
+    }
+
+    const params = new URLSearchParams({
+        company_id: hrCompanyId,
+        leave_type: filter.leaveType,
+        start_date: filter.startDate,
+        end_date: filter.endDate,
+        department: filter.department,
+        page: page + 1  // API-urile RESTful încep de obicei de la 1
+    }).toString();
+
+    const url = `http://localhost:8000/gestionare-concedii/?${params}`;
+    console.log(`Preluare concedii de la: ${url}`);
+
+    try {
+        const LeavesResponse = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        console.log('Concedii pentru randare:', leaves);
+
+        console.log('Date concedii:', LeavesResponse.data);
+        setLeaves(LeavesResponse.data.results.leaves || []);
+        console.log('Date departamente:', LeavesResponse.data.departments);
+        setDepartments(LeavesResponse.data.departments || []);
+
+        setTotalPages(Math.ceil(LeavesResponse.data.count / leavesPerPage));
+    } catch (error) {
+        console.error('Eroare la preluarea concediilor:', error.response ? error.response.data : error);
+    }
+};
+
 
     useEffect(() => {
         const initializeData = async () => {
@@ -102,64 +142,85 @@ const GestionareConcedii = () => {
         initializeData();
     }, []);
 
-    const fetchLeaves = async (accessToken, hrCompanyId) => {
-        if (!accessToken || !hrCompanyId) {
-            console.error("No access token or HR Company ID found.");
+    const fetchDepartments = async () => {
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            console.error("Nu a fost găsit niciun token de acces. Utilizatorul nu este autentificat.");
+            return;
+        }
+        try {
+            const response = await axios.get('http://localhost:8000/departments/', {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+            });
+            console.log('Departamentele primite:', response.data.departments);
+            setDepartments(response.data.departments || []);
+        } catch (error) {
+            console.error('Eroare la preluarea departamentelor:', error);
+            setDepartments([]);
+        }
+    };
+
+
+
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
+
+
+    // Funcția pentru obținerea angajaților dintr-un departament
+    const fetchEmployees = async () => {
+        if (!selectedDepartment) {
+            console.error("Nu a fost selectat niciun departament.");
             return;
         }
 
-        const params = new URLSearchParams({
-            company_id: hrCompanyId,
-            leave_type: filter.leaveType,
-            start_date: filter.startDate,
-            end_date: filter.endDate,
-            department: filter.department
-        }).toString();
-
-        const url = `http://localhost:8000/gestionare-concedii/?${params}`;
-        console.log(`Fetching leaves from: ${url}`);
+        const url = `http://localhost:8000/hr/${hrCompanyId}/employees/?page_size=100`;
+        console.log(`Obținerea angajaților din URL-ul: ${url}`);
 
         try {
-            const LeavesResponse = await axios.get(url, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
+            const response = await axios.get(url, {
+                headers: {
+                    'Authorization': `Bearer ${getAccessToken()}`,
+                    'Content-Type': 'application/json',
+                },
             });
-            console.log('Leaves to render:', leaves);
 
-            console.log('Leaves data:', LeavesResponse.data);
-            setLeaves(LeavesResponse.data.results.leaves || []);
-            console.log('Departments data:', LeavesResponse.data.departments);
-            setDepartments(LeavesResponse.data.departments || []);
-
-            setTotalPages(Math.ceil(LeavesResponse.data.count / leavesPerPage));
+            if (response.data && response.data.results) {
+                setFilteredEmployees(response.data.results);
+            } else {
+                setFilteredEmployees([]);
+            }
         } catch (error) {
-            console.error('Error fetching leaves:', error.response ? error.response.data : error);
+            console.error('Eroare la obținerea angajaților:', error);
         }
-    }
+    };
 
+    // Folosește efectul pentru a obține angajații când se schimbă departamentul
     useEffect(() => {
-        if (hrCompanyId) {
-            fetchLeaves();
-        }
-    }, [hrCompanyId, currentPage, filter]);
+        fetchEmployees();
+    }, [selectedDepartment]);
 
-
-    //CREATE
+    // Funcția pentru adăugarea unui concediu
     const handleAddLeave = async (e) => {
         e.preventDefault();
-        console.log("Submit was triggered");
+        console.log("Submit a fost declanșat");
 
         if (selectedEmployeeIds.length === 0) {
-            console.error("No employees selected.");
+            console.error("Niciun angajat selectat.");
             return;
         }
 
         const leaveData = {
             users: selectedEmployeeIds,
             leave_type: selectedLeaveType,
-            start_date: moment(startDate).format('YYYY-MM-DD'),
-            end_date: moment(endDate).format('YYYY-MM-DD'),
+            start_date: startDate ? moment(startDate).format('YYYY-MM-DD') : '',
+            end_date: endDate ? moment(endDate).format('YYYY-MM-DD') : '',
             reason: reason,
         };
+
+        console.log("Data trimisă la server:", leaveData);
 
         try {
             const accessToken = getAccessToken();
@@ -172,33 +233,42 @@ const GestionareConcedii = () => {
                 },
             });
 
-            console.log('Leave added successfully:', response.data);
-            setLeaves(prevLeaves => [...prevLeaves, response.data]);
+            console.log('Concediul a fost adăugat cu succes:', response.data);
+            setFilteredEmployees([]); // Resetează lista de angajați selectați
+            setSelectedDepartment(''); // Resetează departamentul selectat
+            setSelectedEmployeeIds([]); // Resetează angajații selectați
+            setStartDate(null); // Resetează data de început
+            setEndDate(null); // Resetează data de sfârșit
+            setSelectedLeaveType(''); // Resetează tipul de concediu
+            setReason(''); // Resetează motivul concediului
             CloseAddModal();
         } catch (error) {
-            console.error('Error creating leave:', error.response ? error.response.data : error);
-            alert('Error: ' + (error.response ? error.response.data : error.message));
+            console.error('Eroare la crearea concediului:', error.response ? error.response.data : error);
+            alert('Eroare: ' + (error.response ? error.response.data : error.message));
         }
     };
 
+
+
+    // Funcția pentru gestionarea schimbării selecției angajaților
     const handleEmployeeSelectionChange = (event) => {
         const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
         setSelectedEmployeeIds(selectedOptions);
     };
 
-    // UPDATE
+    // Funcția pentru actualizarea unui concediu
     const handleUpdateLeave = async (e) => {
         e.preventDefault();
 
         if (!selectedLeave) {
-            console.error('No leave selected for editing.');
+            console.error('Niciun concediu selectat pentru editare.');
             return;
         }
 
         const accessToken = getAccessToken();
 
         if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
             return;
         }
 
@@ -208,7 +278,6 @@ const GestionareConcedii = () => {
             end_date: moment(selectedLeave.end_date).format('YYYY-MM-DD'),
             leave_type: selectedLeave.leave_type,
             status: selectedLeave.status,
-
         };
 
         try {
@@ -220,50 +289,64 @@ const GestionareConcedii = () => {
             });
 
             if (response.status === 200) {
-                console.log('Leave update successful', response.data);
+                console.log('Actualizarea concediului a fost reușită', response.data);
                 setLeaves(prevLeaves => prevLeaves.map(leave => leave.id === selectedLeave.id ? response.data : leave));
 
                 CloseEditModal();
             }
         } catch (error) {
-            console.error('Error updating leave:', error.response ? error.response.data : error);
+            console.error('Eroare la actualizarea concediului:', error.response ? error.response.data : error);
         }
     };
 
-    //DELETE
+    // Funcția pentru ștergerea unui concediu
     const handleDeleteLeave = async (leaveId) => {
+        const accessToken = getAccessToken();
+        if (!accessToken) {
+            console.error("Nu a fost găsit niciun token de acces. Utilizatorul nu este autentificat.");
+            return;
+        }
         try {
-            const accessToken = getAccessToken();
-            await axios.delete(`/leave_delete/${leaveId}/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
+            console.log(`Trimitere cerere DELETE pentru leaveId: ${leaveId}`);
+            const response = await axios.delete(`http://localhost:8000/leave_delete/${leaveId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
             });
+            console.log('Răspuns de la server:', response);
 
             setLeaves(prevLeaves => prevLeaves.filter(leave => leave.id !== leaveId));
         } catch (error) {
-            console.error('Error deleting leave:', error);
+            console.error('Eroare la ștergerea concediului:', error);
         }
     };
+
+    // Funcția pentru deschiderea modalului de adăugare
     const OpenAddModal = () => {
         setAddModalOpen(true);
         resetForm();
     };
 
+    // Funcția pentru închiderea modalului de editare
     const CloseEditModal = () => {
         setEditModalOpen(false);
         resetForm();
     };
 
+    // Funcția pentru aprobarea concediului
     const handleApproveLeave = (leaveId, newStatus) => {
         setLeaves(leaves.map((leave) =>
             leave.id === leaveId ? { ...leave, status: newStatus } : leave
         ));
     };
 
+    // Listele sărbătorilor publice
     const publicHolidays = [
         new Date('2024-01-01'),
         new Date('2024-04-01'),
     ];
 
+    // Funcția pentru verificarea dacă o zi este sărbătoare publică
     const isPublicHoliday = (date) => {
         return publicHolidays.some(
             (holiday) =>
@@ -273,6 +356,7 @@ const GestionareConcedii = () => {
         );
     };
 
+    // Funcția pentru verificarea zilelor de concediu
     const checkLeave = (startDate, endDate) => {
         let totalDays = 0;
         for (let d = new Date(startDate); d <= new Date(endDate); d.setDate(d.getDate() + 1)) {
@@ -282,13 +366,14 @@ const GestionareConcedii = () => {
         }
         return totalDays;
     };
-
+    // Funcția pentru verificarea balanței de concediu a angajatului
     const checkLeaveBalance = (employeeId, leaveDuration) => {
         const employee = employees.find(emp => emp.id === employeeId);
         if (!employee) return false;
         return employee.leaveBalance >= leaveDuration;
     };
 
+    // Funcția pentru verificarea suprapunerilor concediilor
     const checkOverlap = (startDate, endDate, department) => {
         const employeesOnLeave = leaves.filter((leave) => {
             const employee = employees.find(emp => emp.id === leave.employeeId && emp.department === department);
@@ -298,8 +383,10 @@ const GestionareConcedii = () => {
                 (new Date(leave.endDate) >= new Date(startDate))
             );
         });
+        return employeesOnLeave.length > 0;
     };
 
+    // Funcția pentru resetarea formularului
     const resetForm = () => {
         setSelectedDepartment('');
         setEmployeeId('');
@@ -308,20 +395,24 @@ const GestionareConcedii = () => {
         setLeaveType('');
     };
 
+    // Funcția pentru calcularea zilelor de concediu
     const calculateLeaveDays = (startDate, endDate) => {
         return Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
     };
 
+    // Funcția pentru deschiderea modalului de editare
     const OpenEditModal = (leave) => {
         setSelectedLeave(leave);
         setEditModalOpen(true);
     };
 
+    // Funcția pentru obținerea etichetei tipului de concediu
     const getLeaveTypeLabel = (leaveTypeValue) => {
         const type = LEAVE_TYPES.find(type => type.value === leaveTypeValue);
         return type ? type.label : 'Nu este specificat tipul de concediu.';
     };
 
+    // Funcția pentru salvarea concediului
     const handleSaveLeave = () => {
         if (selectedLeave) {
             const updatedLeaves = leaves.map((leave) => {
@@ -336,20 +427,22 @@ const GestionareConcedii = () => {
         }
 
         if (checkOverlap(startDate, endDate, selectedDepartment)) {
-            alert('There is already a leave in this interval for an employee.');
+            alert('Există deja un concediu în acest interval pentru un angajat.');
             return;
         }
         if (!checkLeaveBalance(employeeId, calculateLeaveDays(startDate, endDate))) {
-            alert('The employee does not have enough leave balance for the selected interval.');
+            alert('Angajatul nu are suficientă balanță de concediu pentru intervalul selectat.');
             return;
         }
     };
 
+    // Funcția pentru închiderea modalului de adăugare
     const CloseAddModal = () => {
         setAddModalOpen(false);
         resetForm();
     };
 
+    // Funcția pentru schimbarea statusului concediului
     const leaveStatus = (leaveId, newStatus) => {
         if (leaveId === null) return;
 
@@ -363,11 +456,13 @@ const GestionareConcedii = () => {
         setLeaves(updatedLeaves);
     };
 
+    // Funcția pentru căutarea concediilor
     const handleSearch = async () => {
         setCurrentPage(0);
         await fetchLeaves(getAccessToken(), hrCompanyId);
     };
 
+    // Funcția pentru gestionarea schimbării filtrelor
     const handleFilterChange = ({ target: { name, value } }) => {
         setFilter(prevFilter => ({
             ...prevFilter,
@@ -375,8 +470,17 @@ const GestionareConcedii = () => {
         }));
     };
 
-    const handlePageChange = ({ selected }) => {
+    // Funcția pentru schimbarea paginii
+    const handlePageChange = async ({ selected }) => {
         setCurrentPage(selected);
+        await fetchLeaves(getAccessToken(), hrCompanyId, selected);
+    };
+
+
+    // Funcția pentru gestionarea schimbării intervalului de date
+    const handleDateRangeChange = (dates) => {
+        const [start, end] = dates;
+        setSelectedDateRange([start, end]);
     };
 
     return (
@@ -477,35 +581,69 @@ const GestionareConcedii = () => {
                             activeClassName={'active'}
                             forcePage={currentPage}
                         />
+
                         <div className="button-container">
                             <button className='buton' onClick={OpenAddModal}>Adaugă concediu</button>
                         </div>
                     </div>
                 </div>
 
+
                 <Modal
                     isOpen={AddModalOpen}
                     onRequestClose={CloseAddModal}
-                    className="modal-content"
+                    title="Înregistrează un concediu"
+                    buttonText="Adaugă"
                     handleSubmit={handleAddLeave}
+                    className="modal-content"
                 >
                     <h2>Înregistrează un concediu</h2>
                     <form onSubmit={handleAddLeave}>
+                        <div className="form-group">
+                            <label>Departament</label>
+                            <select
+                                value={selectedDepartment}
+                                onChange={(e) => setSelectedDepartment(e.target.value)}
+                            >
+                                <option value="">Selectează departamentul</option>
+                                <option value="IT">IT</option>
+                                <option value="Marketing">Marketing</option>
+                            </select>
+
+                        </div>
+
                         <div className="form-group">
                             <label htmlFor="employee">Angajat:</label>
                             <select
                                 multiple
                                 value={selectedEmployeeIds}
                                 onChange={handleEmployeeSelectionChange}
-                                className="select-style"
+                                disabled={!selectedDepartment}
                             >
-                                {filteredEmployees.map((employee) => (
+                                {filteredEmployees.filter(emp => emp.department === selectedDepartment).map((employee) => (
                                     <option key={employee.user} value={employee.user}>
                                         {employee.name} - {employee.department} ({employee.user})
                                     </option>
                                 ))}
                             </select>
                         </div>
+
+                        <div className="form-group">
+                            <label>Intervalul de timp:</label>
+                            <DatePicker
+                                selectsRange
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChange={(dates) => {
+                                    const [start, end] = dates;
+                                    setStartDate(start);
+                                    setEndDate(end);
+                                }}
+                                className="select-style"
+                                dateFormat="yyyy-MM-dd"
+                            />
+                        </div>
+
 
                         <div className="form-group">
                             <label htmlFor="leaveType">Tip concediu:</label>
@@ -522,64 +660,19 @@ const GestionareConcedii = () => {
                             </select>
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="startDate">Data început:</label>
-                            <input
-                                id="startDate"
-                                type="date"
-                                className="select-style"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                            />
-                        </div>
 
-                        <div className="form-group">
-                            <label htmlFor="endDate">Data sfârșit:</label>
-                            <input
-                                id="endDate"
-                                type="date"
-                                className="select-style"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                            />
-                        </div>
-
-
-                        <div className="form-group">
-                            <label htmlFor="status">Stare:</label>
-                            <select
-                                className="select-style"
-                                id="status"
-                                value={selectedLeave?.status || ''}
-                                onChange={(e) => setSelectedLeave({ ...selectedLeave, status: e.target.value })}
-                            >
-                                <option value="PE">În așteptare</option>
-                                <option value="AC">Aprobat</option>
-                                <option value="RE">Respins</option>
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label htmlFor="is_approved">Aprobare:</label>
-                            <select
-                                className="select-style"
-                                id="is_approved"
-                                value={selectedLeave?.is_approved ? 'Da' : 'Nu'}
-                                onChange={(e) => setSelectedLeave({ ...selectedLeave, is_approved: e.target.value === 'Da' })}
-                            >
-                                <option value="Da">Da</option>
-                                <option value="Nu">Nu</option>
-                            </select>
-                        </div>
 
                         {modalError && <p className="error">{modalError}</p>}
 
                         <div className="button-container">
-                            <button className="buton" type="submit">Adaugă</button>
-                            <button className="buton" type="button" onClick={CloseAddModal}>Închide</button>
+                            <button type="submit" className="buton">Adaugă</button>
+                            <button type="button" className="buton" onClick={CloseAddModal}>
+                                Închide
+                            </button>
                         </div>
                     </form>
                 </Modal>
+
 
                 <Modal
                     isOpen={EditModalOpen}

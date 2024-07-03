@@ -8,14 +8,13 @@ import ErrorBoundary from '../../ErrorBoundary';
 
 const Acasa = () => {
   useEffect(() => {
-    // Efectuează cererea GET fără token de autorizare
     axios.get('http://localhost:8000/acasa/')
       .then(response => {
-        console.log(response.data);  // Aici poți gestiona datele primite
+        console.log(response.data); 
       })
       .catch(error => {
         console.error('Eroare la preluarea datelor:', error);
-        // Aici poți adăuga logică suplimentară în caz de eroare
+       
       });
   }, []);
 

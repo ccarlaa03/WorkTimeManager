@@ -72,7 +72,7 @@ urlpatterns = [
     path('leaves/', views.leave_list_create, name='leave-list-create'),
     path('leaves/<int:id>/', views.leave_detail, name='leave-detail'),
     path('gestionare-concedii/', views.leave_list, name='gestionare-concedii'),
-    path('leave_delete/<int:user_id>/', views.delete_employee, name='leave_delete'),
+    path('leave_delete/<int:leave_id>/', views.delete_leave, name='leave_delete'),
     path('angajat-profil/<int:user_id>/', views.employee_detail, name='employee-detail'),
 
     path('employee-edit/<int:user_id>/', views.edit_employee, name='edit_employee'),

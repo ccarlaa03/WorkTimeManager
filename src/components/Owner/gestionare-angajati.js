@@ -42,6 +42,7 @@ const EmployeeManagement = () => {
     const [error, setError] = useState(null);
 
 
+    // Functia pentru a trimite formularul de creare a unui nou utilizator
     const handleSubmit = async (e) => {
         e.preventDefault();
         const baseApiUrl = 'http://localhost:8000';
@@ -81,7 +82,7 @@ const EmployeeManagement = () => {
         }
     };
 
-
+    // Functia pentru a căuta angajați în baza unor filtre
     const handleSearch = async () => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -127,7 +128,7 @@ const EmployeeManagement = () => {
         }
     };
 
-
+    // Functia pentru a actualiza filtrele pe baza inputului utilizatorului
     const handleFilterChange = ({ target: { name, value } }) => {
         setFilter(prevFilter => ({
             ...prevFilter,
@@ -135,10 +136,11 @@ const EmployeeManagement = () => {
         }));
     };
 
-
+    // Functii pentru a deschide si inchide modala de adaugare
     const openAddModal = () => setModalAddOpen(true);
     const closeAddModal = () => setModalAddOpen(false);
 
+    // Functia pentru a gestiona schimbarea valorilor din formularul de creare utilizator
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFormData(prevFormData => {
@@ -155,6 +157,7 @@ const EmployeeManagement = () => {
         });
     };
 
+    // Functia pentru a genera email-ul si parola pe baza numelui si datei de nastere
     const generateEmailAndPassword = (formData) => {
         const { name, birthDate } = formData;
         if (name && birthDate) {
@@ -172,6 +175,7 @@ const EmployeeManagement = () => {
         }
     };
 
+    // Functia pentru a prelua datele proprietarului si ale companiei
     useEffect(() => {
         const fetchData = async () => {
             const accessToken = localStorage.getItem('access_token');
@@ -204,6 +208,7 @@ const EmployeeManagement = () => {
         fetchData();
     }, []);
 
+    // Functia pentru a prelua lista de angajați cu paginare și filtre aplicate
     useEffect(() => {
         const fetchEmployees = async (page = 1) => {
             const accessToken = localStorage.getItem('access_token');
@@ -246,14 +251,12 @@ const EmployeeManagement = () => {
         }
     }, [currentPage, filter, owner]);
 
-
-
-
+    // Functia pentru a gestiona schimbarea paginilor
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected + 1);
     };
 
-
+    // Functia pentru a sterge un membru HR
     const handleDeleteHr = async (hrId) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -294,6 +297,7 @@ const EmployeeManagement = () => {
         }
     }
 
+    // Functia pentru a sterge un angajat
     const deleteEmployee = async (employeeId) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
@@ -332,9 +336,7 @@ const EmployeeManagement = () => {
                 window.location.reload();
             }, 3000);
         }
-
     };
-
 
     return (
         <div className="container-dashboard">
@@ -371,86 +373,87 @@ const EmployeeManagement = () => {
                     <button onClick={handleSearch}>CAUTĂ</button>
                 </div>
             </div>
-            <table className="card-curs">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nume</th>
-                        <th>Număr de telefon</th>
-                        <th>Adresa de email</th>
-                        <th>Departament</th>
-                        <th>Funcție</th>
-                        <th>Adresă</th>
-                        <th>Data angajării</th>
-                        <th>Acțiuni</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {(employees.length > 0 || hrMembers.length > 0) ? (
-                        <>
-                            {employees.map((employee) => (
-                                <tr key={employee.user}>
-                                    <td>{employee.user}</td>
-                                    <td>
-                                        <Link
-                                            to={`owner/angajat-profil/${employee.user}`}
-                                            style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
-                                        >
-                                            {employee.name}
-                                        </Link>
-                                    </td>
-                                    <td>{employee.telephone_number}</td>
-                                    <td>{employee.email}</td>
-                                    <td>{employee.department}</td>
-                                    <td>{employee.position}</td>
-                                    <td>{employee.address}</td>
-                                    <td>{employee.hire_date}</td>
-                                    <td>
-                                        <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {hrMembers.map((hr) => (
-                                <tr key={hr.user}>
-                                    <td>{hr.user}</td>
-                                    <td>{hr.name}</td>
-                                    <td>{hr.telephone_number}</td>
-                                    <td>{hr.email}</td>
-                                    <td>{hr.department}</td>
-                                    <td>{hr.position}</td>
-                                    <td>{hr.address}</td>
-                                    <td>{hr.hire_date}</td>
-                                    <td>
-                                        <button className='buton' onClick={() => handleDeleteHr(hr.user)}>Șterge</button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </>
-                    ) : (
+            <div className='card-curs'>
+                <table className="card-curs">
+                    <thead>
                         <tr>
-                            <td colSpan="9">Nu există angajați</td>
+                            <th>ID</th>
+                            <th>Nume</th>
+                            <th>Număr de telefon</th>
+                            <th>Adresa de email</th>
+                            <th>Departament</th>
+                            <th>Funcție</th>
+                            <th>Adresă</th>
+                            <th>Data angajării</th>
+                            <th>Acțiuni</th>
                         </tr>
-                    )}
-                </tbody>
+                    </thead>
+                    <tbody>
+                        {(employees.length > 0 || hrMembers.length > 0) ? (
+                            <>
+                                {employees.map((employee) => (
+                                    <tr key={employee.user}>
+                                        <td>{employee.user}</td>
+                                        <td>
+                                            <Link
+                                                to={`owner/angajat-profil/${employee.user}`}
+                                                style={{ color: 'black', textDecoration: 'none', opacity: 0.7 }}
+                                            >
+                                                {employee.name}
+                                            </Link>
+                                        </td>
+                                        <td>{employee.telephone_number}</td>
+                                        <td>{employee.email}</td>
+                                        <td>{employee.department}</td>
+                                        <td>{employee.position}</td>
+                                        <td>{employee.address}</td>
+                                        <td>{employee.hire_date}</td>
+                                        <td>
+                                            <button className='buton' onClick={() => deleteEmployee(employee.user)}>Șterge</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {hrMembers.map((hr) => (
+                                    <tr key={hr.user}>
+                                        <td>{hr.user}</td>
+                                        <td>{hr.name}</td>
+                                        <td>{hr.telephone_number}</td>
+                                        <td>{hr.email}</td>
+                                        <td>{hr.department}</td>
+                                        <td>{hr.position}</td>
+                                        <td>{hr.address}</td>
+                                        <td>{hr.hire_date}</td>
+                                        <td>
+                                            <button className='buton' onClick={() => handleDeleteHr(hr.user)}>Șterge</button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </>
+                        ) : (
+                            <tr>
+                                <td colSpan="9">Nu există angajați</td>
+                            </tr>
+                        )}
+                    </tbody>
 
-            </table>
+                </table>
 
 
-            <div className="button-container">
-                <button className="buton" onClick={openAddModal}>Adaugă angajat nou</button>
+                <div className="button-container">
+                    <button className="buton" onClick={openAddModal}>Adaugă angajat nou</button>
+                </div>
+
+                <ReactPaginate
+                    previousLabel={'Anterior'}
+                    nextLabel={'Următorul'}
+                    breakLabel={'...'}
+                    pageCount={totalPages}
+                    onPageChange={handlePageChange}
+                    containerClassName={'pagination'}
+                    activeClassName={'active'}
+                    forcePage={currentPage - 1}
+                />
             </div>
-
-            <ReactPaginate
-                previousLabel={'Anterior'}
-                nextLabel={'Următorul'}
-                breakLabel={'...'}
-                pageCount={totalPages}
-                onPageChange={handlePageChange}
-                containerClassName={'pagination'}
-                activeClassName={'active'}
-                forcePage={currentPage - 1}
-            />
-
             <Modal
                 isOpen={modalAddOpen}
                 onRequestClose={closeAddModal}

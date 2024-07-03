@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 
+// Funcția care obține ID-ul utilizatorului curent din localStorage
 function getCurrentUserId() {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user).id : null;
 }
 
-
-const Notifications = ({ }) => {
+const Notifications = () => {
     const [notifications, setNotifications] = useState([]);
     const [selectedEmployee, setSelectedEmployee] = useState('');
     const [userOption, setUserOption] = useState('all');
@@ -19,31 +19,36 @@ const Notifications = ({ }) => {
     const [successMessage, setSuccessMessage] = useState('');
     const [email, setEmail] = useState('');
     const [isSendMessageModalOpen, setIsSendMessageModalOpen] = useState(false);
+
+    // Funcții pentru deschiderea și închiderea modalului de trimitere a mesajelor
     const openSendMessageModal = () => setIsSendMessageModalOpen(true);
     const closeSendMessageModal = () => {
         setIsSendMessageModalOpen(false);
         setError('');
         setSuccessMessage('');
     };
+
+    // useEffect pentru preluarea notificărilor utilizatorului curent la montarea componentei
     useEffect(() => {
         const userId = getCurrentUserId();
         if (userId) {
             const fetchNotifications = async () => {
                 try {
+                    // Preluarea notificărilor pentru utilizatorul curent
                     const response = await axios.get(`/notifications/${userId}/`);
                     setNotifications(response.data.notifications);
                 } catch (error) {
-                    console.error('Error fetching notifications:', error);
+                    console.error('Eroare la preluarea notificărilor:', error);
                 }
             };
-    
+
             fetchNotifications();
         } else {
-            console.error('User ID is null, cannot fetch notifications');
+            console.error('ID-ul utilizatorului este nul, nu se pot prelua notificările');
         }
     }, []);
-    
 
+    // Funcția care trimite notificarea către backend
     const handleSendMessage = async (event) => {
         event.preventDefault();
         setLoading(true);
@@ -51,7 +56,7 @@ const Notifications = ({ }) => {
         setSuccessMessage('');
 
         try {
-            const recipientId = userOption === 'single' ? selectedEmployee : 'all'; 
+            const recipientId = userOption === 'single' ? selectedEmployee : 'all';
             const response = await axios.post('/send-notification/', {
                 email,
                 message,
@@ -63,25 +68,26 @@ const Notifications = ({ }) => {
             });
 
             if (response.status === 200) {
-                setSuccessMessage('Notification sent successfully!');
+                setSuccessMessage('Notificare trimisă cu succes!');
                 setEmail('');
                 setMessage('');
                 setSelectedEmployee('');
             } else {
-                setError('Failed to send notification.');
+                setError('Eșec la trimiterea notificării.');
             }
         } catch (error) {
-            setError(`Failed to send notification: ${error.response?.data?.message || error.message}`);
+            setError(`Eșec la trimiterea notificării: ${error.response?.data?.message || error.message}`);
         }
         setLoading(false);
     };
 
     return (
         <div>
-           <Modal
+            {/* Modal pentru trimiterea mesajelor */}
+            <Modal
                 isOpen={isSendMessageModalOpen}
                 onRequestClose={closeSendMessageModal}
-                contentLabel="Send Message"
+                contentLabel="Trimite Mesaj"
                 className="modal-content"
             >
                 <h2>Trimite un mesaj</h2>
@@ -131,3 +137,4 @@ const Notifications = ({ }) => {
 };
 
 export default Notifications;
+

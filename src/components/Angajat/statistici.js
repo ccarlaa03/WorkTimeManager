@@ -7,10 +7,11 @@ const Statistici = ({ user_id }) => {
   const [statsData, setStatsData] = useState({});
   const accessToken = localStorage.getItem('access_token');
 
+  // Functia pentru a prelua statisticile săptămânale ale angajatului
   useEffect(() => {
     const fetchStats = async () => {
       if (!accessToken) {
-        console.log("Access denied. No token available.");
+        console.log("Acces refuzat. Nu există token disponibil.");
         return;
       }
     
@@ -18,25 +19,24 @@ const Statistici = ({ user_id }) => {
         const response = await axios.get(`http://localhost:8000/employee/${user_id}/weekly-stats/`, {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
-        console.log("Response data:", response.data);  // Afișează datele primite pentru a verifica structura
+        console.log("Datele primite:", response.data);  // Afișează datele primite pentru a verifica structura
         if (response.data) {
           updateChartData(response.data);
         }
       } catch (error) {
-        console.error("Error loading weekly statistics:", error);
+        console.error("Eroare la încărcarea statisticilor săptămânale:", error);
       }
     };
-    
-
 
     fetchStats();
-  }, [user_id]);
+  }, [user_id, accessToken]);
 
+  // Functia pentru a actualiza datele graficului
   const updateChartData = (data) => {
     // Verifică structura datelor și ajustează dacă este necesar
-    console.log("Data for chart:", data);
+    console.log("Datele pentru grafic:", data);
     const chartData = {
-      labels: ['Ore lucrate ', 'Media zilnică de ore', 'Ore suplimentare'],
+      labels: ['Ore lucrate', 'Media zilnică de ore', 'Ore suplimentare'],
       datasets: [
         {
           label: 'Ore',
@@ -48,7 +48,6 @@ const Statistici = ({ user_id }) => {
     setStatsData(chartData);
   };
   
-
   return (
     <div className="content-container">
       <div className="card-curs" style={{ alignItems: 'center' }}>
@@ -58,7 +57,6 @@ const Statistici = ({ user_id }) => {
         ) : (
           <p>Se încarcă statistici...</p>
         )}
-
       </div>
     </div>
   );

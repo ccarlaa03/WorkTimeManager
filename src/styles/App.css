@@ -171,6 +171,8 @@ p {
 
 .form-group {
   margin-top: 0px;
+  align-items: center; 
+  align-content: center;
 
 }
 
@@ -200,6 +202,7 @@ input[type="date"],
 .form-group-container {
   display: flex;
   justify-content: space-between;
+  align-items: center; 
 }
 
 .checkbox-label {
@@ -231,25 +234,24 @@ select {
   border-radius: 5px;
 }
 
-.login-button {
-  width: 50%;
-  padding: 10px;
-  margin-top: 0px;
+
+@media (max-width: 600px) {
+  input,
+  textarea,
+  select {
+    width: 100%; 
+    padding: 8px;
+    font-size: 14px; 
+  }
+
+  .container {
+    padding: 20px; 
+  }
+
+  .card {
+    margin-top: 20px; 
+  }
 }
-
-button {
-  padding: 10px 20px;
-  width: auto;
-  margin-right: 10px;
-  background-color: #A087BC;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-
-}
-
 
 @media screen and (max-width: 600px) {
   .despre {
@@ -320,13 +322,16 @@ button {
   }
 }
 
-/* login */
+
 .container {
   display: flex;
-  align-items: center;
   justify-content: center;
-  height: auto;
+  align-items: flex-start; 
+  width: 100%;
+  margin-top: 50px;
 }
+
+
 
 .content {
   display: flex;
@@ -374,6 +379,19 @@ button {
 
 }
 
+button {
+  padding: 10px 20px;
+  width: auto;
+  margin-right: 10px;
+  background-color: #A087BC;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+
+}
+
 .content h2 {
   font-weight: 300;
   font-size: 2.6em;
@@ -400,6 +418,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 50px;
+  justify-content: center;   
 }
 
 
@@ -443,6 +462,7 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin-top: 10px;
+  align-items: center;
 }
 
 .button-container {
@@ -530,7 +550,8 @@ button {
   transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
-
+  align-items: center; 
+  align-content: center;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
@@ -787,20 +808,35 @@ th {
 
 .rapoarte-container {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 50px;
-  margin: 20px; 
+  flex-direction: row;
+  justify-content: space-around; 
+  align-items: flex-start; 
+  margin-top: 20px;
+  gap: 30px; 
 }
+
+.rapoarte-chart-container {
+  flex: 1;
+  max-width: 45%; 
+  background: #FFFFFF; 
+  padding: 20px;
+  border-radius: 10px; 
+}
+
+.chart-container {
+  width: 100%;
+}
+
 
 .rapoarte-section {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 40%; 
-  max-width: 600px; 
+  margin: 10px;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 }
+
 
 .rapoarte-cursuri {
   width: 100%;
@@ -813,7 +849,30 @@ th {
 
 }
 
+.confirmation-message {
+  color: green;
+  font-size: 16px;
+  margin-top: 20px;
+}
 
+
+@media (max-width: 600px) {
+  input,
+  textarea,
+  select {
+    width: 100%; 
+    padding: 8px; 
+    font-size: 14px;
+  }
+
+  .container {
+    padding: 20px; 
+  }
+
+  .card {
+    margin-top: 20px; 
+  }
+}
 .info-table td {
   padding: 8px;
 }
@@ -907,6 +966,27 @@ th {
   align-items: center;
   text-align: center;
 }
+
+.card {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: center;
+  max-width: 90%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 10px;
+    margin-bottom: 15px;
+  }
+}
+
+
 
 .card-curs:hover {
   transform: translateY(-5px);
@@ -1192,7 +1272,7 @@ select::-ms-expand {
 @media (max-width: 768px) {
   .styled-table th, .styled-table td {
     padding: 10px 5px;
-    font-size: 0.8rem; /* Micsorează fontul pentru vizibilitate mai bună pe ecrane mici */
+    font-size: 0.8rem; 
   }
 }
 

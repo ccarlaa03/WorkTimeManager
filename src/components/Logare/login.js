@@ -44,8 +44,8 @@ const Login = () => {
   };
 
   return (
-    <div className="container-dashboard">
-      <div className="card-curs">
+    <div className="container">
+      <div className="card">
         <h2>Login</h2>
         <form onSubmit={handleLogin} className="form-stack">
           <div className="form-element">

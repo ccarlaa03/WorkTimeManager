@@ -12,6 +12,8 @@ const TrainingEmployee = () => {
     user: '',
   });
   const { user } = useContext(AuthContext);
+
+  // Functia pentru a obține eticheta de status a cursului
   const getStatusLabel = (status) => {
     switch (status) {
       case 'planned':
@@ -26,11 +28,13 @@ const TrainingEmployee = () => {
         return status;
     }
   };
+
+  // Functia pentru a prelua datele profilului angajatului
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
+        console.error("Acces refuzat. Nu există token disponibil. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
         return;
       }
       try {
@@ -38,25 +42,25 @@ const TrainingEmployee = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (response.data.employee_info && response.data.employee_info.user) {
-          console.log("Fetched Employee Info:", response.data.employee_info);
+          console.log("Datele angajatului preluate:", response.data.employee_info);
           setEmployeeInfo(response.data.employee_info);
         } else {
-          console.error("User data is incomplete:", response.data);
+          console.error("Datele utilizatorului sunt incomplete:", response.data);
         }
       } catch (error) {
-        console.error("Error retrieving profile data:", error);
+        console.error("Eroare la preluarea datelor profilului:", error);
       }
     };
 
     fetchData();
   }, []);
 
+  // Functia pentru a prelua cursurile disponibile
   useEffect(() => {
     const fetchTrainings = async () => {
-
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken || !employeeInfo.user) {
-        console.error("Access denied or missing user ID.");
+        console.error("Acces refuzat sau ID-ul utilizatorului lipsește.");
         return;
       }
       try {
@@ -64,7 +68,7 @@ const TrainingEmployee = () => {
           headers: { 'Authorization': `Bearer ${accessToken}` },
         });
 
-        console.log("Răspuns trainings:", response.data);
+        console.log("Răspuns cursuri:", response.data);
         const today = new Date();
         const updatedTrainings = response.data.map(training => ({
           ...training,
@@ -73,11 +77,11 @@ const TrainingEmployee = () => {
           noSeatsLeft: training.available_seats <= 0
         }));
         if (response.data) {
-          console.log("Training Response Data:", response.data);
+          console.log("Datele cursurilor preluate:", response.data);
           setTrainings(response.data);
         }
 
-        console.log("Updated trainings:", updatedTrainings);
+        console.log("Cursuri actualizate:", updatedTrainings);
         setTrainings(updatedTrainings);
       } catch (error) {
         console.error('Eroare la preluarea cursurilor:', error);
@@ -85,12 +89,10 @@ const TrainingEmployee = () => {
       setIsLoading(false);
     };
     
-    fetchTrainings()
+    fetchTrainings();
   }, [employeeInfo.user]);
 
-
-
-
+  // Functia pentru a înregistra un angajat la un curs
   const registerForTraining = async (trainingId) => {
     try {
       const response = await instance.post(`/trainings/register/${trainingId}/`, {}, {
@@ -107,7 +109,7 @@ const TrainingEmployee = () => {
   if (isLoading) {
     return <div>Se încarcă...</div>;
   } else if (trainings.length === 0) {
-    return <div>No training sessions available.</div>;
+    return <div>Nu există sesiuni de training disponibile.</div>;
   }
 
   return (
@@ -124,7 +126,7 @@ const TrainingEmployee = () => {
                     <p>Capacitate: {training.capacity} persoane</p>
                     <p>Locuri disponibile: {training.available_seats}</p>
                     <p>Înregistrare până la: {training.enrollment_deadline && new Date(training.enrollment_deadline).toLocaleDateString()}</p>
-                    {training.is_registered ? (
+                    {training.isRegistered ? (
                         <div className="registration-confirmation">Te-ai înscris la acest curs. Ne vedem când începe!</div>
                     ) : (
                         <button onClick={() => registerForTraining(training.id)}>Înscrie-te</button>
@@ -133,9 +135,8 @@ const TrainingEmployee = () => {
             ))}
         </div>
     </div>
-);
-
-
+  );
 };
 
 export default TrainingEmployee;
+

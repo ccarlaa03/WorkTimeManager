@@ -6,14 +6,14 @@ const Pontator = ({ user_id }) => {
     const [status, setStatus] = useState(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
-    const [workSchedule, setWorkSchedule] = useState([]);
     const [showMessageModal, setShowMessageModal] = useState(false);
 
+    // Functia pentru a prelua statusul curent al pontării
     const fetchCurrentStatus = async () => {
         setLoading(true);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            setMessage("Access denied. No token available.");
+            setMessage("Acces refuzat. Nu există token disponibil.");
             setLoading(false);
             return;
         }
@@ -24,12 +24,10 @@ const Pontator = ({ user_id }) => {
             });
             setStatus(response.data.status);
             setLoading(false);
-            console.log('Current status:', status);
-            console.log("Current status set to:", response.data.status);
-
+            console.log('Statusul curent:', response.data.status);
         } catch (error) {
-            setMessage('Failed to fetch current status.');
-            console.error('Failed to fetch current status:', error);
+            setMessage('Eșec la preluarea statusului curent.');
+            console.error('Eșec la preluarea statusului curent:', error);
             setLoading(false);
         }
     };
@@ -44,15 +42,17 @@ const Pontator = ({ user_id }) => {
         }
     }, [status]);
 
+    // Functia pentru a închide modalul de mesaje
     const handleModalClose = () => {
         setShowMessageModal(false);
     };
 
+    // Functia pentru a efectua pontarea la intrare
     const handleClockIn = async () => {
         setLoading(true);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            setMessage("Access denied. No token available.");
+            setMessage("Acces refuzat. Nu există token disponibil.");
             setLoading(false);
             return;
         }
@@ -66,17 +66,18 @@ const Pontator = ({ user_id }) => {
             setTimeout(fetchCurrentStatus, 1000);
             setLoading(false);
         } catch (error) {
-            setMessage('Failed to clock in.');
-            console.error('Error clocking in:', error);
+            setMessage('Eșec la pontarea intrării.');
+            console.error('Eroare la pontarea intrării:', error);
             setLoading(false);
         }
     };
 
+    // Functia pentru a efectua pontarea la ieșire
     const handleClockOut = async () => {
         setLoading(true);
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            setMessage("Access denied. No token available.");
+            setMessage("Acces refuzat. Nu există token disponibil.");
             setLoading(false);
             return;
         }
@@ -89,8 +90,8 @@ const Pontator = ({ user_id }) => {
             setMessage('Te-ai pontat la ieșire. Ne vedem mâine!');
             setLoading(false);
         } catch (error) {
-            setMessage('Failed to clock out.');
-            console.error('Error clocking out:', error);
+            setMessage('Eșec la pontarea ieșirii.');
+            console.error('Eroare la pontarea ieșirii:', error);
             setLoading(false);
         }
     };
@@ -109,7 +110,6 @@ const Pontator = ({ user_id }) => {
                     <button className="buton" onClick={handleClockIn}>Pontare intrare</button>
                 </div>
             )}
-
 
             <Modal isOpen={showMessageModal} onRequestClose={handleModalClose} contentLabel="Message Modal">
                 <h2>Mesaj</h2>

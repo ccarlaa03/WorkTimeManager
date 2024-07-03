@@ -46,125 +46,128 @@ const Dashboard = () => {
   const [workSchedule, setWorkSchedule] = useState([]);
 
 
-  const openEditModal = () => {
-    setProfileToEdit({ ...employeeInfo });
-    setModalEditProfileIsOpen(true);
-  };
+// Functia pentru a deschide modalul de editare a profilului
+const openEditModal = () => {
+  setProfileToEdit({ ...employeeInfo });
+  setModalEditProfileIsOpen(true);
+};
 
-  const closeEditModal = () => {
-    setModalEditProfileIsOpen(false);
-  };
+// Functia pentru a închide modalul de editare a profilului
+const closeEditModal = () => {
+  setModalEditProfileIsOpen(false);
+};
 
-  const formatTime = (timeString) => {
-    const time = new Date('1970-01-01T' + timeString + 'Z');
-    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
-  const notifications = [
-    {},
-  ];
+// Functia pentru a formata ora într-un format specific
+const formatTime = (timeString) => {
+  const time = new Date('1970-01-01T' + timeString + 'Z');
+  return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
 
+const notifications = [
+  // Obiecte de notificare (dacă există)
+];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await axios.get('http://localhost:8000/employee-dashboard/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        console.log(response.data);
-        setProfile(response.data);
-        setEmployeeInfo(response.data.employee_info)
-        setIsLoading(false);
-        setEmployees(response.data.employees);
-      } catch (error) {
-        if (error.response) {
-          console.error("Error retrieving profile data:", error.response.data);
-        } else {
-          console.error("Error retrieving profile data:", error.message);
-        }
-        setIsLoading(false);
-      }
-    };
-    fetchData();
-
-    const fetchWorkSchedule = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        console.error("No access token found. User must be logged in.");
-        return;
-      }
-      const user = employeeInfo.user;
-      if (!employeeInfo.user) {
-        console.error("User ID is undefined or not provided.");
-        return;
-      }
-      try {
-        const response = await axios.get(`http://localhost:8000/angajat-prog/${user}/`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        console.log("Work Schedule fetched:", response.data);
-        console.log('Rendering workSchedule:', workSchedule);
-        if (response.status === 200) {
-          // Filtrăm programul de lucru doar pentru luna curentă
-          const currentDate = new Date();
-          const currentMonth = currentDate.getMonth() + 1; // indexul lunii începe de la 0
-
-          const filteredSchedule = response.data.filter(schedule => {
-            const scheduleDate = new Date(schedule.date);
-            const scheduleMonth = scheduleDate.getMonth() + 1; // indexul lunii începe de la 0
-
-            return scheduleMonth === currentMonth;
-          });
-
-          setWorkSchedule(filteredSchedule);
-        } else {
-          throw new Error('Failed to fetch work schedule');
-        }
-      } catch (error) {
-        console.error('Error fetching work schedule:', error);
-      }
-    };
-
-    fetchWorkSchedule();
-  }, [employeeInfo.user]);
-
-
-  //UPDATE
-  const updateEmployeeProfile = async (event) => {
-    event.preventDefault();
-    console.log("Submitted Data:", profileToEdit);
-
+useEffect(() => {
+  // Functia pentru a prelua datele profilului angajatului
+  const fetchData = async () => {
     const accessToken = localStorage.getItem('access_token');
     if (!accessToken) {
-      console.error("No access token found. User must be logged in.");
+      console.error("Acces refuzat. Token inexistent. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
+      setIsLoading(false);
       return;
     }
 
-
     try {
-      const response = await axios.put(`http://localhost:8000/update-employee-profile/${employeeInfo.user}/`, profileToEdit, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+      const response = await axios.get('http://localhost:8000/employee-dashboard/', {
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
-      if (response.status === 200) {
-        console.log('Profile update successful', response.data);
-        setEmployeeInfo({ ...employeeInfo, ...response.data });
-        closeEditModal();
-      } else {
-        console.error('Failed to update profile', response.data);
-      }
+      console.log(response.data);
+      setProfile(response.data);
+      setEmployeeInfo(response.data.employee_info)
+      setIsLoading(false);
+      setEmployees(response.data.employees);
     } catch (error) {
-      console.error('Error updating profile:', error.response ? error.response.data : error.message);
+      if (error.response) {
+        console.error("Eroare la preluarea datelor profilului:", error.response.data);
+      } else {
+        console.error("Eroare la preluarea datelor profilului:", error.message);
+      }
+      setIsLoading(false);
     }
   };
+  fetchData();
+
+  // Functia pentru a prelua programul de lucru al angajatului
+  const fetchWorkSchedule = async () => {
+    const accessToken = localStorage.getItem('access_token');
+    if (!accessToken) {
+      console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat.");
+      return;
+    }
+    const user = employeeInfo.user;
+    if (!employeeInfo.user) {
+      console.error("ID-ul utilizatorului este nedefinit sau neprovid.");
+      return;
+    }
+    try {
+      const response = await axios.get(`http://localhost:8000/angajat-prog/${user}/`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      console.log("Programul de lucru preluat:", response.data);
+      console.log('Redare program de lucru:', workSchedule);
+      if (response.status === 200) {
+        // Filtrăm programul de lucru doar pentru luna curentă
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // indexul lunii începe de la 0
+
+        const filteredSchedule = response.data.filter(schedule => {
+          const scheduleDate = new Date(schedule.date);
+          const scheduleMonth = scheduleDate.getMonth() + 1; // indexul lunii începe de la 0
+
+          return scheduleMonth === currentMonth;
+        });
+
+        setWorkSchedule(filteredSchedule);
+      } else {
+        throw new Error('Eșec la preluarea programului de lucru');
+      }
+    } catch (error) {
+      console.error('Eroare la preluarea programului de lucru:', error);
+    }
+  };
+
+  fetchWorkSchedule();
+}, [employeeInfo.user]);
+
+// Functia pentru a actualiza profilul angajatului
+const updateEmployeeProfile = async (event) => {
+  event.preventDefault();
+  console.log("Date trimise pentru actualizare:", profileToEdit);
+
+  const accessToken = localStorage.getItem('access_token');
+  if (!accessToken) {
+    console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat.");
+    return;
+  }
+
+  try {
+    const response = await axios.put(`http://localhost:8000/update-employee-profile/${employeeInfo.user}/`, profileToEdit, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status === 200) {
+      console.log('Actualizarea profilului a fost reușită', response.data);
+      setEmployeeInfo({ ...employeeInfo, ...response.data });
+      closeEditModal();
+    } else {
+      console.error('Eșec la actualizarea profilului', response.data);
+    }
+  } catch (error) {
+    console.error('Eroare la actualizarea profilului:', error.response ? error.response.data : error.message);
+  }
+};
 
   if (isLoading) {
     return <div>Se încarcă...</div>;

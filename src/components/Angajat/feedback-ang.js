@@ -18,11 +18,12 @@ const FeedbackForm = () => {
   const months = ["Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie", "August", "Septembrie", "Octombrie", "Noiembrie", "Decembrie"];
   const [formSubmitted, setFormSubmitted] = useState(false);
 
+  // Functia pentru a prelua datele profilului angajatului
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
+        console.error("Acces refuzat. Token inexistent. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
         return;
       }
       try {
@@ -32,15 +33,16 @@ const FeedbackForm = () => {
         console.log(response.data);
         setEmployeeInfo(response.data.employee_info);
       } catch (error) {
-        console.error("Error retrieving profile data:", error);
+        console.error("Eroare la preluarea datelor profilului:", error);
       }
     };
     fetchData();
   }, []);
 
+  // Functia pentru a prelua formularele de feedback și istoricul feedback-ului
   useEffect(() => {
     if (!accessToken) {
-      setError("Access denied. No token available. User must be logged in to access this.");
+      setError("Acces refuzat. Token inexistent. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
       return;
     }
 
@@ -50,21 +52,20 @@ const FeedbackForm = () => {
         const response = await axios.get('http://localhost:8000/feedback-forms/', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
-        console.log("Fetched forms data:", response.data);
+        console.log("Datele formularelor preluate:", response.data);
         if (Array.isArray(response.data)) {
           setFeedbackForms(response.data);
         } else {
-          console.error("Expected an array but received:", response.data);
+          console.error("Se aștepta un array dar s-a primit:", response.data);
           setFeedbackForms([]);
         }
       } catch (err) {
-        console.error("Error fetching forms:", err);
-        setError('Failed to fetch forms');
+        console.error("Eroare la preluarea formularelor:", err);
+        setError('Preluarea formularelor a eșuat');
       } finally {
         setLoading(false);
       }
     };
-
 
     const fetchHistory = async () => {
       setLoading(true);
@@ -72,33 +73,32 @@ const FeedbackForm = () => {
         const response = await axios.get('http://localhost:8000/feedback-history/', {
           headers: { Authorization: `Bearer ${accessToken}` }
         });
-        console.log("Fetched history data:", response.data);
-        console.log("Rendering feedback history with data:", feedbackHistory);
+        console.log("Datele istoricului preluate:", response.data);
+        console.log("Redare istoric feedback cu date:", feedbackHistory);
         if (Array.isArray(response.data)) {
           setFeedbackHistory(response.data);
         } else {
-          console.error("Data fetched is not an array:", response.data);
-
+          console.error("Datele preluate nu sunt un array:", response.data);
           setFeedbackHistory([]);
         }
       } catch (error) {
-        console.error("Failed to fetch feedback history:", error);
-        setError('Failed to fetch feedback history');
+        console.error("Eroare la preluarea istoricului feedback-ului:", error);
+        setError('Preluarea istoricului feedback-ului a eșuat');
       } finally {
         setLoading(false);
       }
     };
 
-
     fetchForms();
     fetchHistory();
   }, [accessToken]);
 
+  // Functia pentru a verifica dacă formularul a fost trimis deja
   useEffect(() => {
     const checkIfSubmitted = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
+        console.error("Acces refuzat. Token inexistent. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
         return;
       }
 
@@ -115,7 +115,7 @@ const FeedbackForm = () => {
             }, 1000);
           }
         } catch (error) {
-          console.error("Error checking form submission:", error);
+          console.error("Eroare la verificarea trimiterii formularului:", error);
         }
       }
     };
@@ -123,23 +123,27 @@ const FeedbackForm = () => {
     checkIfSubmitted();
   }, [currentForm]);
 
-
+  // Afișează un mesaj dacă formularul a fost deja trimis
   if (formSubmitted) {
     return <p>Ai completat deja acest formular. Mulțumim!</p>;
   }
 
+  // Functia pentru a selecta un formular de feedback
   const handleSelectForm = (form) => {
     setCurrentForm(form);
     setIsModalOpen(true);
     setResponses({});
   };
+
+  // Functia pentru a închide modalul
   const closeModal = () => {
     setIsModalOpen(false);
   };
 
+  // Functia pentru a trimite feedback-ul
   const handleSubmit = async () => {
     if (!accessToken) {
-      setError("No access token available. Please log in.");
+      setError("Nu există token de acces. Vă rugăm să vă autentificați.");
       return;
     }
 
@@ -162,30 +166,29 @@ const FeedbackForm = () => {
       })
     };
 
-    console.log("Sending feedback data:", payload);
+    console.log("Se trimit datele feedback-ului:", payload);
 
     try {
       const response = await axios.post(`http://localhost:8000/feedback/submit/${currentForm.id}/`, payload, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
-      console.log("Feedback submission response:", response.data);
-      alert('Feedback submitted successfully');
+      console.log("Răspunsul trimiterii feedback-ului:", response.data);
+      alert('Feedback trimis cu succes');
       window.location.reload();
     } catch (err) {
       if (err.response && err.response.status === 403) {
         alert(err.response.data.error);
       } else {
-        console.error("Error submitting feedback:", err);
-        setError('Failed to submit feedback');
+        console.error("Eroare la trimiterea feedback-ului:", err);
+        setError('Trimiterea feedback-ului a eșuat');
       }
     }
   };
 
-
+  // Functia pentru a gestiona schimbarea răspunsului la întrebări
   const handleResponseChange = (questionId, response) => {
     setResponses({ ...responses, [questionId]: response });
   };
-
 
   if (loading) return <p>Se încarcă...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -266,7 +269,7 @@ const FeedbackForm = () => {
                 <th>Titlu formular</th>
                 <th>Data completării</th>
                 <th>Scor</th>
-                <th>Departament</th>
+
               </tr>
             </thead>
             <tbody>
@@ -276,7 +279,7 @@ const FeedbackForm = () => {
                     <td>{feedback.form.title}</td>
                     <td>{new Date(feedback.date_completed).toLocaleDateString('ro-RO')}</td>
                     <td>{feedback.total_score}</td>
-                    <td>{feedback.employee_department}</td>
+
                   </tr>
                 ))
               ) : (

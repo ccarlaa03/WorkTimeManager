@@ -48,166 +48,175 @@ const ProfilAngajatOwner = () => {
     const [employee, setEmployee] = useState(initialEmployeeState);
     const [workschedule, setWorkSchedule] = useState(null);
     const [leaves, setLeaves] = useState(null);
-    const [employeedetails, seEmployeeDetails] = useState(null);
+    const [employeedetails, setEmployeeDetails] = useState(null);
 
     const getAccessToken = () => localStorage.getItem('access_token');
 
-    // Fetch details about the employee
-    const fetchEmployeeDetails = async () => {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            return;
-        }
-
-        const url = `http://localhost:8000/owner/angajat-profil/${user_id}/`;
-        try {
-            const response = await axios.get(url, {
-                headers: { 'Authorization': `Bearer ${accessToken}` }
-            });
-            console.log('Employee details fetched successfully:', response.data);
-            setEmployee(response.data);
-        } catch (error) {
-            console.error('Failed to fetch employee details:', error.response ? error.response.data : error);
-        }
-    };
-
-    // Fetch leaves information
-    const fetchLeaves = async () => {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            return;
-        }
-
-        try {
-            const leaveResponse = await axios.get(`http://localhost:8000/angajat-concedii/${user_id}/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            setLeaves(leaveResponse.data);
-        } catch (error) {
-            console.error('Error fetching leaves:', error);
-        }
-    };
-
-    // Fetch work schedule information
-    const fetchWorkSchedule = async () => {
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            return;
-        }
-
-        try {
-            const scheduleResponse = await axios.get(`http://localhost:8000/angajat-prog/${user_id}/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            setWorkSchedule(scheduleResponse.data);
-        } catch (error) {
-            console.error('Error fetching work schedule:', error);
-        }
-    };
-
-    const fetchFeedbackData = async () => {
-        setIsLoading(true);
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const response = await axios.get(`/employee/${user_id}/feedback/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            console.log('Feedback Forms:', response.data);
-            setFeedbackForms(response.data);
-        } catch (error) {
-            console.error('Error fetching feedback data:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    const fetchTrainingData = async () => {
-        setIsLoading(true);
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const response = await axios.get(`/employee/${user_id}/trainings/`, {
-                headers: { 'Authorization': `Bearer ${accessToken}` },
-            });
-            console.log('Training Sessions:', response.data);
-            setTrainingSessions(response.data);
-        } catch (error) {
-            console.error('Error fetching training data:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Initialize all data fetch operations
-    useEffect(() => {
-        const initializeData = async () => {
-            await fetchEmployeeDetails();
-            await fetchLeaves();
-            await fetchWorkSchedule();
-            await fetchFeedbackData();
-            await fetchTrainingData();
-        };
-
-        initializeData();
-    }, [user_id]);
-
-    const saveEmployeeDetails = async () => {
-        const getAccessToken = () => localStorage.getItem('access_token');
-        const accessToken = getAccessToken();
-        if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
-            return;
-        }
-
-        const url = `/employee-edit/${user_id}/`;
-        const headers = {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-        };
-
-        try {
-            const response = await instance.put(url, employee, { headers });
-            console.log(typeof saveEmployeeDetails);
-            seEmployeeDetails(response.data);
-            setConfirmationMessage('Modificările au fost salvate cu succes!');
-            setTimeout(() => {
-                setConfirmationMessage('');
-                setIsModalOpen(false);
-            }, 3000);
-        } catch (error) {
-            console.error('Error updating employee details:', error);
-        }
-    };
-
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-        setEmployee((prevState) => ({
-            ...prevState,
-            [name]: value,
-        }));
-    };
-
-    if (!user_id) {
-        return <div>Încărcarea detaliilor angajatului...</div>;
+    // Functia pentru a prelua detaliile despre angajat
+const fetchEmployeeDetails = async () => {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        return;
     }
-    const formatTime = (timeString) => {
-        if (!timeString) return '';
-        const time = new Date('1970-01-01T' + timeString + 'Z');
-        return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const url = `http://localhost:8000/owner/angajat-profil/${user_id}/`;
+    try {
+        const response = await axios.get(url, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        console.log('Detaliile angajatului au fost preluate cu succes:', response.data);
+        setEmployee(response.data);
+    } catch (error) {
+        console.error('Eșec la preluarea detaliilor angajatului:', error.response ? error.response.data : error);
+    }
+};
+
+// Functia pentru a prelua informațiile despre concedii
+const fetchLeaves = async () => {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        return;
+    }
+
+    try {
+        const leaveResponse = await axios.get(`http://localhost:8000/angajat-concedii/${user_id}/`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setLeaves(leaveResponse.data);
+    } catch (error) {
+        console.error('Eroare la preluarea concediilor:', error);
+    }
+};
+
+// Functia pentru a prelua informațiile despre programul de lucru
+const fetchWorkSchedule = async () => {
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        return;
+    }
+
+    try {
+        const scheduleResponse = await axios.get(`http://localhost:8000/angajat-prog/${user_id}/`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        setWorkSchedule(scheduleResponse.data);
+    } catch (error) {
+        console.error('Eroare la preluarea programului de lucru:', error);
+    }
+};
+
+// Functia pentru a prelua datele de feedback
+const fetchFeedbackData = async () => {
+    setIsLoading(true);
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const response = await axios.get(`/employee/${user_id}/feedback/`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        console.log('Formularele de feedback:', response.data);
+        setFeedbackForms(response.data);
+    } catch (error) {
+        console.error('Eroare la preluarea datelor de feedback:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+// Functia pentru a prelua datele despre sesiunile de training
+const fetchTrainingData = async () => {
+    setIsLoading(true);
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const response = await axios.get(`/employee/${user_id}/trainings/`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` },
+        });
+        console.log('Sesiunile de training:', response.data);
+        setTrainingSessions(response.data);
+    } catch (error) {
+        console.error('Eroare la preluarea datelor de training:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
+
+// Initializarea tuturor operațiunilor de preluare a datelor
+useEffect(() => {
+    const initializeData = async () => {
+        await fetchEmployeeDetails();
+        await fetchLeaves();
+        await fetchWorkSchedule();
+        await fetchFeedbackData();
+        await fetchTrainingData();
     };
+
+    initializeData();
+}, [user_id]);
+
+// Functia pentru a salva detaliile angajatului
+const saveEmployeeDetails = async () => {
+    const getAccessToken = () => localStorage.getItem('access_token');
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        return;
+    }
+
+    const url = `/employee-edit/${user_id}/`;
+    const headers = {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+    };
+
+    try {
+        const response = await axios.put(url, employee, { headers });
+        console.log('Detaliile angajatului au fost actualizate cu succes');
+        setEmployeeDetails(response.data);
+        setConfirmationMessage('Modificările au fost salvate cu succes!');
+        setTimeout(() => {
+            setConfirmationMessage('');
+            setIsModalOpen(false);
+        }, 3000);
+    } catch (error) {
+        console.error('Eroare la actualizarea detaliilor angajatului:', error);
+    }
+};
+
+// Functia pentru a gestiona schimbarea valorilor din input
+const handleChange = (e) => {
+    const { name, value } = e.target;
+    setEmployee((prevState) => ({
+        ...prevState,
+        [name]: value,
+    }));
+};
+
+if (!user_id) {
+    return <div>Încărcarea detaliilor angajatului...</div>;
+}
+
+// Functia pentru a formata ora
+const formatTime = (timeString) => {
+    if (!timeString) return '';
+    const time = new Date('1970-01-01T' + timeString + 'Z');
+    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+
     const EmployeeDetailsEdit = ({ employee, onSave, onChange, confirmationMessage }) => {
         return (
             <div className="personal-info">
@@ -307,6 +316,7 @@ const ProfilAngajatOwner = () => {
             </div>
         );
     };
+    //Funcția pentru a vizualiza detaliile despre angajati
     const EmployeeDetailsView = ({ employee, onEditClick }) => {
         return (
             <div className="personal-info">

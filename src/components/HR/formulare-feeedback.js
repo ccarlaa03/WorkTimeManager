@@ -27,11 +27,12 @@ const FeedbackForm = () => {
     const [selectedForm, setSelectedForm] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
+    // Functia pentru a prelua formularele de feedback
     useEffect(() => {
         const fetchFeedbackForms = async () => {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                console.error("No access token found. User is not logged in.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                 return;
             }
 
@@ -41,29 +42,30 @@ const FeedbackForm = () => {
                 });
 
                 if (hrResponse.data && hrResponse.data.company_id) {
-                    console.log('HR Company ID:', hrResponse.data.company_id);
+                    console.log('ID-ul companiei HR:', hrResponse.data.company_id);
                     const hrCompanyId = hrResponse.data.company_id;
                     setHrCompany(hrCompanyId);
 
-                    // Now calling the paginated feedback forms fetch function
+                    // Apelăm funcția de preluare paginată a formularelor de feedback
                     fetchPaginatedFeedbackForms(hrCompanyId, currentPage);
                 } else {
-                    console.log('HR Company data:', hrResponse.data);
+                    console.log('Datele companiei HR:', hrResponse.data);
                     setIsLoading(false);
                 }
             } catch (error) {
-                console.error('Error fetching HR company data:', error);
+                console.error('Eroare la preluarea datelor companiei HR:', error);
                 setIsLoading(false);
             }
         };
 
         fetchFeedbackForms();
-    }, [currentPage]); // Include currentPage in dependencies to fetch new pages
+    }, [currentPage]); // Include currentPage în dependințe pentru a prelua noi pagini
 
+    // Functia pentru a prelua formularele de feedback paginat
     const fetchPaginatedFeedbackForms = async (companyId, page) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
             return;
         }
 
@@ -79,18 +81,19 @@ const FeedbackForm = () => {
             if (feedbackResponse.data) {
                 setFeedbackForms(feedbackResponse.data.results);
                 setTotalPages(Math.ceil(feedbackResponse.data.count / feedbackFormsPerPage));
-                console.log('Feedback Forms:', feedbackResponse.data);
+                console.log('Formularele de feedback:', feedbackResponse.data);
             } else {
                 setFeedbackForms([]);
-                console.error('No feedback forms found or data not in expected format:', feedbackResponse.data);
+                console.error('Nu s-au găsit formulare de feedback sau datele nu sunt în formatul așteptat:', feedbackResponse.data);
             }
             setIsLoading(false);
         } catch (error) {
-            console.error('Error fetching feedback data:', error.response ? error.response.data : error);
+            console.error('Eroare la preluarea datelor de feedback:', error.response ? error.response.data : error);
             setIsLoading(false);
         }
     };
 
+    // Datele pentru grafic
     const feedbackData = {
         labels: feedbackForms.map(form => form.title),
         datasets: [{
@@ -102,17 +105,17 @@ const FeedbackForm = () => {
         }]
     };
 
-    const handleCreateForm = async (form_id) => {
-
+    // Functia pentru a crea un nou formular de feedback
+    const handleCreateForm = async () => {
         const newFormData = {
             title: formTitle.trim(),
             description: formDescription.trim(),
             created_by: user_id,
             hr_review_status: hrReviewStatus,
         };
-
-        console.log('Data sent to backend for new form:', newFormData);
-
+    
+        console.log('Datele trimise la backend pentru noul formular:', newFormData);
+    
         try {
             const response = await axios.post('http://localhost:8000/feedback/add-form/', newFormData, {
                 headers: {
@@ -120,20 +123,23 @@ const FeedbackForm = () => {
                     'Content-Type': 'application/json',
                 },
             });
-
-            setFeedbackForms(prevForms => [...prevForms, response.data]);
-            alert('Formularul a fost creat cu succes!');
-            setFormTitle('');
-            setFormDescription('');
-            setHrReviewStatus('pending');
-            closeModal();
+    
+            if (response.status === 201) {
+                console.log('Răspunsul de la server:', response.data);
+                setFeedbackForms(prevForms => [...prevForms, response.data]);
+                alert('Formularul a fost creat cu succes!');
+                closeModal();
+            } else {
+                console.error('Răspuns neașteptat de la server:', response);
+            }
         } catch (error) {
-            console.error('Error creating new form:', error.response ? error.response.data : error);
+            console.error('Eroare la crearea unui nou formular:', error.response ? error.response.data : error);
             alert('A apărut o eroare la crearea formularului.');
         }
     };
+    
 
-
+    // Functia pentru a șterge un formular de feedback
     const handleDeleteFeedback = async (formId) => {
         const confirm = window.confirm("Ești sigur că vrei să ștergi acest formular?");
         if (confirm) {
@@ -147,13 +153,13 @@ const FeedbackForm = () => {
                     setFeedbackForms(prevForms => prevForms.filter(form => form.id !== formId));
                 }
             } catch (error) {
-                console.error('Error deleting feedback form:', error.response ? error.response.data : error);
+                console.error('Eroare la ștergerea formularului de feedback:', error.response ? error.response.data : error);
                 alert('A apărut o eroare la ștergerea formularului.');
             }
         }
     };
 
-
+    // Functia pentru a edita un formular de feedback existent
     const handleEditFeedback = async () => {
         if (!editFormId) {
             alert('ID-ul formularului nu este specificat.');
@@ -186,13 +192,14 @@ const FeedbackForm = () => {
             setEditFormTitle('');
             setEditFormDescription('');
             setEditHrReviewStatus('pending');
-            closeModal();
+            closeEditModal();
         } catch (error) {
-            console.error('Error updating feedback form:', error.response ? error.response.data : error);
+            console.error('Eroare la actualizarea formularului de feedback:', error.response ? error.response.data : error);
             alert('A apărut o eroare la actualizarea formularului.');
         }
     };
 
+    // Functia pentru a deschide modalul de editare
     const openEditModal = (form) => {
         setEditFormId(form.id);
         setEditFormTitle(form.title);
@@ -200,6 +207,8 @@ const FeedbackForm = () => {
         setEditHrReviewStatus(form.hr_review_status);
         setIsEditModalOpen(true);
     };
+
+    // Functia pentru a închide modalul de editare
     const closeEditModal = () => {
         setIsEditModalOpen(false);
         setEditFormId(null);
@@ -207,22 +216,26 @@ const FeedbackForm = () => {
         setEditFormDescription('');
         setEditHrReviewStatus('pending');
     };
+
+    // Functia pentru a deschide modalul de creare
     const openModal = () => {
         setIsModalOpen(true);
     };
 
+    // Functia pentru a închide modalul de creare
     const closeModal = () => {
         setIsModalOpen(false);
         setFormTitle("");
         setFormDescription("");
     };
+
+    // Functia pentru a închide modalul de detalii
     const closeDetailsModal = () => {
         setIsDetailsModalOpen(false);
         setSelectedForm(null);
     };
-    if (isLoading) {
-        return <div>Se încarcă...</div>;
-    }
+
+    // Functia pentru a trunchia textul lung
     const truncateText = (text, length) => {
         if (text.length > length) {
             return text.substring(0, length) + '...';
@@ -230,9 +243,12 @@ const FeedbackForm = () => {
         return text;
     };
 
+    // Functia pentru a schimba pagina curentă în paginare
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected);
     };
+
+    // Functia pentru a deschide modalul de detalii pentru un formular specific
     const openDetailsModal = async (formId) => {
         const accessToken = localStorage.getItem('access_token');
         try {
@@ -243,7 +259,7 @@ const FeedbackForm = () => {
             setSelectedForm(response.data);
             setIsDetailsModalOpen(true);
         } catch (error) {
-            console.error('Error fetching feedback form details:', error);
+            console.error('Eroare la preluarea detaliilor formularului de feedback:', error);
         }
     };
 
@@ -297,7 +313,7 @@ const FeedbackForm = () => {
                     forcePage={currentPage}
                 />
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <button className='buton' onClick={openModal}>Adaugă Formular Nou</button>
+                    <button className='buton' onClick={openModal}>Adaugă formular nou</button>
                 </div>
 
 
@@ -345,12 +361,12 @@ const FeedbackForm = () => {
             <Modal
                 isOpen={isModalOpen}
                 onRequestClose={closeModal}
-                contentLabel="Adaugă Formular Nou"
+                contentLabel="Adaugă formular nou"
                 className="modal-content"
             >
-                <h2>Adaugă Formular Nou</h2>
+                <h2>Adaugă formular nou</h2>
                 <form onSubmit={handleCreateForm}>
-                    <label htmlFor="title">Titlu Formular:</label>
+                    <label htmlFor="title">Titlu formular:</label>
                     <input
                         id="title"
                         type="text"
@@ -364,7 +380,7 @@ const FeedbackForm = () => {
                         value={formDescription}
                         onChange={(e) => setFormDescription(e.target.value)}
                     />
-                    <label htmlFor="hrReviewStatus">Status Revizuire HR:</label>
+                    <label htmlFor="hrReviewStatus">Status revizuire HR:</label>
                     <select
                         id="hrReviewStatus"
                         value={hrReviewStatus}

@@ -63,22 +63,18 @@ def signup_view(request):
         company_serializer = CompanySerializer(data=company_data)
         if company_serializer.is_valid():
             company = company_serializer.save()
-            
-            # Aici creezi user-ul și îl asociezi companiei ca proprietar
+
             user_data = {
-            'email': request.data.get('email'),
-            'password': request.data.get('password'),
-            'role': 'owner',  # Asumăm că acesta este rolul pentru proprietar
-            'owner_name': request.data.get('owner_name', ''),  # Setăm owner_name dacă este furnizat
-    }
+                'email': request.data.get('email'),
+                'password': request.data.get('password'),
+                'role': 'owner',  # Assuming 'owner' is a role you have configured
+            }
             User = get_user_model()
-            user = User.objects.create_user(email=user_data['email'], password=user_data['password'])
+            user = User.objects.create_user(**user_data)
 
-            user.save()
-
-            # Creează o instanță de Owner și o asociază cu compania și user-ul
+            # Use the correct field 'name' instead of 'owner_name'
             owner_name = request.data.get('owner_name')  
-            owner = Owner.objects.create(user=user, owner_name=owner_name, company=company)
+            owner = Owner.objects.create(user=user, name=owner_name, company=company)
 
             return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
         else:
@@ -418,9 +414,6 @@ def check_user_exists(request):
 @permission_classes([IsAuthenticated])
 def logout_view(request):
     try:
-        refresh_token = request.data.get('refresh_token')
-        token = RefreshToken(refresh_token)
-        token.blacklist()
         return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_205_RESET_CONTENT)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1157,6 +1150,14 @@ def leave_delete(request, id):
     schedule.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_leave(request, leave_id):
+    leave = get_object_or_404(Leave, id=leave_id)
+    leave.delete()
+    print(f'Concediul cu ID-ul {leave_id} a fost șters.')
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1414,12 +1415,15 @@ def update_feedback_form(request, form_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_feedback_form(request):
+    print("Request data:", request.data)
     serializer = FeedbackFormSerializer(data=request.data)
     if serializer.is_valid():
         feedback_form = serializer.save(created_by=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
+        print("Errors:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1437,6 +1441,7 @@ def create_training(request):
         training = serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     else:
+        logging.error('Erori de validare: %s', serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT'])
@@ -1448,10 +1453,12 @@ def update_training(request, training_id):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
+        logging.error('Erori de validare: %s', serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Training.DoesNotExist as e:
-        logging.error("Training-ul nu există: %s", str(e)) 
+        logging.error("Training-ul nu există: %s", str(e))
         return Response({'error': 'Training-ul nu există.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
@@ -1657,3 +1664,16 @@ def employee_list_trainings(request, user_id):
     serializer = TrainingSerializer(trainings, many=True, context={'request': request})
     return Response(serializer.data)
 
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_company_data(request):
+    user = request.user
+    if not user.is_authenticated:
+        return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    company_id = user.company.id
+    data = Company.objects.filter(company_id=company_id)
+    serializer = CompanySerializer(data, many=True)
+    return Response(serializer.data)

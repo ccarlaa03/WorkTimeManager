@@ -21,8 +21,6 @@ const OwnerDashboard = () => {
     number_of_employees: 0,
     founded_date: ''
   });
-  
-  
   const [events, setEvents] = useState([]);
   const [owner, setOwner] = useState(null);
   const [newEvent, setNewEvent] = useState({
@@ -56,8 +54,6 @@ const OwnerDashboard = () => {
     setIsEditCompanyModalOpen(true);
   };
   
-
-
   const closeEditCompanyModal = () => {
     setIsEditCompanyModalOpen(false);
   };
@@ -72,159 +68,159 @@ const OwnerDashboard = () => {
 
   });
 
-  const handleEventInputChange = (e) => {
-    const { name, value } = e.target;
-    const newValue = (name === 'start' || name === 'end') ? new Date(value) : value;
-    setNewEvent({ ...newEvent, [name]: newValue });
-  };
+// Functia pentru a gestiona schimbarea valorilor din input pentru evenimente
+const handleEventInputChange = (e) => {
+  const { name, value } = e.target;
+  const newValue = (name === 'start' || name === 'end') ? new Date(value) : value;
+  setNewEvent({ ...newEvent, [name]: newValue });
+};
 
-  const openAddEventModal = () => {
-    setNewEvent({
+// Functia pentru a deschide modala de adaugare a unui nou eveniment
+const openAddEventModal = () => {
+  setNewEvent({
       ...newEvent,
       start: new Date(),
       end: new Date(),
-    });
-    setIsAddEventModalOpen(true);
-  };
+  });
+  setIsAddEventModalOpen(true);
+};
 
-
-  useEffect(() => {
-    const fetchData = async () => {
+// Functia pentru a prelua datele necesare la incarcarea componentului
+useEffect(() => {
+  const fetchData = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("No access token found. User must be logged in to access this page.");
-        return;
+          console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
+          return;
       }
-  
+
       const config = {
-        headers: { Authorization: `Bearer ${accessToken}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
       };
-  
+
       try {
-        const response = await axios.get('http://localhost:8000/owner-dashboard/', config);
-        if (response.data.owner) {
-          setOwner(response.data.owner);
-          console.log('Owner data:', response.data.owner); 
-          if (response.data.company) {
-            setCompany(response.data.company);
-            console.log('Company data:', response.data.company); 
+          const response = await axios.get('http://localhost:8000/owner-dashboard/', config);
+          if (response.data.owner) {
+              setOwner(response.data.owner);
+              console.log('Date proprietar:', response.data.owner); 
+              if (response.data.company) {
+                  setCompany(response.data.company);
+                  console.log('Date companie:', response.data.company); 
+              }
+          } else {
+              console.error("Datele proprietarului nu sunt disponibile sau ID-ul companiei nu este definit.");
           }
-        } else {
-          console.error("Owner data is not available or company ID is undefined.");
-        }
       } catch (error) {
-        console.error("Error fetching data:", error.response || error);
+          console.error("Eroare la preluarea datelor:", error.response || error);
       }
-  
+
       try {
-        const eventsResponse = await instance.get('/events/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        setEvents(eventsResponse.data.map(event => ({
-          ...event,
-          start: new Date(event.start),
-          end: new Date(event.end),
-        })));
+          const eventsResponse = await axios.get('/events/', {
+              headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          setEvents(eventsResponse.data.map(event => ({
+              ...event,
+              start: new Date(event.start),
+              end: new Date(event.end),
+          })));
       } catch (error) {
-        console.error("Error fetching events:", error.response ? error.response.data : error.message);
+          console.error("Eroare la preluarea evenimentelor:", error.response ? error.response.data : error.message);
       }
-    };
-    fetchData();
-  }, []);
-  
-  
-  
+  };
+  fetchData();
+}, []);
 
-  const handleAddEvent = async (e) => {
-    e.preventDefault();
-    const accessToken = getAccessToken();
-    if (!accessToken) {
-      console.error("No access token provided.");
+// Functia pentru a adauga un nou eveniment
+const handleAddEvent = async (e) => {
+  e.preventDefault();
+  const accessToken = localStorage.getItem('access_token');
+  if (!accessToken) {
+      console.error("Nu s-a furnizat niciun token de acces.");
       return;
-    }
+  }
 
-    if (!company) {
-      console.error("No company ID associated with this user.");
+  if (!company) {
+      console.error("Nu există un ID de companie asociat cu acest utilizator.");
       return;
-    }
-    const eventData = {
+  }
+  const eventData = {
       title: newEvent.title,
       description: newEvent.description,
       start: newEvent.start instanceof Date ? newEvent.start.toISOString() : newEvent.start,
       end: newEvent.end instanceof Date ? newEvent.end.toISOString() : newEvent.end,
       company: company
-    };
+  };
 
-    try {
+  try {
       const response = await axios.post(`http://localhost:8000/add-event-owner/`, eventData, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+          },
       });
 
-      console.log('Event added successfully', response.data);
+      console.log('Eveniment adăugat cu succes', response.data);
       setIsAddEventModalOpen(false);
       setEvents([...events, { ...response.data, start: new Date(response.data.start), end: new Date(response.data.end) }]);
       setTimeout(() => {
-        window.location.reload();
+          window.location.reload();
       }, 1000);
-    } catch (error) {
-      console.error('Error during event addition:', error.response ? error.response.data : error.message);
+  } catch (error) {
+      console.error('Eroare la adăugarea evenimentului:', error.response ? error.response.data : error.message);
       if (error.response) {
-        console.error('Full error response:', error.response);
+          console.error('Răspuns complet eroare:', error.response);
       }
-    }
-  };
+  }
+};
 
-  const handleCompanyChange = (e) => {
-    const { name, value } = e.target;
-    setEditedCompany((prevCompany) => ({ ...prevCompany, [name]: value }));
-  };
+// Functia pentru a gestiona schimbarea valorilor din input pentru companie
+const handleCompanyChange = (e) => {
+  const { name, value } = e.target;
+  setEditedCompany((prevCompany) => ({ ...prevCompany, [name]: value }));
+};
 
-  const handleCompanyUpdate = async (e) => {
-    e.preventDefault();
-    const accessToken = localStorage.getItem('access_token');
-    if (!accessToken) {
-      console.error("No access token provided.");
+// Functia pentru a actualiza datele companiei
+const handleCompanyUpdate = async (e) => {
+  e.preventDefault();
+  const accessToken = localStorage.getItem('access_token');
+  if (!accessToken) {
+      console.error("Nu s-a furnizat niciun token de acces.");
       return;
-    }
-  
-    if (!owner || !owner.company_id) {
-      console.error("Company ID is undefined.");
+  }
+
+  if (!owner || !owner.company_id) {
+      console.error("ID-ul companiei nu este definit.");
       return;
-    }
-  
-    const companyId = owner.company_id;
-    const companyData = { ...editedCompany };
-  
-    console.log('Submitting company update with companyId:', companyId);
-    console.log('Company data:', companyData);
-  
-    try {
+  }
+
+  const companyId = owner.company_id;
+  const companyData = { ...editedCompany };
+
+  console.log('Se trimite actualizarea companiei cu ID-ul companiei:', companyId);
+  console.log('Datele companiei:', companyData);
+
+  try {
       const response = await axios.put(`http://localhost:8000/update-company/${companyId}/`, companyData, {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
+          headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+          },
       });
-  
-      console.log('Company updated successfully', response.data);
+
+      console.log('Compania a fost actualizată cu succes', response.data);
       setCompany(response.data);
       setUpdateSuccess(true);
       closeEditCompanyModal();
       setTimeout(() => {
-        setUpdateSuccess(false);
+          setUpdateSuccess(false);
       }, 3000);
-    } catch (error) {
-      console.error('Error during company update:', error);
+  } catch (error) {
+      console.error('Eroare la actualizarea companiei:', error);
       if (error.response) {
-        console.error('Error data:', error.response.data);
+          console.error('Date eroare:', error.response.data);
       }
-    }
-  };
-  
-  
+  }
+};
 
   return (
     <div className="container-dashboard">
@@ -265,7 +261,7 @@ const OwnerDashboard = () => {
           <input
             type="text"
             name="title"
-            placeholder="Titlu Eveniment"
+            placeholder="Titlu eveniment"
             value={newEvent.title}
             onChange={handleEventInputChange}
             required

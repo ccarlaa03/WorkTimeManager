@@ -18,26 +18,24 @@ const SignUp = () => {
   const [companyFoundedDate, setCompanyFoundedDate] = useState('');
   const [signUpError, setSignUpError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationMessage, setConfirmationMessage] = useState('');
 
   const handleSignUp = async (e) => {
     e.preventDefault();
-
     if (password !== confirmPassword) {
       setSignUpError('Parolele nu coincid.');
       return;
     }
 
     setIsLoading(true);
-
     try {
-      // Asigură-te că adresa URL este corectă și corespunde cu endpoint-ul tău din backend
-      await axios.post('http://localhost:8000/signup/', {
+      const response = await axios.post('http://localhost:8000/signup/', {
         email,
         password,
         company_name: companyName,
         company_address: companyAddress,
         company_phone_number: companyPhoneNumber,
-        company_email: email, 
+        company_email: email,
         company_industry: companyIndustry,
         company_number_of_employees: companyNumberOfEmployees,
         company_founded_date: companyFoundedDate,
@@ -48,7 +46,10 @@ const SignUp = () => {
         }
       });
 
-      navigate('/login/');
+      if (response.status === 201) {
+        setConfirmationMessage('Înregistrarea a fost completată cu succes! Vă mulțumim.');
+        navigate('/login/');
+      }
     } catch (error) {
       console.error('Eroare la înregistrare', error);
       setSignUpError('Eroare la înregistrare. Verifică adresa de email, parola și detaliile companiei.');
@@ -56,6 +57,7 @@ const SignUp = () => {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="container-dashboard">
@@ -108,6 +110,8 @@ const SignUp = () => {
             {isLoading ? 'Se încarcă...' : 'Înregistrare'}
           </button>
         </form>
+
+        {confirmationMessage && <div className="confirmation-message">{confirmationMessage}</div>}
         {signUpError && <p style={{ color: 'red' }}>{signUpError}</p>}
         <p>Ai deja un cont? <Link to="/login">Conectează-te aici</Link>.</p>
       </div>

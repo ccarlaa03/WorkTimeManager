@@ -47,36 +47,19 @@ const GestionareProgramLucru = () => {
     setModalMessage(message);
     setModalOpen(true);
   };
-  useEffect(() => {
+  // Folosește un interceptor pentru a adăuga token-ul CSRF la toate cererile
+  axios.interceptors.request.use(function (config) {
+    const csrftoken = Cookies.get('csrftoken');
+    config.headers['X-CSRFToken'] = csrftoken;
+    return config;
+  });
 
-    const fetchDepartments = async () => {
-      const accessToken = getAccessToken();
-      if (!accessToken) {
-        console.log("No access token found. User is not logged in.");
-        return;
-      }
-      const response = await axios.get('http://localhost:8000/departments/', {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-      console.log(response.data);
-      if (response.data && response.data.departments) {
-        setDepartments(response.data.departments);
-      } else {
-        console.error('Departments data not received or in incorrect format:', response.data);
-      }
-    };
-
-
-    fetchDepartments();
-  }, []);
-
+  // Folosește efectul pentru a inițializa datele
   useEffect(() => {
     const initializeData = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) {
-        console.log("No access token found. User is not logged in.");
+        console.error("Nu a fost găsit niciun token de acces. Utilizatorul nu este autentificat.");
         return;
       }
 
@@ -86,33 +69,53 @@ const GestionareProgramLucru = () => {
           fetchWorkSchedules(hrCompanyId);
         }
       } catch (error) {
-        console.error('Error initializing data:', error);
+        console.error('Eroare la inițializarea datelor:', error);
       }
     };
 
     initializeData();
   }, []);
 
-  axios.interceptors.request.use(function (config) {
-    const csrftoken = Cookies.get('csrftoken');
-    config.headers['X-CSRFToken'] = csrftoken;
-    return config;
-  });
+  // Folosește efectul pentru a obține departamentele
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      const accessToken = getAccessToken();
+      if (!accessToken) {
+        console.error("Nu a fost găsit niciun token de acces. Utilizatorul nu este autentificat.");
+        return;
+      }
+      const response = await axios.get('http://localhost:8000/departments/', {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      console.log('Departamente:', response.data);
+      if (response.data && response.data.departments) {
+        setDepartments(response.data.departments);
+      } else {
+        console.error('Datele departamentelor nu au fost primite sau sunt în format incorect:', response.data);
+      }
+    };
 
-  const handlePageChange = ({ selected }) => {
-    setCurrentPage(selected);
-  };
+    fetchDepartments();
+  }, []);
 
-
+  // Folosește efectul pentru a obține programele de lucru
   useEffect(() => {
     if (hrCompanyId) {
       fetchWorkSchedules();
     }
   }, [currentPage, hrCompanyId]);
 
+  // Schimbă pagina curentă
+  const handlePageChange = ({ selected }) => {
+    setCurrentPage(selected);
+  };
+
+  // Funcția pentru obținerea angajaților dintr-un departament
   const fetchEmployees = async () => {
     if (!selectedDepartment) {
-      console.error("No department selected.");
+      console.error("Nu a fost selectat niciun departament.");
       return;
     }
 
@@ -123,7 +126,7 @@ const GestionareProgramLucru = () => {
     }).toString();
 
     const url = `http://localhost:8000/hr/${hrCompanyId}/employees/?page_size=100`;
-    console.log(`Fetching employees from: ${url}`);
+    console.log(`Obținerea angajaților din URL-ul: ${url}`);
 
     try {
       const response = await axios.get(url, {
@@ -139,7 +142,7 @@ const GestionareProgramLucru = () => {
         setFilteredEmployees([]);
       }
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error('Eroare la obținerea angajaților:', error);
     }
   };
 
@@ -149,16 +152,16 @@ const GestionareProgramLucru = () => {
     }
   }, [selectedDepartment]);
 
-
+  // Funcția pentru obținerea programelor de lucru
   const fetchWorkSchedules = async () => {
     const accessToken = getAccessToken();
     if (!accessToken) {
-      console.error("No access token provided.");
+      console.error("Nu a fost găsit niciun token de acces.");
       return;
     }
 
     if (!hrCompanyId) {
-      console.error("No HR Company ID found.");
+      console.error("Nu a fost găsit niciun ID al companiei HR.");
       return;
     }
 
@@ -168,7 +171,7 @@ const GestionareProgramLucru = () => {
     }).toString();
 
     const url = `http://localhost:8000/gestionare-prog/${hrCompanyId}/schedules/?${params}`;
-    console.log(`Fetching work schedules from: ${url}`);
+    console.log(`Obținerea programelor de lucru din URL-ul: ${url}`);
 
     try {
       const response = await axios.get(url, {
@@ -183,14 +186,14 @@ const GestionareProgramLucru = () => {
         setTotalPages(Math.ceil(response.data.count / employeesPerPage));
       } else {
         setWorkSchedules([]);
-        console.error('No work schedules data or data not in expected format:', response.data);
+        console.error('Datele programelor de lucru nu au fost primite sau sunt în format incorect:', response.data);
       }
     } catch (error) {
-      console.error('Error fetching work schedules:', error.response ? error.response.data : error);
+      console.error('Eroare la obținerea programelor de lucru:', error.response ? error.response.data : error);
     }
   };
 
-
+  // Funcția pentru obținerea companiei HR
   const fetchHrCompany = async () => {
     try {
       const accessToken = getAccessToken();
@@ -199,41 +202,40 @@ const GestionareProgramLucru = () => {
       });
 
       if (hrResponse.data && hrResponse.data.company_id) {
-        console.log('HR Company ID:', hrResponse.data.company_id);
+        console.log('ID-ul Companiei HR:', hrResponse.data.company_id);
         setHrCompany(hrResponse.data.company_id);
         return hrResponse.data.company_id;
       } else {
-        console.log('HR Company data:', hrResponse.data);
+        console.log('Datele Companiei HR:', hrResponse.data);
         return null;
       }
     } catch (error) {
-      console.error('Error fetching HR company data:', error.response ? error.response.data : error);
+      console.error('Eroare la obținerea datelor companiei HR:', error.response ? error.response.data : error);
       return null;
     }
   };
 
-
-  //CREATE
+  // Funcția pentru crearea unui program de lucru
   const handleCreateWorkSchedule = async (e) => {
     e.preventDefault();
-    console.log("Submit was triggered");
+    console.log("Trimiterea formularului a fost declanșată");
     if (selectedEmployeeIds.length === 0) {
-      console.error("No employee selected.");
+      console.error("Nu a fost selectat niciun angajat.");
       return;
     }
-    console.log('Selected Employee ID:', selectedEmployeeIds[0]);
+    console.log('ID-ul Angajatului selectat:', selectedEmployeeIds[0]);
 
-    console.log('filteredEmployees', filteredEmployees);
+    console.log('Angajați filtrați', filteredEmployees);
     const employeeId = parseInt(selectedEmployeeIds[0], 10);
 
     if (isNaN(employeeId)) {
-      console.error("Selected Employee ID is undefined or not a number.");
+      console.error("ID-ul Angajatului selectat este nevalid sau nu este un număr.");
       return;
     }
 
     const employee = filteredEmployees.find(employee => employee.user === employeeId);
     if (!employee) {
-      console.error('Employee not found for ID:', employeeId);
+      console.error('Angajatul nu a fost găsit pentru ID-ul:', employeeId);
       return;
     }
 
@@ -249,7 +251,7 @@ const GestionareProgramLucru = () => {
 
     try {
       const accessToken = getAccessToken();
-      console.log("Access Token:", accessToken);
+      console.log("Token de acces:", accessToken);
       const response = await axios.post('http://localhost:8000/workschedule-create/', scheduleData, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
@@ -258,19 +260,18 @@ const GestionareProgramLucru = () => {
         },
       });
 
-      console.log('Work schedule created successfully:', response.data);
+      console.log('Programul de lucru a fost creat cu succes:', response.data);
       setWorkSchedules([...workSchedules, response.data]);
       fetchWorkSchedules();
       handleCloseAddModal();
       showModal('Programul de lucru a fost creat cu succes.');
     } catch (error) {
-      console.error('Error creating work schedule:', error.response ? error.response.data : error);
-      alert('Error: ' + (error.response ? error.response.data : error.message));
+      console.error('Eroare la crearea programului de lucru:', error.response ? error.response.data : error);
+      alert('Eroare: ' + (error.response ? error.response.data : error.message));
     }
   };
 
-
-
+  // Funcția pentru obținerea datelor dintr-un interval de date
   const getDatesInRange = (startDate, endDate, daysToAdd) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -286,16 +287,15 @@ const GestionareProgramLucru = () => {
     return dates;
   };
 
-
+  // Folosește efectul pentru a filtra angajații în funcție de compania HR
   useEffect(() => {
-
     const filtered = allEmployees.filter(employee =>
       employee.company_id === hrCompanyId
     );
     setFilteredEmployees(filtered);
   }, [allEmployees, hrCompanyId]);
 
-
+  // Funcția pentru gestionarea schimbării selecției angajaților
   const handleEmployeeSelectionChange = (event) => {
     const selectedOptions = Array.from(event.target.selectedOptions, (option) => option.value);
     setSelectedEmployeeIds(selectedOptions);
@@ -304,41 +304,42 @@ const GestionareProgramLucru = () => {
     }
   };
 
-
+  // Funcția pentru gestionarea schimbării intervalului de date
   const handleDateRangeChange = (dates) => {
     const [start, end] = dates;
     setSelectedDateRange([start, end]);
   };
 
-  //DELETE
-
+  // Funcția pentru ștergerea unui program de lucru
   const handleDeleteWorkSchedule = async (id) => {
     const accessToken = getAccessToken();
     try {
       await instance.delete(`/workschedules/${id}/delete/`, {
-        headers: { 'Authorization': `Bearer ${accessToken}` },
+        headers: {
+          'Authorization': `Bearer ${accessToken
+            }`
+        },
       });
       setWorkSchedules(workSchedules.filter(schedule => schedule.id !== id));
-      alert('Work schedule deleted successfully!');
+      alert('Programul de lucru a fost șters cu succes!');
     } catch (error) {
-      console.error('Error deleting work schedule:', error);
+      console.error('Eroare la ștergerea programului de lucru:', error);
     }
   };
 
-
-  //UPDATE
+  // Funcția pentru actualizarea unui program de lucru
   const handleEditWorkSchedule = async (event) => {
     event.preventDefault();
 
     if (!selectedSchedule) {
-      console.error('No schedule selected for editing.');
+      console.error('Nu a fost selectat niciun program pentru editare.');
       return;
     }
 
     const accessToken = localStorage.getItem('access_token');
 
     if (!accessToken) {
-      console.error("No access token found. User is not logged in.");
+      console.error("Nu a fost găsit niciun token de acces. Utilizatorul nu este autentificat.");
       return;
     }
 
@@ -362,7 +363,7 @@ const GestionareProgramLucru = () => {
       });
 
       if (response.status === 200) {
-        console.log('Update successful', response.data);
+        console.log('Actualizarea a fost realizată cu succes', response.data);
         setWorkSchedules(previousSchedules =>
           previousSchedules.map(schedule =>
             schedule.id === selectedSchedule.id ? response.data : schedule
@@ -372,19 +373,22 @@ const GestionareProgramLucru = () => {
         setIsEditModalOpen(false);
       }
     } catch (error) {
-      console.error('Error updating work schedule:', error.response ? error.response.data : error);
+      console.error('Eroare la actualizarea programului de lucru:', error.response ? error.response.data : error);
     }
   };
 
+  // Funcția pentru deschiderea modalului de adăugare
   const handleOpenAddModal = () => {
     setIsAddModalOpen(true);
   };
 
+  // Funcția pentru închiderea modalului de adăugare
   const handleCloseAddModal = () => {
     setIsAddModalOpen(false);
     setSelectedSchedule(null);
   };
 
+  // Funcția pentru deschiderea modalului de editare
   const OpenEditModal = (schedule) => {
     setSelectedSchedule(schedule);
     if (schedule) {
@@ -397,7 +401,7 @@ const GestionareProgramLucru = () => {
     }
   };
 
-
+  // Funcția pentru închiderea modalului de editare
   const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedSchedule(null);

@@ -134,28 +134,30 @@ def validate(self, attrs):
 class EmployeeFeedbackSerializer(serializers.ModelSerializer):
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     employee_name = serializers.CharField(source='employee.name')
-    department = serializers.CharField(source='employee.department') 
+    department = serializers.CharField(source='employee.department')
     questions_and_responses = serializers.SerializerMethodField()
     total_score = serializers.IntegerField()
+    additional_comments = serializers.SerializerMethodField()
 
     class Meta:
         model = EmployeeFeedback
-        fields = ['id', 'employee_name', 'department', 'form', 'questions', 'date_completed', 'questions_and_responses', 'total_score']
+        fields = ['id', 'employee_name', 'department', 'form', 'questions', 'date_completed', 'questions_and_responses', 'total_score', 'additional_comments']
         depth = 1
 
     def get_questions_and_responses(self, obj):
         responses = obj.responses.all()
-        return [
-            {
-                'question': response.question.text,
-                'response': response.response,
-                'score': response.score
-            } for response in responses
-        ]
+        return [{
+            'question': response.question.text,
+            'response': response.response,
+            'score': response.score
+        } for response in responses]
+
+    def get_additional_comments(self, obj):
+        return obj.additional_comments if obj.additional_comments else "Nu există comentarii."
 
 class FeedbackFormSerializer(serializers.ModelSerializer):
     employee_feedbacks = EmployeeFeedbackSerializer(many=True, read_only=True, source='feedback_responses')
-    hr_review_status_display = serializers.CharField(source='get_hr_review_status_display')
+    hr_review_status_display = serializers.CharField(source='get_hr_review_status_display', read_only=True)
     questions = FeedbackQuestionSerializer(many=True, read_only=True)
     class Meta:
         model = FeedbackForm
@@ -181,8 +183,7 @@ class TrainingSerializer(serializers.ModelSerializer):
     participant_count = serializers.IntegerField(read_only=True)
     available_seats = serializers.IntegerField(read_only=True)
     is_registered = serializers.BooleanField(read_only=True)
-    start_date = serializers.DateField(source='date')
-    end_date = serializers.DateField(source='date')
+
     class Meta:
         model = Training
         fields = '__all__'
@@ -192,12 +193,12 @@ class TrainingSerializer(serializers.ModelSerializer):
 
     def get_available_seats(self, obj):
         return obj.available_seats
-        
+
     def validate_duration_days(self, value):
         if not isinstance(value, int) or value < 1:
             raise serializers.ValidationError("Duration must be a positive integer.")
         return value
-    
+
     def get_is_registered(self, obj):
         employee = self.context.get('employee')
         return obj.is_employee_registered(employee)
@@ -217,6 +218,7 @@ class TrainingSerializer(serializers.ModelSerializer):
         instance.enrollment_deadline = validated_data.get('enrollment_deadline', instance.enrollment_deadline)
         instance.save()
         return instance
+
     
 class TrainingParticipantSerializer(serializers.ModelSerializer):
     employee_name = serializers.CharField(source='employee.name', read_only=True)

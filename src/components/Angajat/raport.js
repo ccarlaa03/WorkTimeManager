@@ -13,18 +13,17 @@ const Raport = ({ user_id }) => {
     });
 
     useEffect(() => {
-        const currentDate = new Date();
-        const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
-
-        const year = previousMonth.getFullYear();
-        const month = previousMonth.getMonth() + 1; // Month is zero-indexed, add 1 to align with human-readable format
-
         const fetchWorkHistory = async () => {
             setLoadingHistory(true);
             if (!accessToken) {
-                console.error("Access denied. No token available.");
+                console.error("Acces refuzat. Nu există token disponibil.");
                 return;
             }
+
+            const currentDate = new Date();
+            const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1);
+            const year = previousMonth.getFullYear();
+            const month = previousMonth.getMonth() + 1;
 
             try {
                 const url = `http://localhost:8000/employee/${user_id}/work-history/${year}/${month}/`;
@@ -51,9 +50,7 @@ const Raport = ({ user_id }) => {
 
     const updateChartData = (data) => {
         const totalHoursWorked = data.reduce((total, item) => {
-            const startTime = item.start_time ? new Date(`1970-01-01T${item.start_time}Z`) : null;
-            const endTime = item.end_time ? new Date(`1970-01-01T${item.end_time}Z`) : null;
-            const hoursWorked = startTime && endTime ? (endTime - startTime) / (1000 * 3600) : 0;
+            const hoursWorked = calculateHours(item.start_time, item.end_time);
             return total + hoursWorked;
         }, 0);
 
@@ -71,6 +68,13 @@ const Raport = ({ user_id }) => {
         });
     };
 
+    const calculateHours = (start, end) => {
+        if (!start || !end) return 0;
+        const startTime = new Date(`1970-01-01T${start}Z`);
+        const endTime = new Date(`1970-01-01T${end}Z`);
+        return (endTime - startTime) / (1000 * 3600); // Converts milliseconds to hours
+    };
+
     return (
         <div className="content-container">
             <div className="card-curs" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -83,7 +87,7 @@ const Raport = ({ user_id }) => {
                         <ul>
                             {workHistory.map((item, index) => (
                                 <li key={index}>
-                                    {item.date}: {((new Date(`1970-01-01T${item.end_time}Z`) - new Date(`1970-01-01T${item.start_time}Z`)) / (1000 * 3600)).toFixed(2)} ore lucrate
+                                    {item.date}: {calculateHours(item.start_time, item.end_time).toFixed(2)} ore lucrate
                                 </li>
                             ))}
                         </ul>

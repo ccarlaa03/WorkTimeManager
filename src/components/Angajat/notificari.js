@@ -5,11 +5,12 @@ const Notifications = ({ user_id }) => {
     const [notifications, setNotifications] = useState([]);
     const [events, setEvents] = useState([]);
 
+    // Functia pentru a prelua notificarile
     useEffect(() => {
         const fetchNotifications = async () => {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                console.error("No access token found. User is not logged in.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                 return;
             }
 
@@ -20,7 +21,7 @@ const Notifications = ({ user_id }) => {
                 });
                 setNotifications(response.data.notifications);
             } catch (error) {
-                console.error('Error fetching notifications:', error);
+                console.error('Eroare la preluarea notificărilor:', error);
             }
         };
 
@@ -30,11 +31,11 @@ const Notifications = ({ user_id }) => {
         return () => clearInterval(interval);
     }, [user_id]);
 
-    // Funcție pentru a marca notificările ca fiind citite
+    // Functia pentru a marca notificările ca fiind citite
     const markAsRead = async (id) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("Access denied. No token available.");
+            console.error("Acces refuzat. Nu există token disponibil.");
             return;
         }
 
@@ -46,10 +47,10 @@ const Notifications = ({ user_id }) => {
                 // Filtrăm notificările pentru a elimina notificarea citită
                 setNotifications(prevNotifications => prevNotifications.filter(notification => notification.id !== id));
             } else {
-                console.error('Error marking notification as read:', response.data);
+                console.error('Eroare la marcarea notificării ca citită:', response.data);
             }
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            console.error('Eroare la marcarea notificării ca citită:', error);
         }
     };
 
@@ -66,7 +67,7 @@ const Notifications = ({ user_id }) => {
                                     type="checkbox"
                                     checked={false}
                                     onChange={() => markAsRead(notification.id)}
-                                    aria-label="Mark as read"
+                                    aria-label="Marchează ca citit"
                                 />
                             )}
                         </div>
@@ -78,8 +79,6 @@ const Notifications = ({ user_id }) => {
             </div>
         </div>
     );
-
-
 };
 
 export default Notifications;

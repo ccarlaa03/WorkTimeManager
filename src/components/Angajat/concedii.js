@@ -81,10 +81,11 @@ const Concedii = () => {
   };
 
   useEffect(() => {
+    // Functia pentru a prelua datele profilului angajatului
     const fetchData = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
+        console.error("Acces refuzat. Token inexistent. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
         return;
       }
       try {
@@ -94,13 +95,14 @@ const Concedii = () => {
         console.log(response.data);
         setEmployeeInfo(response.data.employee_info);
       } catch (error) {
-        console.error("Error retrieving profile data:", error);
+        console.error("Eroare la preluarea datelor profilului:", error);
       }
     };
     fetchData();
   }, []);
 
   useEffect(() => {
+    // Functia pentru a prelua concediile angajatului
     const fetchLeaves = async () => {
       if (!accessToken) {
         setError("Acces refuzat. Token inexistent.");
@@ -112,25 +114,26 @@ const Concedii = () => {
         const response = await axios.get(`http://localhost:8000/employee/${employeeInfo.user}/leaves/year/${year}/`, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
-        console.log('Making request for user ID:', employeeInfo.user);
+        console.log('Se face cerere pentru ID-ul utilizatorului:', employeeInfo.user);
 
         if (response.status === 200) {
-          console.log('Received leaves data:', response.data);
+          console.log('Datele despre concedii primite:', response.data);
           setLeaves(response.data);
         } else {
           setError('Eroare la încărcarea concediilor');
         }
       } catch (error) {
-
+        console.error('Eroare la preluarea concediilor:', error);
       } finally {
         setLoading(false);
       }
     };
 
+    // Functia pentru a prelua istoricul concediilor
     const fetchLeaveHistory = async () => {
       const currentYear = new Date().getFullYear();
       if (!accessToken || !employeeInfo.user) {
-        console.error("Access denied or missing user ID.");
+        console.error("Acces refuzat sau ID-ul utilizatorului lipsește.");
         return;
       }
       try {
@@ -142,16 +145,17 @@ const Concedii = () => {
         if (response.status === 200) {
           setLeaveHistory(response.data);
         } else {
-          console.error('Failed to fetch leave history');
+          console.error('Eroare la preluarea istoricului concediilor');
         }
       } catch (error) {
-        console.error('Error fetching leave history:', error);
+        console.error('Eroare la preluarea istoricului concediilor:', error);
       }
     };
 
+    // Functia pentru a prelua statistici despre concedii
     const fetchStatistics = async () => {
       if (!accessToken || !employeeInfo.user) {
-        console.error("Access denied or missing user ID.");
+        console.error("Acces refuzat sau ID-ul utilizatorului lipsește.");
         return;
       }
       try {
@@ -161,11 +165,11 @@ const Concedii = () => {
         if (response.status === 200) {
           setStatistics(response.data);
         } else {
-          setError('Failed to fetch leave statistics');
+          setError('Eroare la preluarea statisticilor concediilor');
         }
       } catch (error) {
-        console.error('Failed to fetch leave statistics:', error);
-        setError('Failed to fetch leave statistics');
+        console.error('Eroare la preluarea statisticilor concediilor:', error);
+        setError('Eroare la preluarea statisticilor concediilor');
       }
     };
 
@@ -174,6 +178,7 @@ const Concedii = () => {
     fetchLeaves();
   }, [employeeInfo.user, year, accessToken]);
 
+  // Functia pentru a gestiona trimiterea formularului de modificare
   const handleSubmitModificare = (e) => {
     e.preventDefault();
     console.log('Cerere de modificare trimisă:', { startDate, endDate, freeDays, reason, leaveType });
@@ -213,7 +218,7 @@ const Concedii = () => {
           </table>
         </div>
         <div className="card-curs" style={{ alignItems: 'center' }}>
-          <h2>Detali zile de concediu</h2>
+          <h2>Detalii zile de concediu</h2>
           {error && <p>{error}</p>}
           <div className="navigation-container">
             <p>Totalul zilelor permise: {statistics.total_allowed}</p>

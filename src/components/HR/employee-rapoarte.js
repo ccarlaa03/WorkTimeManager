@@ -23,11 +23,12 @@ ChartJS.register(
 const DepartmentRaporte = () => {
   const [departmentData, setDepartmentData] = useState([]);
 
+  // Functia pentru a prelua rapoartele pe departamente
   useEffect(() => {
     const fetchDepartmentReport = async () => {
       const accessToken = localStorage.getItem('access_token');
       if (!accessToken) {
-        console.error("No access token found. User is not logged in.");
+        console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
         return;
       }
 
@@ -37,13 +38,14 @@ const DepartmentRaporte = () => {
         });
         setDepartmentData(reportResponse.data);
       } catch (error) {
-        console.error('Error fetching department report:', error.response ? error.response.data : error);
+        console.error('Eroare la preluarea raportului pe departamente:', error.response ? error.response.data : error);
       }
     };
 
     fetchDepartmentReport();
   }, []);
 
+  // Datele pentru grafic
   const chartData = {
     labels: departmentData.map(dept => dept.department.charAt(0).toUpperCase() + dept.department.slice(1)),
     datasets: [
@@ -57,6 +59,7 @@ const DepartmentRaporte = () => {
     ],
   };
 
+  // Opțiunile pentru grafic
   const chartOptions = {
     responsive: true,
     plugins: {
@@ -83,7 +86,7 @@ const DepartmentRaporte = () => {
   };
 
   return (
-    <div >
+    <div>
       <h2>Rapoarte angajați pe departamente</h2>
       <Bar data={chartData} options={chartOptions} />
     </div>
@@ -91,3 +94,4 @@ const DepartmentRaporte = () => {
 };
 
 export default DepartmentRaporte;
+

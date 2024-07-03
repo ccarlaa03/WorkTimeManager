@@ -28,6 +28,8 @@ const RapoarteTraining = () => {
         number_of_employees: 0,
         founded_date: ''
     });
+
+    // Functia pentru a obține eticheta statusului
     const getStatusLabel = (status) => {
         switch (status) {
             case 'planned':
@@ -43,11 +45,12 @@ const RapoarteTraining = () => {
         }
     };
 
+    // Functia pentru a prelua datele de pe server
     useEffect(() => {
         const fetchData = async () => {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                console.error("No access token found. User must be logged in to access this page.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
                 return;
             }
 
@@ -57,27 +60,30 @@ const RapoarteTraining = () => {
 
             try {
                 const response = await axios.get('http://localhost:8000/owner-dashboard/', config);
-                if (response.data.owner) {
+                if (response.data.owner && response.data.owner.company_id) {
+                    console.log("Company ID:", response.data.owner.company_id); 
                     setOwner(response.data.owner);
                     if (response.data.company) {
                         setCompany(response.data.company);
                     }
                 } else {
-                    console.error("Owner data is not available or company ID is undefined.");
+                    console.error("Datele proprietarului nu sunt disponibile sau ID-ul companiei nu este definit.");
                 }
             } catch (error) {
-                console.error("Error fetching data:", error.response || error);
+                console.error("Eroare la preluarea datelor:", error.response || error);
             }
         }
+
 
         fetchData();
     }, []);
 
+    // Functia pentru a prelua sesiunile de training
     const fetchTrainings = async (page = 1) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token found. User must be logged in to access this page.");
-            setError("No access token found. Please log in.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
+            setError("Nu s-a găsit niciun token de acces. Vă rugăm să vă autentificați.");
             setIsLoading(false);
             return;
         }
@@ -90,129 +96,107 @@ const RapoarteTraining = () => {
             setTrainings(response.data.results || []);
             setTotalPages(response.data.total_pages || 1);
         } catch (error) {
-            console.error('Error fetching training data:', error);
-            setError("Failed to fetch data. Please try again.");
+            console.error('Eroare la preluarea datelor despre training:', error);
+            setError("Preluarea datelor a eșuat. Vă rugăm să încercați din nou.");
         } finally {
             setIsLoading(false);
         }
     };
 
+    // Efect pentru a prelua sesiunile de training la schimbarea paginii curente
     useEffect(() => {
         fetchTrainings(currentPage);
     }, [currentPage]);
 
+    // Functia pentru a prelua detaliile unui training
     const fetchTrainingDetails = async (training_id) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token found. User must be logged in to access this page.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
             return;
         }
 
         try {
-            console.log(`Fetching details for training ID: ${training_id}`);
+            console.log(`Se preiau detaliile pentru training-ul cu ID: ${training_id}`);
             const response = await axios.get(`/trainings/${training_id}/details/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
             });
-            console.log('Training Details Response:', response.data);
+            console.log('Răspuns detalii training:', response.data);
             setSelectedTraining(response.data);
             setIsModalOpen(true);
         } catch (error) {
-            console.error('Error fetching training details:', error);
-            alert('Failed to fetch training details');
+            console.error('Eroare la preluarea detaliilor training-ului:', error);
+            alert('Preluarea detaliilor despre training a eșuat');
         }
     };
 
+    // Functia pentru a deschide modalul de detalii training
     const openModal = (training_id) => {
         fetchTrainingDetails(training_id);
     };
+
+    // Functia pentru a schimba pagina curentă
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected + 1);
     };
+
+    // Functia pentru a închide modalul de detalii training
     const closeModal = () => {
         setIsModalOpen(false);
     };
 
-    if (isLoading) return <p>Loading...</p>;
-    if (error) return <p>Error: {error}</p>;
+    if (isLoading) return <p>Se încarcă...</p>;
+    if (error) return <p>Eroare: {error}</p>;
 
     return (
         <div className="container-dashboard">
             <h1 style={{ textAlign: 'center' }}>Rapoarte cursuri angajați</h1>
             <div className="card-curs">
-                {trainings.length > 0 ? (
-                    <>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Titlu</th>
-                                    <th>Data începerii</th>
-                                    <th>Data terminării</th>
-                                    <th>Detalii</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {trainings.map((training) => (
-                                    <tr key={training.id}>
-                                        <td>{training.title}</td>
-                                        <td>{new Date(training.date).toLocaleDateString()}</td>
-                                        <td>{new Date(training.date).toLocaleDateString()}</td>
-                                        <td><button onClick={() => openModal(training.id)}>Vizualizează Detalii</button></td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        <ReactPaginate
-                            previousLabel={'Anterior'}
-                            nextLabel={'Următorul'}
-                            breakLabel={'...'}
-                            pageCount={totalPages}
-                            onPageChange={handlePageChange}
-                            containerClassName={'pagination'}
-                            activeClassName={'active'}
-                            forcePage={currentPage - 1}
-                        />
-                    </>
-                ) : <p>Nu există sesiuni de training disponibile.</p>}
-
-                {selectedTraining && (
-                    <Modal isOpen={modalIsOpen} className="modal-content" onRequestClose={closeModal} contentLabel="Detalii Training">
-                        <h2>{selectedTraining.title}</h2>
-                        <li>{selectedTraining.description}</li>
-                        <p><b>Data:</b> {new Date(selectedTraining.date).toLocaleDateString()}</p>
-                        <p><b>Status:</b> {getStatusLabel(selectedTraining.status)}</p>
-                        <p><b>Durata (zile): </b>{selectedTraining.duration_days}</p>
-                        <p><b>Capacitate:</b> {selectedTraining.capacity}</p>
-                        <p><b>Data limită de înregistrare:</b> {selectedTraining.enrollment_deadline ? new Date(selectedTraining.enrollment_deadline).toLocaleDateString() : 'N/A'}</p>
-                        <p><b>Numărul de participanți: </b> {selectedTraining.participant_count}</p>
-                        <div>
-                            <h3>Participanți:</h3>
-                            <ul>
-                                {selectedTraining.participants && selectedTraining.participants.length > 0 ? (
-                                    selectedTraining.participants.map(participant => (
-                                        <li key={participant.employee_id}>
-                                            {participant.employee_name} - {participant.employee_department}
-                                        </li>
-                                    ))
-                                ) : (
-                                    <p>Nu există participanți înregistrați la acest training.</p>
-                                )}
-                            </ul>
-                        </div>
-                        <button className='buton' onClick={closeModal}>Închide</button>
-                    </Modal>
-                )}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Titlu</th>
+                            <th>Data începerii</th>
+                            <th>Data terminării</th>
+                            <th>Detalii</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {trainings.map((training) => (
+                            <tr key={training.id}>
+                                <td>{training.title}</td>
+                                <td>{new Date(training.date).toLocaleDateString()}</td>
+                                <td>{new Date(training.date).toLocaleDateString()}</td>
+                                <td><button onClick={() => openModal(training.id)}>Vizualizează Detalii</button></td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+                <ReactPaginate
+                    previousLabel={'Anterior'}
+                    nextLabel={'Următorul'}
+                    breakLabel={'...'}
+                    pageCount={totalPages}
+                    onPageChange={handlePageChange}
+                    containerClassName={'pagination'}
+                    activeClassName={'active'}
+                    forcePage={currentPage - 1}
+                />
             </div>
             <div className="rapoarte-container">
-                <div className="rapoarte-section">
+                <div className="rapoarte-chart-container">
                     <Rapoarte trainings={trainings} />
                 </div>
-                <div className="rapoarte-section">
+                <div className="rapoarte-chart-container">
                     <Participanti />
                 </div>
             </div>
+
         </div>
+
     );
+
 };
 
 export default RapoarteTraining;
+

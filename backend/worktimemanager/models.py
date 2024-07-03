@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import datetime
 from django.db import transaction
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils.translation import gettext_lazy as _
@@ -444,8 +445,20 @@ class PrivateEvent(models.Model):
 def leave_update_notification(sender, instance, **kwargs):
     if instance.is_approved_changed:
         hr_user = instance.user.company.HR.first().user if instance.user.company.HR.exists() else None
+        
         if hr_user:
-            message = f"Concediul pentru {instance.start_date.strftime('%Y-%m-%d')} - {instance.end_date.strftime('%Y-%m-%d')} a fost {'aprobat' if instance.is_approved else 'respins'}."
+            # Verificăm și convertim start_date și end_date la obiecte datetime dacă sunt stringuri
+            if isinstance(instance.start_date, str):
+                start_date = datetime.strptime(instance.start_date, '%Y-%m-%d')
+            else:
+                start_date = instance.start_date
+
+            if isinstance(instance.end_date, str):
+                end_date = datetime.strptime(instance.end_date, '%Y-%m-%d')
+            else:
+                end_date = instance.end_date
+
+            message = f"Concediul pentru {start_date.strftime('%Y-%m-%d')} - {end_date.strftime('%Y-%m-%d')} a fost {'aprobat' if instance.is_approved else 'respins'}."
             Notification.objects.create(
                 sender=hr_user,
                 recipient=instance.user.user,
@@ -458,7 +471,6 @@ def leave_update_notification(sender, instance, **kwargs):
             print("No HR user found.")
     else:
         print("No change in approved status.")
-
 
 @receiver(post_save, sender=Training)
 def training_creation_notification(sender, instance, created, **kwargs):

@@ -38,21 +38,25 @@ const HrDashboard = () => {
   const [updateSuccess, setUpdateSuccess] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
+  // Obține token-ul de acces din localStorage
   const getAccessToken = () => localStorage.getItem('access_token');
 
+  // Deschide modalul de profil
   const openModal = () => {
     setModalIsOpen(true);
   };
 
+  // Închide modalul de profil
   const closeModal = () => {
     setModalIsOpen(false);
   }
 
+  // Preia datele inițiale ale profilului HR și evenimentele asociate
   useEffect(() => {
     const fetchData = async () => {
       const accessToken = getAccessToken();
       if (!accessToken) {
-        console.log("No access token found. User is not logged in.");
+        console.log("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
         return;
       }
 
@@ -62,7 +66,7 @@ const HrDashboard = () => {
         });
 
         if (hrResponse.data) {
-          console.log('HR data:', hrResponse.data);
+          console.log('Date HR:', hrResponse.data);
           setHR({
             id: hrResponse.data.id || '',
             name: hrResponse.data.name || '',
@@ -78,29 +82,31 @@ const HrDashboard = () => {
           })));
         }
       } catch (error) {
-        console.error("Error fetching data:", error.response ? error.response.data : error.message);
+        console.error("Eroare la preluarea datelor:", error.response ? error.response.data : error.message);
       }
     };
     fetchData();
   }, []);
 
+  // Funcția pentru gestionarea modificărilor din formularul de profil HR
   const handleProfileChange = (e) => {
     const { name, value } = e.target;
     setHR((prevHR) => ({ ...prevHR, [name]: value }));
   };
 
+  // Funcția pentru actualizarea profilului HR
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     const accessToken = getAccessToken();
     if (!accessToken) {
-      console.error("No access token provided.");
+      console.error("Nu s-a furnizat niciun token de acces.");
       return;
     }
 
     const userId = HR.id;
 
     if (!userId) {
-      console.error("User ID is undefined.");
+      console.error("ID-ul utilizatorului nu este definit.");
       return;
     }
 
@@ -112,7 +118,7 @@ const HrDashboard = () => {
       company_id: HR.company_id,
     };
 
-    console.log('Submitting profile update:', profileData);
+    console.log('Trimitere actualizare profil:', profileData);
 
     try {
       const response = await axios.put(`http://localhost:8000/update-profile/${userId}/`, profileData, {
@@ -122,36 +128,38 @@ const HrDashboard = () => {
         },
       });
 
-      console.log('Profile updated successfully', response.data);
+      console.log('Profil actualizat cu succes', response.data);
       setUpdateSuccess(true);
       closeEditProfileModal();
       setTimeout(() => {
         setUpdateSuccess(false);
       }, 3000);
     } catch (error) {
-      console.error('Error during profile update:', error);
+      console.error('Eroare la actualizarea profilului:', error);
       if (error.response) {
-        console.error('Error data:', error.response.data);
+        console.error('Date eroare:', error.response.data);
       }
     }
   };
 
+  // Funcția pentru gestionarea modificărilor din formularul de eveniment
   const handleEventInputChange = (e) => {
     const { name, value } = e.target;
     const newValue = (name === 'start' || name === 'end') ? new Date(value) : value;
     setNewEvent({ ...newEvent, [name]: newValue });
   };
 
+  // Funcția pentru adăugarea unui nou eveniment
   const handleAddEvent = async (e) => {
     e.preventDefault();
     const accessToken = getAccessToken();
     if (!accessToken) {
-      console.error("No access token provided.");
+      console.error("Nu s-a furnizat niciun token de acces.");
       return;
     }
 
     if (!HR.company) {
-      console.error("No company ID associated with this HR user.");
+      console.error("Nu există niciun ID de companie asociat cu acest utilizator HR.");
       return;
     }
     const eventData = {
@@ -170,13 +178,13 @@ const HrDashboard = () => {
         },
       });
 
-      console.log('Event added successfully', response.data);
+      console.log('Eveniment adăugat cu succes', response.data);
       setIsAddEventModalOpen(false);
       setEvents([...events, { ...response.data, start: new Date(response.data.start), end: new Date(response.data.end) }]);
     } catch (error) {
-      console.error('Error during event addition:', error.response ? error.response.data : error.message);
+      console.error('Eroare la adăugarea evenimentului:', error.response ? error.response.data : error.message);
       if (error.response) {
-        console.error('Full error response:', error.response);
+        console.error('Răspuns complet eroare:', error.response);
       }
     }
   };
@@ -185,6 +193,7 @@ const HrDashboard = () => {
   const closeEditProfileModal = () => setEditProfile(false);
   const closeAddEventModal = () => setIsAddEventModalOpen(false);
 
+  // Funcția pentru deschiderea modalului de adăugare a unui eveniment
   const openAddEventModal = () => {
     setNewEvent({
       ...newEvent,
@@ -249,11 +258,11 @@ const HrDashboard = () => {
             onChange={handleEventInputChange}
             required
           />
-          <label>Descrie:</label>
+          <label>Descriere:</label>
           <input
             type="text"
             name="description"
-            placeholder="Descrie"
+            placeholder="Descriere"
             value={newEvent.description}
             onChange={handleEventInputChange}
             required
@@ -277,21 +286,21 @@ const HrDashboard = () => {
           <button className="button" type="submit">Adaugă Eveniment</button>
         </form>
       </Modal>
+      <div className="card-curs">
+        <Calendar
+          localizer={localizer}
+          events={events}
+          startAccessor="start"
+          endAccessor="end"
+          style={{ height: 500 }}
+        />
 
-      <Calendar
-        localizer={localizer}
-        events={events}
-        startAccessor="start"
-        endAccessor="end"
-        style={{ height: 500 }}
-      />
-
-      <div className="button-container">
-        <button onClick={openAddEventModal} className="button">
-          Adaugă eveniment nou
-        </button>
+        <div className="button-container">
+          <button onClick={openAddEventModal} className="buton">
+            Adaugă eveniment nou
+          </button>
+        </div>
       </div>
-
       <div className="card-curs">
         <DepartmentRaporte />
       </div>
@@ -300,4 +309,6 @@ const HrDashboard = () => {
 };
 
 export default HrDashboard;
+
+
 

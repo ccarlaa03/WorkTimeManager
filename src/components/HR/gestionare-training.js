@@ -3,6 +3,7 @@ import Modal from 'react-modal';
 import Rapoarte from './training-rapoarte';
 import instance from '../../axiosConfig';
 import axios from 'axios';
+import moment from 'moment';
 
 Modal.setAppElement('#root');
 
@@ -51,7 +52,7 @@ const GestionareTrainingHR = () => {
         const fetchTraining = async () => {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                console.error("No access token found. User is not logged in.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                 return;
             }
 
@@ -61,17 +62,15 @@ const GestionareTrainingHR = () => {
                 });
 
                 if (hrResponse.data && hrResponse.data.company_id) {
-                    console.log('HR Company ID:', hrResponse.data.company_id);
+                    console.log('ID Companie HR:', hrResponse.data.company_id);
                     const hrCompanyId = hrResponse.data.company_id;
                     setHrCompany(hrCompanyId);
 
                     const employeeResponse = await axios.get(`/gestionare-ang/${hrCompanyId}/`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` },
                     });
-                    console.log('All Employees:', employeeResponse.data);
-                    
-
-                    console.log("Employees data:", employees);
+                    console.log('Toți angajații:', employeeResponse.data);
+                    setEmployees(employeeResponse.data);
 
                     const trainingResponse = await axios.get(`http://localhost:8000/trainings/${hrCompanyId}/`, {
                         headers: { 'Authorization': `Bearer ${accessToken}` },
@@ -79,20 +78,18 @@ const GestionareTrainingHR = () => {
 
                     if (trainingResponse.data) {
                         setTrainings(trainingResponse.data);
-                        console.log('Trainings data:', trainingResponse.data);
+                        console.log('Date despre training-uri:', trainingResponse.data);
                     } else {
-                        setError("No training data found.");
+                        setError("Nu s-au găsit date despre training.");
                     }
-                    console.log('Trainings data:', trainingResponse.data);
-                    setTrainings(trainingResponse.data);
                     setIsLoading(false);
 
                 } else {
-                    console.log('HR Company data:', hrResponse.data);
+                    console.log('Date companie HR:', hrResponse.data);
                     setIsLoading(false);
                 }
             } catch (error) {
-                console.error('Error fetching trainings:', error.response ? error.response.data : error);
+                console.error('Eroare la preluarea datelor despre training:', error.response ? error.response.data : error);
                 setIsLoading(false);
             }
         };
@@ -100,18 +97,20 @@ const GestionareTrainingHR = () => {
         fetchTraining();
     }, []);
 
-    //CREATE
+    // Funcția pentru crearea unui nou training
+    const handleCreateTraining = async (e) => {
+        e.preventDefault();
 
-    const handleCreateTraining = async () => {
         const newTrainingData = {
             title: title.trim(),
             description: description.trim(),
-            date,
-            duration_days: parseInt(duration_days),
-            capacity: parseInt(capacity),
-            enrollment_deadline: enrollmentDeadline,
+            date: moment(date).format('YYYY-MM-DD'),
+            duration_days: parseInt(duration_days, 10),
+            capacity: parseInt(capacity, 10),
+            enrollment_deadline: moment(enrollmentDeadline).format('YYYY-MM-DD'),
         };
-        console.log('Data sent to backend for new training:', newTrainingData);
+
+        console.log('Date trimise pentru noul training:', newTrainingData);
 
         try {
             const response = await instance.post('http://localhost:8000/trainings/create/', newTrainingData, {
@@ -125,57 +124,57 @@ const GestionareTrainingHR = () => {
                 setTrainings(prevTrainings => [...prevTrainings, response.data]);
                 closeAddModal();
             } else {
-                console.error('Unexpected response status:', response.status);
+                console.error('Status neașteptat al răspunsului:', response.status);
             }
         } catch (error) {
-            console.error('Error creating new training:', error.response ? error.response.data : error);
+            console.error('Eroare la crearea unui nou training:', error.response ? error.response.data : error);
         }
     };
 
-
-    //UPDATE
+    // Funcția pentru actualizarea unui training existent
     const handleEditTraining = async (event) => {
         event.preventDefault();
+
         if (!editingTraining) {
             alert('Nu s-a selectat niciun training pentru editare.');
             return;
         }
+
         const formData = {
             title: editingTraining.title.trim(),
             description: editingTraining.description.trim(),
-            date: editingTraining.date,
-            duration_days: editingTraining.duration_days,
-            capacity: editingTraining.capacity,
-            enrollment_deadline: editingTraining.enrollment_deadline,
+            date: moment(editingTraining.date).format('YYYY-MM-DD'),
+            duration_days: parseInt(editingTraining.duration_days, 10),
+            capacity: parseInt(editingTraining.capacity, 10),
+            enrollment_deadline: moment(editingTraining.enrollment_deadline).format('YYYY-MM-DD'),
             status: editingTraining.status,
         };
-        console.log('Data sent to backend for edit:', formData);
+
+        console.log('Date trimise pentru editare:', formData);
+
         try {
-            const response = await instance.put(`http://localhost:8000/trainings/update/${editingTraining.id}/`, formData, {
+            const response = await instance.put(`/trainings/update/${editingTraining.id}/`, formData, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
                     'Content-Type': 'application/json',
                 },
             });
-            console.log('Response from backend:', response);
+
             if (response.status === 200) {
                 const updatedTrainings = trainings.map(training =>
                     training.id === editingTraining.id ? { ...training, ...response.data } : training
                 );
                 setTrainings(updatedTrainings);
-
                 closeEditModal();
             } else {
-                console.error('Unexpected response status:', response.status);
+                console.error('Status neașteptat al răspunsului:', response.status);
             }
         } catch (error) {
-            console.error('Error updating training:', error.response ? error.response.data : error);
-
+            console.error('Eroare la actualizarea training-ului:', error.response ? error.response.data : error);
         }
     };
 
-
-    //DELETE
+    // Funcția pentru ștergerea unui training
     const handleDeleteTraining = async (trainingId) => {
         const confirm = window.confirm("Ești sigur că vrei să ștergi acest training?");
         if (confirm) {
@@ -187,11 +186,10 @@ const GestionareTrainingHR = () => {
                     setTrainings(prevTrainings => prevTrainings.filter(training => training.id !== trainingId));
                 }
             } catch (error) {
-                console.error('Error deleting training:', error.response ? error.response.data : error);
+                console.error('Eroare la ștergerea training-ului:', error.response ? error.response.data : error);
             }
         }
     };
-
 
     const openAddModal = () => {
         setIsAddModalOpen(true);
@@ -231,11 +229,10 @@ const GestionareTrainingHR = () => {
     const TrainingDetailsModal = ({ isOpen, onClose, training_id }) => {
         useEffect(() => {
             const fetchDetails = async () => {
-
                 const accessToken = localStorage.getItem('access_token');
 
                 if (!accessToken) {
-                    console.error("No access token found. User is not logged in.");
+                    console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                     return;
                 }
 
@@ -245,9 +242,8 @@ const GestionareTrainingHR = () => {
                     });
                     setTraining(response.data);
                 } catch (error) {
-                    console.error('Error fetching training details:', error.response ? error.response.data : error);
+                    console.error('Eroare la preluarea detaliilor training-ului:', error.response ? error.response.data : error);
                 }
-
             };
 
             if (isOpen && training_id) {
@@ -255,12 +251,9 @@ const GestionareTrainingHR = () => {
             }
         }, [isOpen, training_id]);
 
-
-
-
         return (
-            <Modal isOpen={isOpen} className="modal-content" onRequestClose={onClose} contentLabel="Training Details">
-                <h2>Detali</h2>
+            <Modal isOpen={isOpen} className="modal-content" onRequestClose={onClose} contentLabel="Detalii Training">
+                <h2>Detalii Training</h2>
                 {training && (
                     <div>
                         <h3>{training.title}</h3>
@@ -279,15 +272,16 @@ const GestionareTrainingHR = () => {
                         )}
                     </div>
                 )}
-
                 <button onClick={onClose}>Închide</button>
             </Modal>
         );
     };
+
     const handleOpenDetails = (training_id) => {
         setSelectedTrainingId(training_id);
         setIsDetailsModalOpen(true);
     };
+
     return (
         <div className="container-dashboard">
             <h1 style={{ textAlign: 'center' }}>Training</h1>
@@ -315,6 +309,7 @@ const GestionareTrainingHR = () => {
                     isOpen={isDetailsModalOpen}
                     onClose={() => setIsDetailsModalOpen(false)}
                     training_id={selectedTrainingId}
+                    className="modal-content"
                 />
             </div>
 
@@ -459,8 +454,10 @@ const GestionareTrainingHR = () => {
                             onChange={(e) => setEnrollmentDeadline(e.target.value)}
                         />
                     </label>
-                    <button type="submit">Adaugă</button>
-                    <button type="button" onClick={closeAddModal}>Închide</button>
+                    <div className="button-container">
+                        <button className="buton" type="submit">Adaugă</button>
+                        <button className="buton" type="button" onClick={closeAddModal}>Închide</button>
+                    </div>
                 </form>
             </Modal>
             <div className="button-container">
@@ -475,3 +472,4 @@ const GestionareTrainingHR = () => {
 };
 
 export default GestionareTrainingHR;
+

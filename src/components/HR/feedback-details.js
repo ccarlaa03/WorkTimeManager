@@ -25,11 +25,12 @@ const FeedbackDetails = () => {
     });
 
 
+    // Functia pentru a prelua detaliile companiei
     useEffect(() => {
         async function fetchCompanyDetails() {
             const accessToken = localStorage.getItem('access_token');
             if (!accessToken) {
-                console.error("No access token found. User is not logged in.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                 setIsLoading(false);
                 return;
             }
@@ -41,30 +42,31 @@ const FeedbackDetails = () => {
 
                 if (hrResponse.data && hrResponse.data.company_id) {
                     setHrCompany(hrResponse.data.company_id);
-                    await fetchEmployees(accessToken);
+                    await fetchEmployees(accessToken, hrResponse.data.company_id);
                     await fetchFormDetails(accessToken, form_id);
                 } else {
-                    console.log('HR Company data:', hrResponse.data);
+                    console.log('Datele companiei HR:', hrResponse.data);
                 }
             } catch (error) {
-                console.error('Error fetching company details:', error.response ? error.response.data : error);
+                console.error('Eroare la preluarea detaliilor companiei:', error.response ? error.response.data : error);
             }
         }
 
+        // Functia pentru a prelua angajații companiei
         async function fetchEmployees(accessToken, hrCompanyId) {
             if (!accessToken) {
-                console.error("No access token found. User is not logged in.");
+                console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
                 return;
             }
-        
+
             if (!hrCompanyId) {
-                console.error("No HR Company ID found.");
+                console.error("Nu s-a găsit ID-ul companiei HR.");
                 return;
             }
-        
+
             const url = `http://localhost:8000/gestionare-ang/${hrCompanyId}/`;
-            console.log(`Fetching employees from: ${url}`);
-        
+            console.log(`Preluarea angajaților de la: ${url}`);
+
             try {
                 const employeeResponse = await instance.get(url, {
                     headers: {
@@ -72,20 +74,20 @@ const FeedbackDetails = () => {
                         'Content-Type': 'application/json',
                     },
                 });
-        
+
                 if (employeeResponse.data) {
-                    console.log('All Employees:', employeeResponse.data);
-                    setEmployees(employeeResponse.data);  
+                    console.log('Toți angajații:', employeeResponse.data);
+                    setEmployees(employeeResponse.data);
                 } else {
-                    console.error('No employee data or data not in expected format:', employeeResponse.data);
-                    setEmployees([]);  
+                    console.error('Datele angajaților lipsesc sau nu sunt în formatul așteptat:', employeeResponse.data);
+                    setEmployees([]);
                 }
             } catch (error) {
-                console.error('Error fetching employees:', error.response ? error.response.data : error);
+                console.error('Eroare la preluarea angajaților:', error.response ? error.response.data : error);
             }
         }
-        
 
+        // Functia pentru a prelua detaliile formularului
         async function fetchFormDetails(accessToken, formId) {
             try {
                 const response = await instance.get(`/feedback-details/${formId}/`, {
@@ -93,9 +95,8 @@ const FeedbackDetails = () => {
                 });
                 console.log(response.data);
                 setFormDetails(response.data);
-
             } catch (error) {
-                console.error('Error fetching form details:', error);
+                console.error('Eroare la preluarea detaliilor formularului:', error);
             }
         }
 
@@ -103,11 +104,9 @@ const FeedbackDetails = () => {
         fetchCompanyDetails().finally(() => setIsLoading(false));
     }, [form_id]);
 
-
-    // CREATE
+    // Functia pentru a adăuga o întrebare nouă
     const handleAddQuestion = async (e) => {
         e.preventDefault();
-
 
         const newQuestionData = {
             text: newQuestion.text.trim(),
@@ -117,7 +116,7 @@ const FeedbackDetails = () => {
             importance: newQuestion.importance,
         };
 
-        // Add options if it's a multiple-choice question
+        // Adăugarea opțiunilor dacă este o întrebare de tip multiple-choice
         if (newQuestion.responseType === 'multiple_choice') {
             newQuestionData.options = newQuestion.options.map(option => ({
                 text: option.text.trim(),
@@ -125,7 +124,7 @@ const FeedbackDetails = () => {
             }));
         }
 
-        console.log('Data sent to backend:', newQuestionData);
+        console.log('Datele trimise la backend:', newQuestionData);
 
         try {
             const response = await instance.post(`/feedback/add-question/${form_id}/`, newQuestionData, {
@@ -141,13 +140,11 @@ const FeedbackDetails = () => {
             setIsAddModalOpen(false);
             setNewQuestionText('');
         } catch (error) {
-            console.error('Error adding a new question:', error.response ? error.response.data : error);
+            console.error('Eroare la adăugarea unei noi întrebări:', error.response ? error.response.data : error);
         }
     };
 
-
-
-    // UPDATE
+    // Functia pentru a edita o întrebare existentă
     const handleEditQuestion = async (e) => {
         e.preventDefault();
 
@@ -175,16 +172,14 @@ const FeedbackDetails = () => {
 
                 setIsEditModalOpen(false);
             } else {
-                console.error('Unexpected response status:', response.status);
+                console.error('Statusul răspunsului este neașteptat:', response.status);
             }
         } catch (error) {
-            console.error('Error updating the question:', error.response ? error.response.data : error);
+            console.error('Eroare la actualizarea întrebării:', error.response ? error.response.data : error);
         }
     };
 
-
-
-    // DELETE
+    // Functia pentru a șterge o întrebare
     const handleDeleteQuestion = async (questionId) => {
         try {
             const accessToken = localStorage.getItem('access_token');
@@ -197,10 +192,11 @@ const FeedbackDetails = () => {
                 questions: prevFormDetails.questions.filter(q => q.id !== questionId),
             }));
         } catch (error) {
-            console.error('Error deleting the question:', error);
+            console.error('Eroare la ștergerea întrebării:', error);
         }
     };
 
+    // Functia pentru a încărca datele unei întrebări pentru editare
     const loadQuestionForEditing = (questionData) => {
         setCurrentQuestion({
             ...questionData,
@@ -208,6 +204,7 @@ const FeedbackDetails = () => {
         });
     };
 
+    // Functia pentru a gestiona schimbarea tipului de răspuns al unei întrebări noi
     const handleNewQuestionResponseTypeChange = (e) => {
         const selectedResponseType = e.target.value;
         setNewQuestion((prevQuestion) => ({
@@ -217,6 +214,7 @@ const FeedbackDetails = () => {
         }));
     };
 
+    // Functia pentru a gestiona schimbarea textului unei opțiuni noi
     const handleNewOptionTextChange = (index, newText) => {
         setNewQuestion(prevQuestion => {
             const newOptions = [...prevQuestion.options];
@@ -224,6 +222,8 @@ const FeedbackDetails = () => {
             return { ...prevQuestion, options: newOptions };
         });
     };
+
+    // Functia pentru a gestiona schimbarea scalei de evaluare
     const handleRatingScaleChange = (e) => {
         const newScale = parseInt(e.target.value, 10);
         if (newScale > 0) {
@@ -233,6 +233,8 @@ const FeedbackDetails = () => {
             }));
         }
     };
+
+    // Functia pentru a gestiona schimbarea scorului unei opțiuni noi
     const handleNewOptionScoreChange = (index, newScore) => {
         setNewQuestion(prevQuestion => {
             const newOptions = [...prevQuestion.options];
@@ -241,13 +243,14 @@ const FeedbackDetails = () => {
         });
     };
 
+    // Functia pentru a adăuga o opțiune nouă
     const handleAddNewOption = () => {
         setNewQuestion(prevQuestion => ({
             ...prevQuestion,
             options: [...prevQuestion.options, { text: '', score: 0 }],
         }));
     };
-
+    // Functia pentru a gestiona schimbarea textului unei opțiuni existente
     const handleOptionTextChange = (index, newText) => {
         setNewQuestion(prevNewQuestion => {
             const updatedOptions = prevNewQuestion.options.map((option, idx) =>
@@ -257,6 +260,7 @@ const FeedbackDetails = () => {
         });
     };
 
+    // Functia pentru a gestiona schimbarea scorului unei opțiuni existente
     const handleOptionScoreChange = (index, newScore) => {
         setNewQuestion(prevNewQuestion => {
             const updatedOptions = prevNewQuestion.options.map((option, idx) =>
@@ -266,20 +270,23 @@ const FeedbackDetails = () => {
         });
     };
 
-
+    // Functia pentru a deschide modalul de adăugare
     const openAddModal = () => {
         setIsAddModalOpen(true);
     };
+
+    // Functia pentru a închide modalul de adăugare
     const closeAddModal = () => {
         setIsAddModalOpen(false);
     };
 
+    // Functia pentru a deschide modalul de editare cu datele întrebării selectate
     const openEditModal = (question) => {
         loadQuestionForEditing(question);
         setIsEditModalOpen(true);
     };
 
-
+    // Functia pentru a închide modalul de editare
     const closeEditModal = () => {
         setIsEditModalOpen(false);
         setCurrentQuestion({});

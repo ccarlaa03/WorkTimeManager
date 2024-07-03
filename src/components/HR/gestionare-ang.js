@@ -33,7 +33,8 @@ const GestionareAngajati = () => {
     const employeesPerPage = 6;
     const [totalPages, setTotalPages] = useState(0);
 
-    const handleSubmit = async (event) => {
+     // Functia pentru a trimite formularul
+     const handleSubmit = async (event) => {
         event.preventDefault();
         await createEmployee(newEmployee);
         setNewEmployee({
@@ -48,10 +49,12 @@ const GestionareAngajati = () => {
         closeAddModal();
     };
 
+    // Functia pentru a schimba pagina curentă în paginare
     const handlePageChange = ({ selected }) => {
         setCurrentPage(selected);
     };
 
+    // Functia pentru a gestiona schimbările de input în formular
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setNewEmployee(prevFormData => {
@@ -68,37 +71,39 @@ const GestionareAngajati = () => {
         });
     };
 
+    // Functia pentru a prelua datele companiei HR
     const fetchHrCompany = async () => {
-        const accessToken = getAccessToken();
+        const accessToken = localStorage.getItem('access_token');
         try {
             const hrResponse = await instance.get('/hr-dashboard/', {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
             });
             if (hrResponse.data && hrResponse.data.company_id) {
                 setHrCompany(hrResponse.data.company_id);
-                console.log('HR Company ID:', hrResponse.data.company_id);
+                console.log('ID-ul companiei HR:', hrResponse.data.company_id);
             } else {
-                console.log('HR Company data:', hrResponse.data);
+                console.log('Datele companiei HR:', hrResponse.data);
             }
         } catch (error) {
-            console.error('Error fetching HR company data:', error.response ? error.response.data : error);
+            console.error('Eroare la preluarea datelor companiei HR:', error.response ? error.response.data : error);
         }
     };
 
+    // Functia pentru a prelua lista angajaților
     const fetchEmployees = async () => {
-        const accessToken = getAccessToken();
+        const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token provided.");
+            console.error("Nu s-a furnizat niciun token de acces.");
             return;
         }
 
         if (!hrCompanyId) {
-            console.error("No HR Company ID found.");
+            console.error("Nu s-a găsit niciun ID de companie HR.");
             return;
         }
 
         const params = new URLSearchParams({
-            page: currentPage + 1, // Pagination starts at 1 in backend
+            page: currentPage + 1, // Paginarea începe de la 1 în backend
             per_page: employeesPerPage,
             name: filter.name,
             function: filter.function,
@@ -106,7 +111,7 @@ const GestionareAngajati = () => {
         }).toString();
 
         const url = `http://localhost:8000/hr/${hrCompanyId}/employees/?${params}`;
-        console.log(`Fetching employees from: ${url}`);
+        console.log(`Preluare angajați de la: ${url}`);
 
         try {
             const response = await axios.get(url, {
@@ -121,11 +126,11 @@ const GestionareAngajati = () => {
                 setTotalPages(Math.ceil(response.data.count / employeesPerPage));
             } else {
                 setEmployees([]);
-                console.error('No employees data or data not in expected format:', response.data);
+                console.error('Nu există date de angajați sau datele nu sunt în formatul așteptat:', response.data);
             }
         } catch (err) {
-            setError(err.response ? err.response.data : 'Error fetching employees');
-            console.error('Failed to fetch employees:', err);
+            setError(err.response ? err.response.data : 'Eroare la preluarea angajaților');
+            console.error('Eroare la preluarea angajaților:', err);
         }
     };
 
@@ -139,6 +144,7 @@ const GestionareAngajati = () => {
         }
     }, [currentPage, filter, hrCompanyId]);
 
+    // Functia pentru a gestiona schimbările de input în formularul de editare a angajatului
     const handleEmployeeEditChange = (e) => {
         const { name, value } = e.target;
         setEmployeeToEdit((prevEmployee) => ({
@@ -147,6 +153,7 @@ const GestionareAngajati = () => {
         }));
     };
 
+    // Functia pentru a genera email și parolă pe baza numelui și datei de naștere
     const generateEmailAndPassword = (formData) => {
         const { name, birth_date } = formData;
         if (name && birth_date) {
@@ -164,13 +171,12 @@ const GestionareAngajati = () => {
         }
     };
 
-
-    // CREATE
+    // Functia pentru a crea un nou angajat
     const createEmployee = async (newEmployee) => {
         newEmployee.company = hrCompanyId;
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.log("No access token found. User is not logged in.");
+            console.log("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
             return;
         }
         try {
@@ -183,12 +189,13 @@ const GestionareAngajati = () => {
             console.error('Eroare la adăugarea unui nou angajat:', error.response ? error.response.data : error.message);
         }
     };
-    // UPDATE
+
+    // Functia pentru a actualiza un angajat existent
     const updateEmployee = async (event) => {
         event.preventDefault();
-        const accessToken = getAccessToken();
+        const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
             return;
         }
 
@@ -203,8 +210,8 @@ const GestionareAngajati = () => {
             user: employeeToEdit.user,
         };
 
-        console.log("Updating employee with ID:", updatedEmployeeData.user);
-        console.log("Data sent to the server:", updatedEmployeeData);
+        console.log("Actualizare angajat cu ID-ul:", updatedEmployeeData.user);
+        console.log("Date trimise la server:", updatedEmployeeData);
 
         try {
             const response = await axios.put(`http://localhost:8000/update_employee/${employeeToEdit.user}/`, updatedEmployeeData, {
@@ -214,11 +221,11 @@ const GestionareAngajati = () => {
                 },
             });
 
-            console.log("Response status:", response.status);
-            console.log("Data received from the server:", response.data);
+            console.log("Răspuns status:", response.status);
+            console.log("Date primite de la server:", response.data);
 
             if (response.status === 200) {
-                console.log('Update successful', response.data);
+                console.log('Actualizare reușită', response.data);
 
                 setEmployees(prevEmployees => prevEmployees.map(employee =>
                     employee.user === updatedEmployeeData.user ? { ...employee, ...response.data } : employee
@@ -227,15 +234,15 @@ const GestionareAngajati = () => {
                 closeEditModal();
             }
         } catch (error) {
-            console.error('Error updating employee:', error.response ? error.response.data : error);
+            console.error('Eroare la actualizarea angajatului:', error.response ? error.response.data : error);
         }
     };
 
-    // DELETE
+    // Functia pentru a șterge un angajat
     const deleteEmployee = async (userId) => {
-        const accessToken = getAccessToken();
+        const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
-            console.error("No access token found. User is not logged in.");
+            console.error("Nu s-a găsit niciun token de acces. Utilizatorul nu este autentificat.");
             return;
         }
         try {
@@ -248,34 +255,41 @@ const GestionareAngajati = () => {
                 setEmployees(prevEmployees => prevEmployees.filter(employee => employee.user !== userId));
             }
         } catch (error) {
-            console.error('Error deleting employee:', error.response ? error.response.data : error.message);
+            console.error('Eroare la ștergerea angajatului:', error.response ? error.response.data : error.message);
         }
     };
 
-    const openAddModal = () => setModalAddOpen(true);
-    const closeAddModal = () => setModalAddOpen(false);
+     // Funcția pentru a deschide modalul de adăugare
+     const openAddModal = () => setModalAddOpen(true);
 
-    const openEditModal = (employee) => {
-        setEmployeeToEdit(employee);
-        setModalEditOpen(true);
-    };
-
-    const closeEditModal = () => {
-        setModalEditOpen(false);
-        setEmployeeToEdit(null);
-    };
-
-    const handleFilterChange = ({ target: { name, value } }) => {
-        setFilter(prevFilter => ({
-            ...prevFilter,
-            [name]: value
-        }));
-    };
-
-    const handleSearch = async () => {
-        setCurrentPage(0);
-        await fetchEmployees();
-    };
+     // Funcția pentru a închide modalul de adăugare
+     const closeAddModal = () => setModalAddOpen(false);
+ 
+     // Funcția pentru a deschide modalul de editare
+     const openEditModal = (employee) => {
+         setEmployeeToEdit(employee);
+         setModalEditOpen(true);
+     };
+ 
+     // Funcția pentru a închide modalul de editare
+     const closeEditModal = () => {
+         setModalEditOpen(false);
+         setEmployeeToEdit(null);
+     };
+ 
+     // Funcția pentru a gestiona schimbările de filtrare
+     const handleFilterChange = ({ target: { name, value } }) => {
+         setFilter(prevFilter => ({
+             ...prevFilter,
+             [name]: value
+         }));
+     };
+ 
+     // Funcția pentru a căuta angajați în funcție de filtrele aplicate
+     const handleSearch = async () => {
+         setCurrentPage(0);
+         await fetchEmployees();
+     };
 
     return (
 

@@ -24,143 +24,136 @@ const ProgramLucru = () => {
   const [viewMode, setViewMode] = useState('month');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  const formatTime = (timeString) => {
-    if (!timeString) return '';
-    const time = new Date('1970-01-01T' + timeString + 'Z');
-    return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
-  const accessToken = localStorage.getItem('access_token');
-
-  const handlePrev = () => {
-    if (viewMode === 'month') {
-      setCurrentDate(subMonths(currentDate, 1));
-    } else {
-      setCurrentDate(subWeeks(currentDate, 1));
-    }
-  };
-
-  const handleNext = () => {
-    if (viewMode === 'month') {
-      setCurrentDate(addMonths(currentDate, 1));
-    } else {
-      setCurrentDate(addWeeks(currentDate, 1));
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        console.error("Access denied. No token available. User must be logged in to access this.");
-        return;
-      }
-      try {
-        const response = await axios.get('http://localhost:8000/employee-dashboard/', {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        });
-        console.log(response.data);
-        setEmployeeInfo(response.data.employee_info);
-      } catch (error) {
-        console.error("Error retrieving profile data:", error);
+  
+    // Functia pentru a formata ora într-un format specific
+    const formatTime = (timeString) => {
+      if (!timeString) return '';
+      const time = new Date('1970-01-01T' + timeString + 'Z');
+      return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+  
+    // Functia pentru a merge la luna sau săptămâna precedentă
+    const handlePrev = () => {
+      if (viewMode === 'month') {
+        setCurrentDate(subMonths(currentDate, 1));
+      } else {
+        setCurrentDate(subWeeks(currentDate, 1));
       }
     };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    const fetchSchedules = async () => {
-      if (!employeeInfo.user) {
-        console.error("User ID is undefined or not provided.");
-        return;
-      }
-      setLoading(true);
-      setError('');
-
-      const accessToken = localStorage.getItem('access_token');
-      if (!accessToken) {
-        setError("Access denied. No token available.");
-        setLoading(false);
-        return;
-      }
-
-      const dateParams = viewMode === 'month'
-        ? {
-          start_date: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
-          end_date: format(endOfMonth(currentDate), 'yyyy-MM-dd')
-        }
-        : {
-          start_date: format(startOfWeek(currentDate), 'yyyy-MM-dd'),
-          end_date: format(endOfWeek(currentDate), 'yyyy-MM-dd')
-        };
-
-      try {
-        const response = await axios.get(`http://localhost:8000/employee/${employeeInfo.user}/work-schedule/`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          params: dateParams
-        });
-
-        if (response.status === 200) {
-          setSchedules(response.data);
-        } else {
-          setError('Failed to fetch schedules');
-        }
-      } catch (error) {
-        setError(`Error fetching schedules: ${error.response?.data?.error || error.message || 'Unknown error'}`);
-      } finally {
-        setLoading(false);
+  
+    // Functia pentru a merge la luna sau săptămâna următoare
+    const handleNext = () => {
+      if (viewMode === 'month') {
+        setCurrentDate(addMonths(currentDate, 1));
+      } else {
+        setCurrentDate(addWeeks(currentDate, 1));
       }
     };
-
-    const fetchWorkHistory = async () => {
-      const currentYear = new Date().getFullYear();
-      const currentMonth = new Date().getMonth();
-
-      if (!accessToken || !employeeInfo.user) {
-        console.error("Access denied or missing user ID.");
-        return;
-      }
-
-      try {
-        const url = `http://localhost:8000/employee/${employeeInfo.user}/work-history/${currentYear}/${currentMonth}/`;
-        const response = await axios.get(url, {
-          headers: { Authorization: `Bearer ${accessToken}` }
-        });
-
-        if (response.status === 200) {
-          setWorkHistory(response.data);
-        } else {
-          console.error('Failed to fetch work history');
+  
+    // Functia pentru a prelua datele profilului angajatului
+    useEffect(() => {
+      const fetchData = async () => {
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+          console.error("Acces refuzat. Nu există token disponibil. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching work history:', error);
-      }
+        try {
+          const response = await axios.get('http://localhost:8000/employee-dashboard/', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          console.log(response.data);
+          setEmployeeInfo(response.data.employee_info);
+        } catch (error) {
+          console.error("Eroare la preluarea datelor profilului:", error);
+        }
+      };
+      fetchData();
+    }, []);
+  
+    // Functia pentru a prelua programul de lucru și istoricul de lucru
+    useEffect(() => {
+      const fetchSchedules = async () => {
+        if (!employeeInfo.user) {
+          console.error("ID-ul utilizatorului este nedefinit sau neprovid.");
+          return;
+        }
+        setLoading(true);
+        setError('');
+  
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken) {
+          setError("Acces refuzat. Nu există token disponibil.");
+          setLoading(false);
+          return;
+        }
+  
+        const dateParams = viewMode === 'month'
+          ? {
+            start_date: format(startOfMonth(currentDate), 'yyyy-MM-dd'),
+            end_date: format(endOfMonth(currentDate), 'yyyy-MM-dd')
+          }
+          : {
+            start_date: format(startOfWeek(currentDate), 'yyyy-MM-dd'),
+            end_date: format(endOfWeek(currentDate), 'yyyy-MM-dd')
+          };
+  
+        try {
+          const response = await axios.get(`http://localhost:8000/employee/${employeeInfo.user}/work-schedule/`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            params: dateParams
+          });
+  
+          if (response.status === 200) {
+            setSchedules(response.data);
+          } else {
+            setError('Eșec la preluarea programelor');
+          }
+        } catch (error) {
+          setError(`Eroare la preluarea programelor: ${error.response?.data?.error || error.message || 'Eroare necunoscută'}`);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      const fetchWorkHistory = async () => {
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth();
+  
+        const accessToken = localStorage.getItem('access_token');
+        if (!accessToken || !employeeInfo.user) {
+          console.error("Acces refuzat sau ID-ul utilizatorului lipsește.");
+          return;
+        }
+  
+        try {
+          const url = `http://localhost:8000/employee/${employeeInfo.user}/work-history/${currentYear}/${currentMonth}/`;
+          const response = await axios.get(url, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+  
+          if (response.status === 200) {
+            setWorkHistory(response.data);
+          } else {
+            console.error('Eșec la preluarea istoricului de lucru');
+          }
+        } catch (error) {
+          console.error('Eroare la preluarea istoricului de lucru:', error);
+        }
+      };
+  
+      fetchWorkHistory();
+      fetchSchedules();
+    }, [employeeInfo.user, currentDate, viewMode]);
+  
+    // Functia pentru a trimite cererea de modificare
+    const handleSubmitModificare = (e) => {
+      e.preventDefault();
+      console.log('Cerere de modificare trimisă:', { date, startTime, endTime });
+      setIsModalOpen(false);
+      setShowSuccessMessage(true); 
     };
-
-
-    fetchWorkHistory();
-    fetchSchedules();
-  }, [employeeInfo.user, currentDate, viewMode]);
-
-
-  // Simularea unei cereri asincrone către un server pentru a obține zilele libere
-  const fetchZileLibere = async (lunaCurenta) => {
-    // Aici ar fi codul pentru a face un apel HTTP către server
-    // În loc, vom returna un răspuns mock (simulat)
-    return Promise.resolve([
-      { data: '06/01/2024', motiv: 'Sărbătoare legală' },
-      // ... alte zile libere
-    ]);
-  };
-
-
-
-  const handleSubmitModificare = (e) => {
-    e.preventDefault();
-    console.log('Cerere de modificare trimisă:', { date, startTime, endTime });
-    setIsModalOpen(false);
-    setShowSuccessMessage(true); 
-  };
-
+    
   return (
     <div>
       <div className='container-dashboard'>
@@ -225,12 +218,12 @@ const ProgramLucru = () => {
             <h2 style={{ textAlign: 'center' }}> Istoric program de lucru {currentDate.getFullYear()}</h2>
             {viewMode === 'week' && (
               <div className="button-container">
-                <button className="filter-button" onClick={() => setViewMode('month')}>Lunar</button>
+                <button className="buton" onClick={() => setViewMode('month')}>Lunar</button>
               </div>
             )}
             {viewMode === 'month' && (
               <div className="button-container">
-                <button className="filter-button" onClick={() => setViewMode('week')}>Săptămânal</button>
+                <button className="buton" onClick={() => setViewMode('week')}>Săptămânal</button>
               </div>
             )}
             <table>
