@@ -6,7 +6,6 @@ import { AuthContext } from '../../AuthContext';
 const TrainingEmployee = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [trainings, setTrainings] = useState([]);
-  const [error, setError] = useState('');
   const [employeeInfo, setEmployeeInfo] = useState({
     name: '',
     user: '',

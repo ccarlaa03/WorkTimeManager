@@ -9,7 +9,6 @@ const EmployeeTraining = () => {
     // State-ul și funcțiile necesare pentru gestionarea angajaților și cursurilor
     const [selectedTraining, setSelectedTraining] = useState(null);
     const [availableEmployees, setAvailableEmployees] = useState([]);
-    const [selectedEmployees, setSelectedEmployees] = useState([]);
 
     useEffect(() => {
         // Funcție pentru a prelua lista de angajați disponibili

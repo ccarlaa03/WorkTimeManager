@@ -61,7 +61,7 @@ const RapoarteTraining = () => {
             try {
                 const response = await axios.get('http://localhost:8000/owner-dashboard/', config);
                 if (response.data.owner && response.data.owner.company_id) {
-                    console.log("Company ID:", response.data.owner.company_id); 
+                    console.log("Company ID:", response.data.owner.company_id);
                     setOwner(response.data.owner);
                     if (response.data.company) {
                         setCompany(response.data.company);
@@ -109,26 +109,29 @@ const RapoarteTraining = () => {
     }, [currentPage]);
 
     // Functia pentru a prelua detaliile unui training
+
     const fetchTrainingDetails = async (training_id) => {
         const accessToken = localStorage.getItem('access_token');
         if (!accessToken) {
             console.error("Nu s-a găsit niciun token de acces. Utilizatorul trebuie să fie autentificat pentru a accesa această pagină.");
+            setError("Nu s-a găsit niciun token de acces. Vă rugăm să vă autentificați.");
+            setIsLoading(false);
             return;
         }
-
+        setIsModalOpen(true); // Setează modalul să se deschidă înainte sau după fetch, în funcție de necesități
         try {
-            console.log(`Se preiau detaliile pentru training-ul cu ID: ${training_id}`);
             const response = await axios.get(`/trainings/${training_id}/details/`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
             });
             console.log('Răspuns detalii training:', response.data);
             setSelectedTraining(response.data);
-            setIsModalOpen(true);
         } catch (error) {
             console.error('Eroare la preluarea detaliilor training-ului:', error);
             alert('Preluarea detaliilor despre training a eșuat');
+            setIsModalOpen(false); // Închide modalul dacă fetch-ul eșuează
         }
     };
+
 
     // Functia pentru a deschide modalul de detalii training
     const openModal = (training_id) => {
@@ -191,6 +194,33 @@ const RapoarteTraining = () => {
                     <Participanti />
                 </div>
             </div>
+            <Modal
+                isOpen={modalIsOpen}
+                onRequestClose={closeModal}
+                contentLabel="Detalii Training"
+                className="modal-content"
+            >
+                <h2>Detalii despre curs</h2>
+                {selectedTraining && (
+                    <div>
+                        <h3>{selectedTraining.title}</h3>
+                        <p>Numărul de participanți: {selectedTraining.participant_count}</p>
+                        <h3>Participanți:</h3>
+                        {selectedTraining.participants && selectedTraining.participants.length > 0 ? (
+                            <ul>
+                                {selectedTraining.participants.map(participant => (
+                                    <li key={participant.employee_name}>
+                                        {participant.employee_name} - {participant.employee_department}
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p>Nu există participanți înregistrați la acest training.</p>
+                        )}
+                    </div>
+                )}
+                <button onClick={closeModal}>Închide</button>
+            </Modal>
 
         </div>
 

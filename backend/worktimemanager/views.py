@@ -1318,32 +1318,32 @@ def add_feedback_question(request, form_id):
 @permission_classes([IsAuthenticated])
 def submit_employee_feedback(request, form_id):
     # Verifică dacă utilizatorul a completat deja formularul
-    if EmployeeFeedback.objects.filter(employee=request.user.employee, form_id=form_id).exists():
+    if not hasattr(request.user, 'employee_details'):
+        return Response({'error': 'Profilul de angajat nu este asociat.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if EmployeeFeedback.objects.filter(employee=request.user.employee_details, form_id=form_id).exists():
         return Response({'error': 'Ai completat deja acest formular. Nu poți să îl completezi din nou.'}, status=status.HTTP_403_FORBIDDEN)
 
     # Prelucrarea datelor de feedback
     feedback_data = request.data.get('responses')
-    feedback_instance = EmployeeFeedback.objects.create(employee=request.user.employee, form_id=form_id)
+    feedback_instance = EmployeeFeedback.objects.create(employee=request.user.employee_details, form_id=form_id)
 
     for item in feedback_data:
         question_id = item.get('question_id')
         response_data = item.get('response')
         if 'selected_option' in response_data:
-            # Creați un răspuns pentru întrebările de tip multiple choice
             FeedbackResponse.objects.create(
                 feedback=feedback_instance,
                 question_id=question_id,
                 selected_option_id=response_data['selected_option']
             )
         elif 'score' in response_data:
-            # Creați un răspuns pentru întrebările de tip rating
             FeedbackResponse.objects.create(
                 feedback=feedback_instance,
                 question_id=question_id,
                 score=response_data['score']
             )
         elif 'text' in response_data:
-            # Creați un răspuns pentru întrebările de tip text
             FeedbackResponse.objects.create(
                 feedback=feedback_instance,
                 question_id=question_id,
@@ -1355,8 +1355,14 @@ def submit_employee_feedback(request, form_id):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def check_if_submitted(request, form_id):
-    submitted = EmployeeFeedback.objects.filter(employee=request.user.employee, form_id=form_id).exists()
-    return Response({'submitted': submitted})
+    # Check if the user has an associated Employee profile
+    if hasattr(request.user, 'employee_details'):
+        # Filter EmployeeFeedback by the employee and form_id
+        submitted = EmployeeFeedback.objects.filter(employee=request.user.employee_details, form_id=form_id).exists()
+        return Response({'submitted': submitted})
+    else:
+        return Response({'error': 'No associated employee profile found.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -1505,21 +1511,17 @@ def training_report(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def register_to_training(request, training_id):
-    try:
-        training = Training.objects.get(id=training_id)
-        employee = request.user.employee 
-        if employee in training.participants.all():
-            return Response({'error': 'Already registered'}, status=status.HTTP_409_CONFLICT)
-        
-        training.participants.add(employee)
-        training.save()
-        return Response({'message': 'Registered successfully'}, status=status.HTTP_200_OK)
-    except Training.DoesNotExist:
-        return Response({'error': 'Training not found'}, status=status.HTTP_404_NOT_FOUND)
-    except Employee.DoesNotExist:
-        return Response({'error': 'Not an employee'}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    training = get_object_or_404(Training, id=training_id)
+    employee = request.user.employee_details  # assuming `employee_details` is the correct related_name
+
+    # Using user_id if user is the primary key for Employee
+    if training.participants.filter(user=employee.user).exists():
+        return Response({'error': 'Already registered'}, status=status.HTTP_409_CONFLICT)
+
+    training.participants.add(employee)
+    return Response({'message': 'Registered successfully'}, status=status.HTTP_200_OK)
+
+
     
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
